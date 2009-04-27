@@ -49,7 +49,7 @@
 		$arrInventoryFields[] = array('name' => 'Date Created:', 'value' => $this->lblCreationDate->Render(false));
 		$arrInventoryFields[] = array('name' => 'Date Modified:', 'value' => $this->lblModifiedDate->Render(false));			
 	}
-	
+
 ?>
 
 
@@ -105,7 +105,59 @@
 		</td>
 	</tr>
 </table>
-
+<div id="image-panel">
+	<script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
+	<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
+	<script type="text/javascript">
+		function ajaxFileUpload()
+		{
+			$("#loading")
+			.ajaxStart(function(){
+				$(this).show();
+			})
+			.ajaxComplete(function(){
+				$(this).hide();
+			});
+	
+			$.ajaxFileUpload
+			(
+				{
+					url:'doajaxfileupload.php',
+					secureuri:false,
+					fileElementId:'fileToUpload',
+					dataType: 'json',
+					success: function (data, status)
+					{
+						if(typeof(data.error) != 'undefined')
+						{
+							if(data.error != '')
+							{
+								alert(data.error);
+							}else
+							{
+								alert(data.msg);
+							}
+						}
+					},
+					error: function (data, status, e)
+					{
+						alert(e);
+					}
+				}
+			)
+			
+			return false;
+	
+		}
+	</script>	
+	<form name="form" action="" method="POST" enctype="multipart/form-data">
+		<input id="sku" type="hidden" value="<?=$this->txtInventoryModelCode->Text?>"/>
+		<input id="category" type="hidden" value="<?=$this->lstCategory->SelectedValue?>"/>
+		<input id="fileToUpload" type="file" size="45" name="fileToUpload" class="input"><br>
+		<button class="button" id="buttonUpload" onclick="return ajaxFileUpload();" style="height:32px">Upload Image</button>
+	</form>
+	<img id="loading" src="../images/loading.gif" style="display:none;">
+</div>
 <?php
 $this->pnlAttachments->Render();
 ?>
