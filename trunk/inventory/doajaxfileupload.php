@@ -1,4 +1,12 @@
 <?php
+	session_start();
+	if(!empty($_POST['categoryId']) || !empty($_POST['inventoryCode'])){
+		$_SESSION['categoryId'] = $_POST['categoryId'];
+		$_SESSION['inventoryCode'] = $_POST['inventoryCode'];
+		print_r($_SESSION);
+		exit;
+	}
+	$imagePath = "C:\\xampp\\htdocs\\tracmor\\inventoy_images\\";
 	$error = "";
 	$msg = "";
 	$fileElementName = 'fileToUpload';
@@ -38,15 +46,28 @@
 		$error = 'No file was uploaded..';
 	}else 
 	{
-			$msg .= " File Name: " . $_FILES['fileToUpload']['name'] . ", ";
-			$msg .= " File Size: " . @filesize($_FILES['fileToUpload']['tmp_name']);
-			$msg .= " sku: ".$_GET['sku'];
-			$msg .= " category: ".$_POST['category'];
+			//$msg .= " File Name: " . $_FILES['fileToUpload']['name'] . ", ";
+			//$msg .= " File Size: " . @filesize($_FILES['fileToUpload']['tmp_name']);
+			//$msg .= " sku: ".$_GET['inventoryCode'];
+			//$msg .= " category: ".$_GET['categoryId'];
 			//for security reason, we force to remove all uploaded file
-			@unlink($_FILES['fileToUpload']);		
-	}		
+			//@unlink($_FILES['fileToUpload']);
+			$extension = explode(".", $_FILES['fileToUpload']['name']);
+			$extension = $extension[1];
+			//echo $_FILES['fileToUpload']['tmp_name'];
+			//if(!file_exists($imagePath.$_GET['categoryId']."\\".$_GET['inventoryCode'])){
+			//	mkdir($imagePath.$_GET['categoryId']."\\".$_GET['inventoryCode']);
+			//}
+			//var_dump($_SESSION);
+			$categoryId = ($_GET['categoryId'] !="")?$_GET['categoryId']:$_SESSION['categoryId'];
+			$inventoryCode = ($_GET['inventoryCode'] !="")?$_GET['inventoryCode']:$_SESSION['inventoryCode'];
+			move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$categoryId."\\".$inventoryCode.".".$extension);
+			echo "{success: true,imagePath: '../inventoy_images/".$categoryId."/".$inventoryCode.".".$extension."'}";
+	}
+	/*
 	echo "{";
 	echo				"error: '" . $error . "',\n";
 	echo				"msg: '" . $msg . "'\n";
 	echo "}";
+	*/
 ?>

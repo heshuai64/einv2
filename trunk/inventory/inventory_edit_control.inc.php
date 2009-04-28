@@ -105,10 +105,20 @@
 		</td>
 	</tr>
 </table>
-<div id="image-panel">
+<div id="image-panel" style="position:relative;">
 	<script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
 	<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
 	<script type="text/javascript">
+		$("#c17").bind("blur", function(e){
+			//alert($("#c17").val());
+			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
+		});
+			
+		$("#c19").bind("blur", function(e){
+			//alert($("#c19").val());
+			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
+		});
+
 		function ajaxFileUpload()
 		{
 			$("#loading")
@@ -122,21 +132,24 @@
 			$.ajaxFileUpload
 			(
 				{
-					url:'doajaxfileupload.php',
+					url:'doajaxfileupload.php?categoryId=<?=$this->lstCategory->SelectedValue?>&inventoryCode=<?=$this->txtInventoryModelCode->Text?>',
 					secureuri:false,
 					fileElementId:'fileToUpload',
 					dataType: 'json',
 					success: function (data, status)
 					{
+						
 						if(typeof(data.error) != 'undefined')
 						{
 							if(data.error != '')
 							{
-								alert(data.error);
+								//alert(data.error);
 							}else
 							{
-								alert(data.msg);
+								//alert(data.msg);
 							}
+						}else{
+							document.getElementById("inventory-image").src = data.imagePath;
 						}
 					},
 					error: function (data, status, e)
@@ -151,12 +164,13 @@
 		}
 	</script>	
 	<form name="form" action="" method="POST" enctype="multipart/form-data">
-		<input id="sku" type="hidden" value="<?=$this->txtInventoryModelCode->Text?>"/>
-		<input id="category" type="hidden" value="<?=$this->lstCategory->SelectedValue?>"/>
 		<input id="fileToUpload" type="file" size="45" name="fileToUpload" class="input"><br>
 		<button class="button" id="buttonUpload" onclick="return ajaxFileUpload();" style="height:32px">Upload Image</button>
 	</form>
 	<img id="loading" src="../images/loading.gif" style="display:none;">
+	<div style="position:absolute;right:300px;top:0px">
+		<img style="width:150px;height:100px" id="inventory-image" src="../inventoy_images/<?=$this->lstCategory->SelectedValue?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/>
+	</div>
 </div>
 <?php
 $this->pnlAttachments->Render();
