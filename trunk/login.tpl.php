@@ -78,7 +78,7 @@
 		<td align="center">
 			<table align="center" width="300">
 				<tr>
-					<td style="text-align:center;"><img src="images/tracmor_logo.png"></td>
+					<td style="text-align:center;"><h1>Inventory Management System</h1></td>
 				</tr>
 				<tr>
 					<td>
@@ -119,6 +119,6 @@
 	</tr>
 </table>
 
-<table align='center' cellpadding='5'><tr><td bgcolor='#CCCCCC'><strong>PHP Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(phpversion()) ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>MySql Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(mysqli_get_client_info()); ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>Qcodo Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(QCODO_VERSION); ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>Build Date:</strong></td><td bgcolor='#EEEEEE'>Tue Jul 29 13:37:33 PDT 2008</td></tr></table>
+<!--<table align='center' cellpadding='5'><tr><td bgcolor='#CCCCCC'><strong>PHP Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(phpversion()) ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>MySql Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(mysqli_get_client_info()); ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>Qcodo Version:</strong></td><td bgcolor='#EEEEEE'><?php _p(QCODO_VERSION); ?></td></tr><tr><td bgcolor='#CCCCCC'><strong>Build Date:</strong></td><td bgcolor='#EEEEEE'>Tue Jul 29 13:37:33 PDT 2008</td></tr></table>-->
 <?php $this->RenderEnd(); ?>
 <?php require_once(__INCLUDES__ . '/footer.inc.php'); ?>
