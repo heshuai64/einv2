@@ -93,7 +93,7 @@
 				// If the user has access to the assets module, send them there. Otherwise, send them to the home module.
 				$objRoleModule = RoleModule::LoadByRoleIdModuleId($objUserAccount->RoleId, 2);
 				if ($objRoleModule->AccessFlag) {
-					QApplication::Redirect('./assets/');
+					QApplication::Redirect('./inventory/');
 				}
 				else {
 					Qapplication::Redirect('./home/');

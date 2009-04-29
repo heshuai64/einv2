@@ -46,9 +46,9 @@
 										if ($this->objRoleModuleArray) {
 											foreach ($this->objRoleModuleArray as $objRoleModule) {
 												//var_dump($objRoleModule->Module->ShortDescription);
-												//if(in_array($objRoleModule->Module->ShortDescription, array("assets"))){
-												//	continue;
-												//}
+												if(in_array($objRoleModule->Module->ShortDescription, array("assets","contacts","shipping","receiving","reports"))){
+													continue;
+												}
 												$link = '../' . $objRoleModule->Module->ShortDescription . '/';
 												if (QApplication::$objRoleModule && QApplication::$objRoleModule->ModuleId == $objRoleModule->ModuleId) {
 													$strTabClass = 'current_tab_';
@@ -73,7 +73,7 @@
 												$strTabClass = 'current_tab_';
 											}
 											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Admin</a></td>', $strTabClass, '../admin/', $strTabClass));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Admin</a></td>', $strTabClass, '../admin/category_list.php', $strTabClass));
 											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										}
 									?>

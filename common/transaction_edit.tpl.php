@@ -70,9 +70,10 @@
 		
 	<?php $this->dtgEntity->Render(); ?>
 	<br class="item_divide" />
-	
+	<!--
 	<br class="item_divide" />
 	<a href="../assets/asset_list.php">Asset List</a>
+	-->
 	<br class="item_divide" />
 	<a href="../inventory/Inventory_model_list.php">Inventory List</a>
 

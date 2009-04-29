@@ -36,10 +36,12 @@
 								<td><img src="../images/empty.gif" width="30" height="1"></td>
 								<td style="border-left:1px solid #CCCCCC;"></td>
 							</tr>
+							<!--
 							<tr>
 								<td width="30" align="center"><img src="../images/icons/settings.png" name="shortcut0"></td>
 								<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" width="100%" onmouseover="this.style.backgroundColor='#EEEEEE';" onmouseout="this.style.backgroundColor='#FFFFFF';"><a href="index.php" class="graylink">Settings</a></td>
 							</tr>
+							-->
 							<tr>
 								<td width="30" align="center"><img src="../images/icons/category.png" name="shortcut1"></td>
 								<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" width="100%" onmouseover="this.style.backgroundColor='#EEEEEE';" onmouseout="this.style.backgroundColor='#FFFFFF';"><a href="category_list.php" class="graylink">Categories</a></td>
@@ -52,10 +54,12 @@
 								<td width="30" align="center"><img src="../images/icons/locations.png" name="shortcut3"></td>
 								<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" width="100%" onmouseover="this.style.backgroundColor='#EEEEEE';" onmouseout="this.style.backgroundColor='#FFFFFF';"><a href="location_list.php" class="graylink">Locations</a></td>
 							</tr>
+							<!--
 							<tr>
 								<td width="30" align="center"><img src="../images/icons/shipping_and_receiving.png" name="shortcut4"></td>
 								<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" width="100%" onmouseover="this.style.backgroundColor='#EEEEEE';" onmouseout="this.style.backgroundColor='#FFFFFF';"><a href="shipping_account_list.php" class="graylink">Shipping/Receiving</a></td>
 							</tr>
+							-->
 							<tr>
 								<td width="30" align="center"><img src="../images/icons/custom_fields.png" name="shortcut5"></td>
 								<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" width="100%" onmouseover="this.style.backgroundColor='#EEEEEE';" onmouseout="this.style.backgroundColor='#FFFFFF';"><a href="custom_field_list.php" class="graylink">Custom Fields</a></td>

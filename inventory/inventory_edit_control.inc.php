@@ -183,8 +183,8 @@ $this->pnlAttachments->Render();
 			$this->btnMove->Render();
 			$this->btnTakeOut->Render();
 			$this->btnRestock->Render();
-			$this->btnShip->Render();
-			$this->btnReceive->Render();
+			//$this->btnShip->Render();
+			//$this->btnReceive->Render();
 			echo '<br class="item_divider />';
 			echo '<br class="item_divider />';
 			echo('<div class="title">Quantity by Location</div>');
@@ -196,8 +196,10 @@ $this->pnlAttachments->Render();
 ?>
 <br class="item_divider">
 <?php
+/*
 if ($this->blnEditMode) {
 	$this->lblShipmentReceipt->Render();
 	$this->dtgShipmentReceipt->RenderWithError();
 }
+*/
 ?>
