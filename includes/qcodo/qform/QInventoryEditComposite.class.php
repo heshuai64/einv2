@@ -775,7 +775,11 @@ class QInventoryEditComposite extends QControl {
 
 		// Display Edit and Delete buttons
 		$this->btnEdit->Display = true;
-		$this->btnDelete->Display = true;
+		if($_GET['intInventoryModelId'] == 5 || $_GET['intInventoryModelId'] == 6 || $_GET['intInventoryModelId'] == 7 || $_GET['intInventoryModelId'] == 8){
+			$this->btnDelete->Display = false;
+		}else{
+			$this->btnDelete->Display = true;
+		}
 		$this->atcAttach->btnUpload->Display = true;
 
 		// Display custom field labels

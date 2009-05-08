@@ -50,7 +50,7 @@
 	define ('__PHP_ASSETS__', __SUBDIRECTORY__ . '/assets/php');
 
 	if ((function_exists('date_default_timezone_set')) && (!ini_get('date.timezone')))
-		date_default_timezone_set('America/Los_Angeles');
+		date_default_timezone_set('Asia/Shanghai');
 
 	define('ERROR_PAGE_PATH', __PHP_ASSETS__ . '/_core/error_page.php');
 ?>
