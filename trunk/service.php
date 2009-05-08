@@ -81,7 +81,7 @@ class Service{
             echo "<br>";
             $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
             $weight_value_row = mysql_fetch_assoc($weight_value_result);
-            $weight = $weight_value_row['short_description'];
+            $weight = (float)$weight_value_row['short_description'];
             echo "<font color='red'><br>Weight End<br></font>";
             
             //---------------------------------------  Envelope  ---------------------------------------------------
@@ -303,7 +303,7 @@ class Service{
         
         $i = 0;
         while($row = mysql_fetch_assoc($result)){
-            $responce->rows[$i]['id']= $row[id];
+            $responce->rows[$i]['id']= $row['id'];
             $responce->rows[$i]['cell'] = array($row['id'],$row['model'],$row['name'],$row['quantity'],$row['time']);
             $i++; 
         }
@@ -372,6 +372,123 @@ class Service{
         
     }
     
+    public function getShippingMethodBySku(){
+        $AEA = array();
+        $data = json_decode($_GET['data']);
+        //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
+        $sku_array = $data->sku_array;
+        //$sku_array = explode(",", $_GET['skuString']);
+
+        foreach($sku_array as $sku){
+            //var_dump($sku);
+            echo "<font color='green'><br>Loop Start--------------------------------------------------------<br></font>";
+            //get sku model id
+            $sql = "select inventory_model_id,category_id from inventory_model where inventory_model_code='".$sku->skuId."'";
+            echo $sql;
+            echo "<br>";
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            $category = $row['category_id'];
+            $inventory_model_id = $row['inventory_model_id'];
+            echo $category."<br>";
+            echo $inventory_model_id."<br>";
+            
+            //-------------------------------------------   Weight   -----------------------------------------------
+            //get weight field id
+            echo "<font color='red'><br>Weight Start<br></font>";
+            $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+            echo $weight_field_sql;
+            echo "<br>";
+            $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+            $weight_field_row = mysql_fetch_assoc($weight_field_result);
+            
+            
+            //get weight value
+            $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+            on cfs.custom_field_value_id=cfv.custom_field_value_id
+            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+            echo $weight_value_sql;
+            echo "<br>";
+            $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+            $weight_value_row = mysql_fetch_assoc($weight_value_result);
+            $weight = (float) $weight_value_row['short_description'] * $sku->quantity;
+            echo $weight."<br>";
+            echo "<font color='red'><br>Weight End<br></font>";
+            
+            //-------------------------------------------    Cost    -----------------------------------------------
+            //get cost field id
+            echo "<font color='red'><br>Cost Start<br></font>";
+            $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+            echo $cost_field_sql;
+            echo "<br>";
+            $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+            $cost_field_row = mysql_fetch_assoc($cost_field_result);
+            
+            
+            //get cost value
+            $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+            on cfs.custom_field_value_id=cfv.custom_field_value_id
+            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
+            echo $cost_value_sql;
+            echo "<br>";
+            $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+            $cost_value_row = mysql_fetch_assoc($cost_value_result);
+            $cost = $cost_value_row['short_description'] * $sku->quantity;
+            echo $cost."<br>";
+            echo "<font color='red'><br>Cost End<br></font>";
+            
+            if($weight > 1.4){
+                $shippingMethod = "S";
+                break;
+            }else{
+                switch($category){
+                    case "1":
+                        //Battery
+                        if($cost < 100 || ($cost >= 100 && $cost < 200 && in_array($data->country, $AEA))){
+                            $shippingMethod = "B";
+                        }else{
+                            $shippingMethod = "R";
+                            break;
+                        }
+                    break;
+                
+                    case "2":
+                        //Game
+                        if($cost < 150){
+                            $shippingMethod = "B";
+                        }else{
+                            $shippingMethod = "R";
+                            break;
+                        }
+                    break;
+                
+                    case "3":
+                        //Security
+                        if($cost < 99){
+                            $shippingMethod = "B";
+                        }else{
+                            $shippingMethod = "R";
+                            break;
+                        }
+                    break;
+                
+                    case "4":
+                        //Case
+                        $shippingMethod = "B";
+                    break;
+                
+                    case "5":
+                        //Oil Painting
+                        $shippingMethod = "B";
+                    break;
+                }
+            }
+            echo $shippingMethod."<br>";
+            echo "<font color='green'><br>Loop End--------------------------------------------------------<br></font>";
+        }
+        echo json_encode(array('shippingMethod'=>$shippingMethod));
+    }
+    
     public function calculateWeekFlow(){
         $seven_day_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
         $today = date("Y-m-d");
@@ -428,6 +545,10 @@ switch($action){
     
     case "calculateWeekFlow":
         $service->calculateWeekFlow();
+        break;
+    
+    case "getShippingMethodBySku":
+        $service->getShippingMethodBySku();
         break;
 }
 
