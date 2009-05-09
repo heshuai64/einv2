@@ -185,7 +185,52 @@ class Service{
     }
     
     public function syncEnvelope(){
+        //-------------------------------------------   Constant  --------------------------------------------
+        //Battery Category Id
         $battery_category = 2;
+        $s_envelope_model_id = 5;
+        $m_envelope_model_id = 6;
+        $l_envelope_model_id = 7;
+        $xl_envelope_model_id = 8;
+                
+        //S Inventory Model And Location
+        $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$s_envelope_model_id."'";
+        echo $envelope_location_sql;
+        echo "<br>";
+        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
+        $s_location_id = $envelope_location_row['location_id'];
+        $s_inventory_location_id = $envelope_location_row['inventory_location_id'];
+          
+        //M Inventory Location
+        $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$m_envelope_model_id."'";
+        echo $envelope_location_sql;
+        echo "<br>";
+        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
+        $m_location_id = $envelope_location_row['location_id'];
+        $m_inventory_location_id = $envelope_location_row['inventory_location_id'];
+        
+        //L Inventory Model And Location
+        $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$l_envelope_model_id."'";
+        echo $envelope_location_sql;
+        echo "<br>";
+        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
+        $l_location_id = $envelope_location_row['location_id'];
+        $l_inventory_location_id = $envelope_location_row['inventory_location_id'];
+        
+        //XL Inventory Model And Location
+        $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$xl_envelope_model_id."'";
+        echo $envelope_location_sql;
+        echo "<br>";
+        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
+        $xl_location_id = $envelope_location_row['location_id'];
+        $xl_inventory_location_id = $envelope_location_row['inventory_location_id'];
+        
+        //-----------------------------------------------------------------------------------------------------
+        
         $sql = "select shipment_id from inventory_transaction where inventory_transaction_id = 90";//envelope_status = 0 and shipment_id !=''";
         $result = mysql_query($sql, Service::$database_connect);
         $created_by = 1;
@@ -194,9 +239,15 @@ class Service{
             $sql_1 = "select inventory_transaction_id,inventory_location_id,quantity from inventory_transaction where inventory_transaction_id = 89 or inventory_transaction_id = 90";//envelope_status = 0 and shipment_id !=''";
             $result_1 = mysql_query($sql_1, Service::$database_connect);
             $num_rows_1 = mysql_num_rows($result_1);
-            $s_envelope = 0;
+            
             if($num_rows_1 > 1){
+//------------------------------------------ Many Envelope  --------------------------------------------------                
                 echo "<font color='red'><br>Many Envelope Start<br></font>";
+                $s_envelope_count = 0;
+                $m_envelope_count = 0;
+                $l_envelope_count = 0;
+                $xl_envelope_count = 0;
+                
                 while($row_1 = mysql_fetch_assoc($result_1)){
                     $inventory_model_id = $row_1['inventory_location_id'];
                     //get envelope field id
@@ -231,19 +282,186 @@ class Service{
                     $row_2 = mysql_fetch_assoc($result_2);
                     $category_id = $row_2['category_id'];
                         
-                    if($envelope_model_id == 5 && $category_id == $battery_category && $row_1['quantity'] < 6){
-                        $s_envelope += $row_1['quantity'];
+                    if($envelope_model_id == $s_envelope_model_id && $s_envelope_count < 6 && $category_id == $battery_category && $row_1['quantity'] < 6){
+                        //S Envelope
+                        $s_envelope_count += $row_1['quantity'];
                         if($s_envelope > 6){
                             continue;
                         }
+                    }elseif($envelope_model_id == $m_envelope_model_id){
+                        //M Envelope
+                        $m_envelope_count += $row_1['quantity'];
+                    }elseif($envelope_model_id == $l_envelope_model_id){
+                        //L Envelope
+                        $l_envelope_count += $row_1['quantity'];
+                    }elseif($envelope_model_id == $xl_envelope_model_id){
+                        //XL Envelope
+                        $xl_envelope_count += $row_1['quantity'];
                     }
-                    
-                    
-                    
-                    
                 }
-                echo "<font color='red'><br>Many Envelope Start<br></font>";
+                
+                if($s_envelope_count > 0 && $s_envelope_count < 6){
+                    if($s_envelope_count == 1){
+                        //2-4 S = 1L envelope add stock out transaction
+                        $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $sql;
+                        echo "<br>";
+                        $result = mysql_query($sql, Service::$database_connect);
+                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        
+                        $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                        values ('".$s_inventory_location_id."','".$envelope_transaction_id."',1,'".$s_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $envelope_stock_out_sql;
+                        echo "<br>";
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        if($envelope_stock_out_result){
+                            //M envelope update stock quantity
+                            $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$s_inventory_location_id."' and location_id = '".$s_location_id."'";
+                            echo $envelope_update_stock_sql;
+                            echo "<br>";
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            if($envelope_update_stock_result){
+                                $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                                echo $envelope_status_sql;
+                                echo "<br>";
+                                $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                            }
+                        }
+                    }elseif($s_envelope_count > 1 && $s_envelope_count < 5){
+                        //2-4 S = 1L envelope add stock out transaction
+                        $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $sql;
+                        echo "<br>";
+                        $result = mysql_query($sql, Service::$database_connect);
+                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        
+                        $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                        values ('".$l_inventory_location_id."','".$envelope_transaction_id."',1,'".$l_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $envelope_stock_out_sql;
+                        echo "<br>";
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        if($envelope_stock_out_result){
+                            //M envelope update stock quantity
+                            $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$l_inventory_location_id."' and location_id = '".$l_location_id."'";
+                            echo $envelope_update_stock_sql;
+                            echo "<br>";
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            if($envelope_update_stock_result){
+                                $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                                echo $envelope_status_sql;
+                                echo "<br>";
+                                $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                            }
+                        }
+                    }elseif($s_envelope_count == 5){
+                        //5S = 1XL envelope add stock out transaction
+                        $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $sql;
+                        echo "<br>";
+                        $result = mysql_query($sql, Service::$database_connect);
+                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        
+                        $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                        values ('".$xl_inventory_location_id."','".$envelope_transaction_id."',1,'".$xl_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                        echo $envelope_stock_out_sql;
+                        echo "<br>";
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        if($envelope_stock_out_result){
+                            //M envelope update stock quantity
+                            $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$xl_inventory_location_id."' and location_id = '".$xl_location_id."'";
+                            echo $envelope_update_stock_sql;
+                            echo "<br>";
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            if($envelope_update_stock_result){
+                                $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                                echo $envelope_status_sql;
+                                echo "<br>";
+                                $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                            }
+                        }
+                    }
+                }elseif($m_envelope_count > 0){
+                    //M envelope add stock out transaction
+                    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $sql;
+                    echo "<br>";
+                    $result = mysql_query($sql, Service::$database_connect);
+                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    
+                    $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                    values ('".$m_inventory_location_id."','".$envelope_transaction_id."','".$m_envelope_count."','".$m_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $envelope_stock_out_sql;
+                    echo "<br>";
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    if($envelope_stock_out_result){
+                        //M envelope update stock quantity
+                        $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$m_envelope_count." where inventory_model_id = '".$m_envelope_model_id."' and location_id = '".$m_location_id."'";
+                        echo $envelope_update_stock_sql;
+                        echo "<br>";
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        if($envelope_update_stock_result){
+                            $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                            echo $envelope_status_sql;
+                            echo "<br>";
+                            $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                        }
+                    }
+                }elseif($l_envelope_count > 0){
+                    //L envelope add stock out transaction
+                    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $sql;
+                    echo "<br>";
+                    $result = mysql_query($sql, Service::$database_connect);
+                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    
+                    $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                    values ('".$l_inventory_location_id."','".$envelope_transaction_id."','".$l_envelope_count."','".$l_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $envelope_stock_out_sql;
+                    echo "<br>";
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    if($envelope_stock_out_result){
+                        //M envelope update stock quantity
+                        $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$l_envelope_count." where inventory_model_id = '".$l_inventory_location_id."' and location_id = '".$l_location_id."'";
+                        echo $envelope_update_stock_sql;
+                        echo "<br>";
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        if($envelope_update_stock_result){
+                            $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                            echo $envelope_status_sql;
+                            echo "<br>";
+                            $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                        }
+                    }
+                }elseif($xl_envelope_count > 0){
+                    //XL envelope add stock out transaction
+                    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $sql;
+                    echo "<br>";
+                    $result = mysql_query($sql, Service::$database_connect);
+                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    
+                    $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+                    values ('".$xl_inventory_location_id."','".$envelope_transaction_id."','".$xl_envelope_count."','".$xl_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
+                    echo $envelope_stock_out_sql;
+                    echo "<br>";
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    if($envelope_stock_out_result){
+                        //M envelope update stock quantity
+                        $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$xl_envelope_count." where inventory_model_id = '".$xl_inventory_location_id."' and location_id = '".$xl_location_id."'";
+                        echo $envelope_update_stock_sql;
+                        echo "<br>";
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        if($envelope_update_stock_result){
+                            $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
+                            echo $envelope_status_sql;
+                            echo "<br>";
+                            $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                        }
+                    }
+                }
+                echo "<font color='red'><br>Many Envelope End<br></font>";
             }else{
+//------------------------------------------ Single Envelope  --------------------------------------------------
                 echo "<font color='red'><br>Single Envelope Start<br></font>";
                 $row_1 = mysql_fetch_assoc($result_1);
                 $inventory_model_id = $row_1['inventory_location_id'];
@@ -290,29 +508,18 @@ class Service{
                     
                     //envelope stock out
                     if($category_id == $battery_category){
-                        if($envelope_model_id == 5 && $row_1['quantity'] > 1 && $row_1['quantity'] < 5){
-                            $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '7'";// and quantity > ".$quantity."";
-                            echo $envelope_location_sql;
-                            echo "<br>";
-                            $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
-                            $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
-                            $envelope_location_id = $envelope_location_row['location_id'];
-                            $inventory_location_id = $envelope_location_row['inventory_location_id'];
-                            
-                            $envelope_model_id = 7;
+                        if($envelope_model_id == $s_envelope_model_id && $row_1['quantity'] > 1 && $row_1['quantity'] < 5){
+                            // 2-4 S
+                            $inventory_location_id = $l_inventory_location_id;
+                            $envelope_model_id = $l_envelope_model_id;
                             $row_1['quantity'] = 1;
-                        }elseif($envelope_model_id == 5 && $row_1['quantity'] == 5){
-                            $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '8'";// and quantity > ".$quantity."";
-                            echo $envelope_location_sql;
-                            echo "<br>";
-                            $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
-                            $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
-                            $envelope_location_id = $envelope_location_row['location_id'];
-                            $inventory_location_id = $envelope_location_row['inventory_location_id'];
-                            
-                            $envelope_model_id = 8;
+                        }elseif($envelope_model_id == $s_envelope_model_id && $row_1['quantity'] == 5){
+                            //5 S
+                            $inventory_location_id = $xl_inventory_location_id;
+                            $envelope_model_id = $xl_envelope_model_id;
                             $row_1['quantity'] = 1;
-                        }elseif($envelope_model_id == 5 && $row_1['quantity'] > 5){
+                        }elseif($envelope_model_id == $s_envelope_model_id && $row_1['quantity'] > 5){
+                            //over S
                             continue;
                         }  
                     }
@@ -348,6 +555,115 @@ class Service{
                 echo "<font color='red'><br>Single Envelope End<br></font>";
             }
         }
+    }
+    
+    public function importCsv($csv_file_name){
+        //get weight field id
+        $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+        echo $weight_field_sql;
+        echo "<br>";
+        $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+        $weight_field_row = mysql_fetch_assoc($weight_field_result);
+        $weight_field_id = $weight_field_row['custom_field_id'];
+        
+        //get cost field id
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        echo $cost_field_sql;
+        echo "<br>";
+        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_row = mysql_fetch_assoc($cost_field_result);
+        $cost_field_id =  $cost_field_row['custom_field_id'];
+        
+        //get envelope field id
+        $envelope_field_sql = "select custom_field_id from custom_field where short_description = 'Envelope'";
+        echo $envelope_field_sql;
+        echo "<br>";
+        $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+        $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
+        $envelope_field_id = $envelope_field_row['custom_field_id'];
+            
+        $entity_qtype_id = 2; //inventory
+        
+        //----------------------------------------------------------------------------------------------------    
+        $manufacturer_id = 1;
+        $created_by = 1;
+        $category_id = 1;
+        $creation_date = date("Y-m-d H:i:s");
+        
+        
+        $inventory_model_code = "a09050901";
+        $short_description = "a09050901";
+        $long_description = "a09050901";
+        
+        $weight = "0.5";
+        $cost = "200";
+        $envelope = "L";
+        
+        
+        
+        $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
+        ($category_id,$manufacturer_id,'".$inventory_model_code."','".$short_description."','".$long_description."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $inventory_model_id = mysql_insert_id(Service::$database_connect);
+        
+        //add weight
+        $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($weight_field_id,'".$weight."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $weight_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        
+        $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($weight_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        
+        //add cost
+        $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($cost_field_id,'".$cost."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $cost_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        
+        $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($cost_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        
+        //add envelope
+        $sql = "select custom_field_value_id from custom_field_value where short_description = '".$envelope."'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $envelope_custom_field_value_id = $row['custom_field_value_id'];
+        /*
+        $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($envelope_field_id,'".$envelope."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $envelope_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        */
+        $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($envelope_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        
+        
+        
+        exit;
+        $row = 1;
+        $handle = fopen($csv_file_name, "r");
+        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            $num = count($data);
+            echo "<p> $num fields in line $row: <br /></p>\n";
+            $row++;
+            for ($c=0; $c < $num; $c++) {
+                echo $data[$c] . "<br />\n";
+            }
+            $sql = "";
+        }
+        fclose($handle);    
     }
     
     public function stockAttention(){
@@ -728,6 +1044,9 @@ switch($action){
     case "syncEnvelope":
         $service->syncEnvelope();
         break;
+    
+    case "importCsv":
+        $service->importCsv($_GET['file_name']);
 }
 
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
