@@ -6,7 +6,8 @@
 		print_r($_SESSION);
 		exit;
 	}
-	$imagePath = "C:\\xampp\\htdocs\\tracmor\\inventoy_images\\";
+	//$imagePath = "C:\\xampp\\htdocs\\tracmor\\inventoy_images\\";
+	$imagePath = "/export/inventory/inventory_images/";
 	$error = "";
 	$msg = "";
 	$fileElementName = 'fileToUpload';
@@ -58,11 +59,15 @@
 			//if(!file_exists($imagePath.$_GET['categoryId']."\\".$_GET['inventoryCode'])){
 			//	mkdir($imagePath.$_GET['categoryId']."\\".$_GET['inventoryCode']);
 			//}
+			if(!file_exists($imagePath.$_GET['categoryId'])){
+				mkdir($imagePath.$_GET['categoryId'], 0777);
+			}
 			//var_dump($_SESSION);
 			$categoryId = ($_GET['categoryId'] !="")?$_GET['categoryId']:$_SESSION['categoryId'];
 			$inventoryCode = ($_GET['inventoryCode'] !="")?$_GET['inventoryCode']:$_SESSION['inventoryCode'];
-			move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$categoryId."\\".$inventoryCode.".".$extension);
-			echo "{success: true,imagePath: '../inventoy_images/".$categoryId."/".$inventoryCode.".".$extension."'}";
+			//move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$categoryId."\\".$inventoryCode.".".$extension);
+			move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$categoryId."/".$inventoryCode.".".$extension);
+			echo "{success: true,imagePath: '../inventory_images/".$categoryId."/".$inventoryCode.".".$extension."'}";
 	}
 	/*
 	echo "{";

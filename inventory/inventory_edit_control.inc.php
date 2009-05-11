@@ -109,16 +109,27 @@
 	<script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
 	<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
 	<script type="text/javascript">
+		/*
 		$("#c17").bind("blur", function(e){
-			//alert($("#c17").val());
+			alert($("#c17").val());
 			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
 		});
 			
 		$("#c19").bind("blur", function(e){
-			//alert($("#c19").val());
+			alert($("#c19").val());
 			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
 		});
-
+		*/
+		$("#c17").blur(function(){
+			alert($("#c17").val());
+			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
+		});
+		
+		$("#c19").blur(function(){
+			alert($("#c19").val());
+			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
+		});
+		
 		function ajaxFileUpload()
 		{
 			$("#loading")
@@ -138,19 +149,7 @@
 					dataType: 'json',
 					success: function (data, status)
 					{
-						
-						if(typeof(data.error) != 'undefined')
-						{
-							if(data.error != '')
-							{
-								//alert(data.error);
-							}else
-							{
-								//alert(data.msg);
-							}
-						}else{
-							document.getElementById("inventory-image").src = data.imagePath;
-						}
+						document.getElementById("inventory-image").src = data.imagePath;
 					},
 					error: function (data, status, e)
 					{
@@ -169,7 +168,7 @@
 	</form>
 	<img id="loading" src="../images/loading.gif" style="display:none;">
 	<div style="position:absolute;right:300px;top:0px">
-		<img style="width:150px;height:100px" id="inventory-image" src="../inventoy_images/<?=$this->lstCategory->SelectedValue?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/>
+		<img style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=$this->lstCategory->SelectedValue?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/>
 	</div>
 </div>
 <?php

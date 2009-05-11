@@ -2,11 +2,11 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<link rel="stylesheet" type="text/css" href="/tracmor/css/tracmor.css"></link>
+		<link rel="stylesheet" type="text/css" href="/inventory/css/tracmor.css"></link>
 		<link rel="stylesheet" type="text/css" media="screen" href="themes/lightness/ui.all.css" />
 		<link rel="stylesheet" type="text/css" media="screen" href="themes/ui.jqgrid.css" />
 
-		<script type="text/javascript" src="/tracmor/js/_core/_tracmor.js"></script>
+		<script type="text/javascript" src="/inventory/js/_core/_tracmor.js"></script>
 		<script type="text/javascript" src="js/jquery.js"></script>
 		<script type="text/javascript" src="js/jquery.ui.all.js"></script>
 		<script type="text/javascript" src="js/jquery.layout.js"></script>
@@ -45,7 +45,7 @@
 						<td>
 							<table cellspacing="0" cellpadding="0">
 								<tbody><tr>
-									<td width="100%" style="padding-left: 10px; font-family: arial; color: rgb(255, 255, 255); font-size: 12px; font-weight: bold;">Welcome Admin</td>									<td><span style="display: none;" id="c4_ctl"><div style="padding: 0px 20px 14px 0px;" id="c4"><img height="16" width="16" alt="Please Wait..." src="/tracmor/images/spinner_14.gif" class="spinner"/></div></span></td>
+									<td width="100%" style="padding-left: 10px; font-family: arial; color: rgb(255, 255, 255); font-size: 12px; font-weight: bold;">Welcome Admin</td>									<td><span style="display: none;" id="c4_ctl"><div style="padding: 0px 20px 14px 0px;" id="c4"><img height="16" width="16" alt="Please Wait..." src="/inventory/images/spinner_14.gif" class="spinner"/></div></span></td>
 									<!--<td><img src="../images/searchSeparator.gif"></td>-->
 									<!--<td style="padding-left:5px;padding-right:5px;font-family:arial;color:#FFFFFF;font-size:12px;font-weight:bold;">Search</td>
 									<td style="padding-left:5px;padding-right:5px;"><input type="text" style="border:1px solid #000000;font-size:12px;font-family:arial;"></td>
@@ -100,11 +100,11 @@
 												<td style="border-left: 1px solid rgb(204, 204, 204);"/>
 											</tr>
 				<tr>
-					<td align="center" width="30"><img name="shortcut0" src="/tracmor/images/icons/weather_lightning.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=1">Stock Attention</a></td></tr><tr>
-					<td align="center" width="30"><img name="shortcut1" src="/tracmor/images/icons/weather_rain.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=2">Out Of Stock </a></td></tr><tr>
-					<td align="center" width="30"><img name="shortcut2" src="/tracmor/images/icons/weather_sun.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=3">Top Sales</a></td></tr><tr>
-					<td align="center" width="30"><img name="shortcut3" src="/tracmor/images/icons/money_yen.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=4">Postage By Date</a></td></tr><tr>
-					<td align="center" width="30"><img name="shortcut4" src="/tracmor/images/icons/inventory_restock.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../inventory/inventory_edit.php?intTransactionTypeId=4">Restock Inventory</a></td>
+					<td align="center" width="30"><img name="shortcut0" src="/inventory/images/icons/weather_lightning.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=1">Stock Attention</a></td></tr><tr>
+					<td align="center" width="30"><img name="shortcut1" src="/inventory/images/icons/weather_rain.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=2">Out Of Stock </a></td></tr><tr>
+					<td align="center" width="30"><img name="shortcut2" src="/inventory/images/icons/weather_sun.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=3">Top Sales</a></td></tr><tr>
+					<td align="center" width="30"><img name="shortcut3" src="/inventory/images/icons/money_yen.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=4">Postage By Date</a></td></tr><tr>
+					<td align="center" width="30"><img name="shortcut4" src="/inventory/images/icons/inventory_restock.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../inventory/inventory_edit.php?intTransactionTypeId=4">Restock Inventory</a></td>
 				</tr>
 					</tbody></table>
 									</td>
