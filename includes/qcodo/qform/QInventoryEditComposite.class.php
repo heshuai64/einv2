@@ -808,7 +808,9 @@ class QInventoryEditComposite extends QControl {
 		$this->lstCategory->Display = true;
 		$this->lstManufacturer->Display = true;
 		$this->txtLongDescription->Display = true;
-		$this->txtInventoryModelCode->Display = true;
+		//$this->txtInventoryModelCode->Display = true;
+		$this->lblInventoryModelCode->Display = true;
+		$this->txtInventoryModelCode->Display = false;
 
 		// Display Cancel and Save butons
 		$this->btnCancel->Display = true;
