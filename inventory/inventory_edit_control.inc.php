@@ -121,12 +121,12 @@
 		});
 		*/
 		$("#c17").blur(function(){
-			alert($("#c17").val());
+			//alert($("#c17").val());
 			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
 		});
 		
 		$("#c19").blur(function(){
-			alert($("#c19").val());
+			//alert($("#c19").val());
 			$.post("doajaxfileupload.php", { categoryId: $("#c17").val(), inventoryCode: $("#c19").val() } );
 		});
 		
