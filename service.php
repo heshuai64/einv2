@@ -2,7 +2,7 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '';
+    const DATABASE_PASSWORD = '5333533';
     const DATABASE_NAME = 'tracmor';
     private static $database_connect;
     
@@ -873,7 +873,8 @@ class Service{
         }
     }
     
-    public function importCsv($csv_file_name){
+    
+    public function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes){
         //get weight field id
         $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
         echo $weight_field_sql;
@@ -901,12 +902,13 @@ class Service{
         $entity_qtype_id = 2; //inventory
         
         //----------------------------------------------------------------------------------------------------    
-        $manufacturer_id = 1;
+        
+        $manufacturer_id = 3;
         $created_by = 1;
-        $category_id = 1;
         $creation_date = date("Y-m-d H:i:s");
         
-        
+        /*
+        $category_id = 1;
         $inventory_model_code = "a09050901";
         $short_description = "a09050901";
         $long_description = "a09050901";
@@ -914,7 +916,7 @@ class Service{
         $weight = "0.5";
         $cost = "200";
         $envelope = "L";
-        
+        */
         
         
         $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
@@ -923,8 +925,10 @@ class Service{
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $inventory_model_id = mysql_insert_id(Service::$database_connect);
+        //$inventory_model_id = 100;
         
         //add weight
+        echo "<font color='red'>add weight</font><br>";
         $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($weight_field_id,'".$weight."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
@@ -937,6 +941,7 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         
         //add cost
+        echo "<font color='red'>add cost</font><br>";
         $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($cost_field_id,'".$cost."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
@@ -949,7 +954,10 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         
         //add envelope
-        $sql = "select custom_field_value_id from custom_field_value where short_description = '".$envelope."'";
+        echo "<font color='red'>add envelope</font><br>";
+        $sql = "select custom_field_value_id from custom_field_value where custom_field_id = '".$envelope_field_id."' and short_description = '".$envelopes."'";
+        echo $sql;
+        echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $envelope_custom_field_value_id = $row['custom_field_value_id'];
@@ -964,10 +972,9 @@ class Service{
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
-        
-        
-        
-        exit;
+    }
+    
+    public function importCsv($csv_file_name){
         $row = 1;
         $handle = fopen($csv_file_name, "r");
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
@@ -975,11 +982,20 @@ class Service{
             echo "<p> $num fields in line $row: <br /></p>\n";
             $row++;
             for ($c=0; $c < $num; $c++) {
-                echo $data[$c] . "<br />\n";
+                echo $c.": ".$data[$c] . "<br />\n";
             }
-            $sql = "";
+            
+            //var_dump($data[2]);
+            if(!empty($data[2]) && in_array($data[4], array('S','M','L','XL'))){
+                echo "<font color='red'>" .$data[0] ." ". $data[2] ." ". $data[3] ." ". $data[4] ."</font><br />\n";
+                $this->addInventory(2, $data[0], $data[0], $data[0], $data[3], $data[2], $data[4]);
+                exit;
+            }
+            //exit;
         }
-        fclose($handle);    
+        fclose($handle);
+        
+        exit;
     }
     
     public function stockAttention(){
@@ -1175,7 +1191,7 @@ class Service{
     }
     
     public function getShippingMethodBySku(){
-        $AEA = array();
+        $AEA = array('Australia', 'United Kingdom', 'United States');
         $data = json_decode($_GET['data']);
         //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
         $sku_array = $data->sku_array;
