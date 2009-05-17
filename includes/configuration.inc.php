@@ -21,7 +21,7 @@
 				'port' => null,
 				'database' => 'tracmor',
 				'username' => 'root',
-				'password' => '',
+				'password' => '5333533',
 				'profiling' => false)));
 			break;
 	}
