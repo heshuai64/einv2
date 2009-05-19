@@ -23,8 +23,8 @@ class Service{
     }
     
     private function log($file_name, $data){
-        //file_put_contents("/export/einv2/log/".$file_name."-".date("Y-m-d").".html", $data, FILE_APPEND);
-        echo $data;   
+        file_put_contents("/export/inventory/log/".$file_name."-".date("Y-m-d").".html", $data, FILE_APPEND);
+        //echo $data;   
     }
     
     public function inventoryTakeOut($inventory_model, $quantity, $shipment_id, $shipment_method){
@@ -1301,7 +1301,9 @@ class Service{
     
     public function getShippingMethodBySku(){
         $AEA = array('Australia', 'United Kingdom', 'United States');
+        $_GET['data'] = str_replace("\\", "", $_GET['data']);
         $data = json_decode($_GET['data']);
+        //echo $_GET['data'];
         //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
         $sku_array = $data->sku_array;
         //$sku_array = explode(",", $_GET['skuString']);
