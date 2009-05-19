@@ -2,8 +2,8 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '';
-    const DATABASE_NAME = 'tracmor';
+    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_NAME = 'inventory';
     private static $database_connect;
     
     public function __construct(){
@@ -904,7 +904,8 @@ class Service{
         $entity_qtype_id = 2; //inventory
         
         //----------------------------------------------------------------------------------------------------    
-        //仓库
+        
+        //入库 仓库
         $location_id = 6;
         
         
@@ -1010,12 +1011,29 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         
         
-        //add quantity
+        //add quantity  
         $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
         values ('".$inventory_model_id."','".$location_id."','".$quantity."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
+        $inventory_location_id = mysql_insert_id(Service::$database_connect);
+        
+        //restock
+        //add transactions  Restock(4)
+        $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','import stock','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $transaction_id = mysql_insert_id(Service::$database_connect);
+        
+        //add inventory transactions    New Inventory(4)
+        $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+        values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','4','".$location_id."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        
     }
     
     public function importCsv($csv_file_name){
@@ -1025,7 +1043,7 @@ class Service{
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
-        */    
+        */
             
         $categories_id = 2;
         $row = 1;
@@ -1057,6 +1075,9 @@ class Service{
                         $data[5] = 5;
                         break;
                 }
+                
+                //var_dump($data);
+                //exit;
                 /*
                 $sql = "select manufacturer_id from manufacturer where LOCATE(short_description,'".trim($data[5])."')";
                 echo $sql;
