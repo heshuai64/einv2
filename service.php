@@ -2,7 +2,7 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_PASSWORD = '';
     const DATABASE_NAME = 'tracmor';
     private static $database_connect;
     
@@ -14,6 +14,8 @@ class Service{
             exit;
         }
           
+        mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+        
         if (!mysql_select_db(self::DATABASE_NAME, Service::$database_connect)) {
             echo "Unable to select mydbname: " . mysql_error(Service::$database_connect);
             exit;
@@ -874,7 +876,7 @@ class Service{
     }
     
     
-    public function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes){
+    public function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
         //get weight field id
         $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
         echo $weight_field_sql;
@@ -902,10 +904,13 @@ class Service{
         $entity_qtype_id = 2; //inventory
         
         //----------------------------------------------------------------------------------------------------    
+        //仓库
+        $location_id = 6;
         
-        $manufacturer_id = 3;
+        
         $created_by = 1;
         $creation_date = date("Y-m-d H:i:s");
+        
         
         /*
         $category_id = 1;
@@ -924,6 +929,37 @@ class Service{
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
+        if(!$result){
+            
+            
+            $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$inventory_model_code."'";
+            echo $sql_1;
+            echo "<br>";
+            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $row_1 = mysql_fetch_assoc($result_1);
+            $inventory_model_id = $row_1['inventory_model_id'];
+            
+            $sql_4 = "delete from custom_field_selection where entity_id = '".$inventory_model_id."'";
+            echo $sql_4;
+            echo "<br>";
+            $result_4 = mysql_query($sql_4, Service::$database_connect);
+            
+            $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+            echo $sql_5;
+            echo "<br>";
+            $result_5 = mysql_query($sql_5, Service::$database_connect);
+            
+            $sql_2 = "delete from inventory_model where inventory_model_id = '".$inventory_model_id."'";
+            echo $sql_2;
+            echo "<br>";
+            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            
+            $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
+            ($category_id,$manufacturer_id,'".$inventory_model_code."','".$short_description."','".$long_description."','".$created_by."','".$creation_date."')";
+            echo $sql;
+            echo "<br>";
+            $result = mysql_query($sql, Service::$database_connect);
+        }
         $inventory_model_id = mysql_insert_id(Service::$database_connect);
         //$inventory_model_id = 100;
         
@@ -972,30 +1008,82 @@ class Service{
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
+        
+        
+        //add quantity
+        $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
+        values ('".$inventory_model_id."','".$location_id."','".$quantity."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
     }
     
     public function importCsv($csv_file_name){
+        /*
+        $creation_date = "2009-05-19 15:30:00";
+        $sql = "delete from custom_field_value where creation_date > '".$creation_date."'";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        */    
+            
+        $categories_id = 2;
         $row = 1;
+        $manufacturer = array();
+        
         $handle = fopen($csv_file_name, "r");
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
             $num = count($data);
             echo "<p> $num fields in line $row: <br /></p>\n";
-            $row++;
+            
             for ($c=0; $c < $num; $c++) {
                 echo $c.": ".$data[$c] . "<br />\n";
             }
             
-            //var_dump($data[2]);
-            if(!empty($data[2]) && in_array($data[4], array('S','M','L','XL'))){
-                echo "<font color='red'>" .$data[0] ." ". $data[2] ." ". $data[3] ." ". $data[4] ."</font><br />\n";
-                $this->addInventory(2, $data[0], $data[0], $data[0], $data[3], $data[2], $data[4]);
-                exit;
+            //var_dump($data);
+            if(in_array($data[3], array('S','M','L','XL'))){
+                $data[1] = substr($data[1], 3);
+                
+                switch($data[5]){
+                    case "历精";
+                        $data[5] = 1;
+                        break;
+                    
+                    case "飞远";
+                        $data[5] = 4;
+                        break;
+                    
+                    case "恒丰利泰";
+                        $data[5] = 5;
+                        break;
+                }
+                /*
+                $sql = "select manufacturer_id from manufacturer where LOCATE(short_description,'".trim($data[5])."')";
+                echo $sql;
+                echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+                $row = mysql_fetch_assoc($result);
+                var_dump($row);
+                $data[5] = $row['manufacturer_id'];
+                */
+                
+                $data[0] = trim($data[0]);
+                $data[1] = trim($data[1]);
+                $data[2] = trim($data[2]);
+                $data[3] = trim($data[3]);
+                $data[4] = trim($data[4]);
+                
+                $this->addInventory($categories_id, $data[0], $data[0], $data[0], $data[2], $data[1], $data[3], $data[4], $data[5]);
+                //exit;
             }
+
+            //if($row > 5)
+            //    exit;
+                
+            $row++;
             //exit;
         }
         fclose($handle);
-        
-        exit;
     }
     
     public function stockAttention(){
