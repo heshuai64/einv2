@@ -48,16 +48,18 @@ class Service{
         
         //get sku model id
         $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$inventory_model."'";
-        echo $sql;
-        echo "<br>";
+        $this->log("inventoryTakeOut", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $inventory_model_id = $row['inventory_model_id'];
         
         //get sku location
         $sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
-        echo $sql;
-        echo "<br>";
+        $this->log("inventoryTakeOut", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $source_location_id = $row['location_id'];
@@ -66,17 +68,19 @@ class Service{
         if(!empty($source_location_id)){
             //sku add stock out transaction
             $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','".$shipment_id.", ".$shipment_method_descript."','".$created_by."','".date("Y-m-d H:i:s")."')";
-            echo $sql;
-            echo "<br>";
+            $this->log("inventoryTakeOut", $sql."<br>");
+            //echo $sql;
+            //echo "<br>";
             $result = mysql_query($sql, Service::$database_connect);
             $transaction_id = mysql_insert_id(Service::$database_connect);
             
             //-------------------------------------------   Weight   -----------------------------------------------
             //get weight field id
-            echo "<font color='red'><br>Weight Start<br></font>";
+            //echo "<font color='red'><br>Weight Start<br></font>";
             $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
-            echo $weight_field_sql;
-            echo "<br>";
+            $this->log("inventoryTakeOut", $weight_field_sql."<br>");
+            //echo $weight_field_sql;
+            //echo "<br>";
             $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
             $weight_field_row = mysql_fetch_assoc($weight_field_result);
             
@@ -85,12 +89,13 @@ class Service{
             $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
             on cfs.custom_field_value_id=cfv.custom_field_value_id
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
-            echo $weight_value_sql;
-            echo "<br>";
+            $this->log("inventoryTakeOut", $weight_value_sql."<br>");
+            //echo $weight_value_sql;
+            //echo "<br>";
             $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
             $weight_value_row = mysql_fetch_assoc($weight_value_result);
             $weight = (float)$weight_value_row['short_description'];
-            echo "<font color='red'><br>Weight End<br></font>";
+            //echo "<font color='red'><br>Weight End<br></font>";
             
             
             //---------------------------------------  Envelope  ---------------------------------------------------
@@ -176,15 +181,18 @@ class Service{
             //sku stock out
             $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,shipment_id,shipment_method,shipment_fee) 
             values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."',".$shipment_fee.")";
-            echo $sql;
-            echo "<br>";
+            $this->log("inventoryTakeOut", $sql."<br>");
+            //echo $sql;
+            //echo "<br>";
             $result = mysql_query($sql, Service::$database_connect);
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                echo $sql;
-                echo "<br>";
+                $this->log("inventoryTakeOut", $sql."<br>");
+                //echo $sql;
+                //echo "<br>";
                 $result = mysql_query($sql, Service::$database_connect);
+                echo "take out success";
             }
         }else{
             echo "Sku Not In Location!<br>";
