@@ -3,7 +3,7 @@ class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
     const DATABASE_PASSWORD = '5333533';
-    const DATABASE_NAME = 'inventory';
+    const DATABASE_NAME = 'tracmor';
     private static $database_connect;
     
     public function __construct(){
@@ -1497,6 +1497,52 @@ class Service{
         print_r($array);
     }
     
+    public function getAllSkus(){
+        $sql = "select count(*) as count from inventory_model";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $totalCount = $row['count'];
+        
+        if(empty($_POST['start']) && empty($_POST['limit'])){
+            $_POST['start'] = 0;
+            $_POST['limit'] = 10;
+        }
+        
+        $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model limit ".$_POST['start'].",".$_POST['limit'];
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        $i = 0;
+        while($row = mysql_fetch_assoc($result)){
+            $sql_1 = "select short_description from category where category_id = '".$row['category_id']."'";
+            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $row_1 = mysql_fetch_assoc($result_1);
+            
+            
+            $sql_2 = "select short_description from manufacturer where manufacturer_id = '".$row['manufacturer_id']."'";
+            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $row_2 = mysql_fetch_assoc($result_2);
+            
+            $array[$i]['inventory_model_code'] = $row['inventory_model_code'];
+            $array[$i]['category'] = $row_1['short_description'];
+            $array[$i]['manufacturer'] = $row_2['short_description'];
+            
+            $sql_3 = "select cfv.custom_field_id,cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_qtype_id = 2 and cfs.entity_id = '".$row['inventory_model_id']."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            while($row_3 = mysql_fetch_assoc($result_3)){
+                $sql_4 = "select short_description from custom_field where custom_field_id = '".$row_3['custom_field_id']."'";
+                $result_4 = mysql_query($sql_4, Service::$database_connect);
+                $row_4 = mysql_fetch_assoc($result_4);
+                $array[$i][$row_4['short_description']] = $row_3['short_description'];
+            }
+            $i++;
+        }
+        
+        echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
+	mysql_free_result($result);
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -1549,6 +1595,11 @@ switch($action){
     
     case "importCsv":
         $service->importCsv($_GET['file_name']);
+        break;
+    
+    case "getAllSkus":
+        $service->getAllSkus();
+        break;
 }
 
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
