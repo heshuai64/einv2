@@ -2,7 +2,7 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_PASSWORD = '';
     const DATABASE_NAME = 'tracmor';
     private static $database_connect;
     
@@ -940,7 +940,6 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         if(!$result){
             
-            
             $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$inventory_model_code."'";
             echo $sql_1;
             echo "<br>";
@@ -948,21 +947,57 @@ class Service{
             $row_1 = mysql_fetch_assoc($result_1);
             $inventory_model_id = $row_1['inventory_model_id'];
             
+            //delte custom field value
             $sql_4 = "delete from custom_field_selection where entity_id = '".$inventory_model_id."'";
             echo $sql_4;
             echo "<br>";
             $result_4 = mysql_query($sql_4, Service::$database_connect);
             
+            //get inventory location id
+            $sql_6 = "select inventory_location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+            echo $sql_6;
+            echo "<br>";
+            $result_6 = mysql_query($sql_6, Service::$database_connect);
+            $row_6 = mysql_fetch_assoc($result_6);
+            
+            //get transaction id
+            $sql_7 = "select inventory_transaction_id,transaction_id from inventory_transaction where inventory_location_id = '". $row_6['inventory_location_id']."'";
+            echo $sql_7;
+            echo "<br>";
+            $result_7 = mysql_query($sql_7, Service::$database_connect);
+            $row_7 = mysql_fetch_assoc($result_7);
+            
+            //delete transactoin
+            $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
+            echo $sql_8;
+            echo "<br>";
+            $result_8 = mysql_query($sql_8, Service::$database_connect);
+            
+            //delete inventory transaction
+            $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
+            echo $sql_9;
+            echo "<br>";
+            $result_9 = mysql_query($sql_9, Service::$database_connect);
+            
+            //delete inventory location
+            $sql_10 = "delete from inventory_location where where inventory_location_id = '". $row_6['inventory_location_id']."'";
+            echo $sql_10;
+            echo "<br>";
+            $result_10 = mysql_query($sql_10, Service::$database_connect);
+            
+            //delete location
             $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_5;
             echo "<br>";
             $result_5 = mysql_query($sql_5, Service::$database_connect);
             
+            //delete sku
             $sql_2 = "delete from inventory_model where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_2;
             echo "<br>";
             $result_2 = mysql_query($sql_2, Service::$database_connect);
             
+            //insert sku
             $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
             ($category_id,$manufacturer_id,'".$inventory_model_code."','".$short_description."','".$long_description."','".$created_by."','".$creation_date."')";
             echo $sql;
@@ -1498,19 +1533,56 @@ class Service{
     }
     
     public function getAllSkus(){
-        $sql = "select count(*) as count from inventory_model";
-        $result = mysql_query($sql, Service::$database_connect);
-        $row = mysql_fetch_assoc($result);
-        $totalCount = $row['count'];
+        if(count($_POST) == 0){
+            $sql = "select count(*) as count from inventory_model";
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            $totalCount = $row['count'];
+            
+            if(empty($_POST['start']) && empty($_POST['limit'])){
+                $_POST['start'] = 0;
+                $_POST['limit'] = 10;
+            }
+            
+            $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model limit ".$_POST['start'].",".$_POST['limit'];
+            $result = mysql_query($sql, Service::$database_connect);
+            $array = array();
         
-        if(empty($_POST['start']) && empty($_POST['limit'])){
-            $_POST['start'] = 0;
-            $_POST['limit'] = 10;
+        }else{
+            $where = " where 1 = 1 ";
+		
+            if(!empty($_POST['inventory_model_code'])){
+                    $where .= " and inventory_model_code like '%".$_POST['inventory_model_code']."%'";
+            }
+            
+            if(!empty($_POST['short_description'])){
+                    $where .= " and short_description like '%".$_POST['short_description']."%'";
+            }
+            
+            if(!empty($_POST['long_description'])){
+                    $where .= " and long_description like '%".$_POST['long_description']."%'";
+            }
+            
+            if(!empty($_POST['category_id'])){
+                    $where .= " and category_id  = '".$_POST['category_id']."'";
+            }
+            
+            if(!empty($_POST['manufacturer_id'])){
+                    $where .= " and manufacturer_id = '".$_POST['manufacturer_id']."'";
+            }
+                
+            $sql = "select count(*) as count from inventory_model ".$where;
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            $totalCount = $row['count'];
+            
+            $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model ".$where." limit ".$_POST['start'].",".$_POST['limit'];
+            //echo $sql;
+            $result = mysql_query($sql, Service::$database_connect);
+            $array = array();
         }
         
-        $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model limit ".$_POST['start'].",".$_POST['limit'];
-        $result = mysql_query($sql, Service::$database_connect);
-        $array = array();
+        
         $i = 0;
         while($row = mysql_fetch_assoc($result)){
             $sql_1 = "select short_description from category where category_id = '".$row['category_id']."'";
@@ -1523,6 +1595,9 @@ class Service{
             $row_2 = mysql_fetch_assoc($result_2);
             
             $array[$i]['inventory_model_code'] = $row['inventory_model_code'];
+            $array[$i]['short_description'] = $row['short_description'];
+            $array[$i]['long_description'] = $row['long_description'];
+            
             $array[$i]['category'] = $row_1['short_description'];
             $array[$i]['manufacturer'] = $row_2['short_description'];
             
@@ -1541,6 +1616,28 @@ class Service{
         
         echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
 	mysql_free_result($result);
+    }
+    
+    public function getSuppliers(){
+        $sql = "select manufacturer_id as id,short_description as name from manufacturer";
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+        }
+        
+        echo json_encode($array);
+    }
+    
+    public function getCategories(){
+        $sql = "select category_id as id,short_description as name from category where inventory_flag = 1";
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+        }
+        
+        echo json_encode($array);
     }
     
     public function __destruct(){
@@ -1599,6 +1696,14 @@ switch($action){
     
     case "getAllSkus":
         $service->getAllSkus();
+        break;
+    
+    case "getSuppliers":
+        $service->getSuppliers();
+        break;
+    
+    case "getCategories":
+        $service->getCategories();
         break;
 }
 
