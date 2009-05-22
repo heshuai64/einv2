@@ -2,8 +2,8 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '';
-    const DATABASE_NAME = 'tracmor';
+    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_NAME = 'inventory';
     private static $database_connect;
     
     public function __construct(){
@@ -884,6 +884,64 @@ class Service{
     }
     
     
+    
+    public function deleteInventory(){
+        $inventory_model_id = $_GET['id'];
+        
+        //delte custom field value
+        $sql_4 = "delete from custom_field_selection where entity_id = '".$inventory_model_id."'";
+        echo $sql_4;
+        echo "<br>";
+        $result_4 = mysql_query($sql_4, Service::$database_connect);
+        
+        //get inventory location id
+        $sql_6 = "select inventory_location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+        echo $sql_6;
+        echo "<br>";
+        $result_6 = mysql_query($sql_6, Service::$database_connect);
+        $row_6 = mysql_fetch_assoc($result_6);
+        
+        //get transaction id
+        $sql_7 = "select inventory_transaction_id,transaction_id from inventory_transaction where inventory_location_id = '". $row_6['inventory_location_id']."'";
+        echo $sql_7;
+        echo "<br>";
+        $result_7 = mysql_query($sql_7, Service::$database_connect);
+        
+        while($row_7 = mysql_fetch_assoc($result_7)){
+            //delete transactoin
+            $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
+            echo $sql_8;
+            echo "<br>";
+            $result_8 = mysql_query($sql_8, Service::$database_connect);
+            
+            //delete inventory transaction
+            $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
+            echo $sql_9;
+            echo "<br>";
+            $result_9 = mysql_query($sql_9, Service::$database_connect);
+        }
+        
+        /*
+        //delete inventory location
+        $sql_10 = "delete from inventory_location where inventory_location_id = '". $row_6['inventory_location_id']."'";
+        echo $sql_10;
+        echo "<br>";
+        $result_10 = mysql_query($sql_10, Service::$database_connect);
+        */
+        
+        //delete inventory location
+        $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+        echo $sql_5;
+        echo "<br>";
+        $result_5 = mysql_query($sql_5, Service::$database_connect);
+        
+        //delete sku
+        $sql_2 = "delete from inventory_model where inventory_model_id = '".$inventory_model_id."'";
+        echo $sql_2;
+        echo "<br>";
+        $result_2 = mysql_query($sql_2, Service::$database_connect);
+    }
+    
     public function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
         //get weight field id
         $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
@@ -965,27 +1023,30 @@ class Service{
             echo $sql_7;
             echo "<br>";
             $result_7 = mysql_query($sql_7, Service::$database_connect);
-            $row_7 = mysql_fetch_assoc($result_7);
             
-            //delete transactoin
-            $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
-            echo $sql_8;
-            echo "<br>";
-            $result_8 = mysql_query($sql_8, Service::$database_connect);
+            while($row_7 = mysql_fetch_assoc($result_7)){
+                //delete transactoin
+                $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
+                echo $sql_8;
+                echo "<br>";
+                $result_8 = mysql_query($sql_8, Service::$database_connect);
+                
+                //delete inventory transaction
+                $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
+                echo $sql_9;
+                echo "<br>";
+                $result_9 = mysql_query($sql_9, Service::$database_connect);
+            }
             
-            //delete inventory transaction
-            $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
-            echo $sql_9;
-            echo "<br>";
-            $result_9 = mysql_query($sql_9, Service::$database_connect);
-            
+            /*
             //delete inventory location
-            $sql_10 = "delete from inventory_location where where inventory_location_id = '". $row_6['inventory_location_id']."'";
+            $sql_10 = "delete from inventory_location where inventory_location_id = '". $row_6['inventory_location_id']."'";
             echo $sql_10;
             echo "<br>";
             $result_10 = mysql_query($sql_10, Service::$database_connect);
+            */
             
-            //delete location
+            //delete inventory location
             $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_5;
             echo "<br>";
@@ -1048,13 +1109,15 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         $envelope_custom_field_value_id = mysql_insert_id(Service::$database_connect);
         */
+        echo "<font color='red'>add custom field</font><br>";
         $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($envelope_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         
         
-        //add quantity  
+        //add location quantity
+        echo "<font color='red'>add location quantity</font><br>";
         $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
         values ('".$inventory_model_id."','".$location_id."','".$quantity."','".$created_by."','".$creation_date."')";
         echo $sql;
@@ -1064,6 +1127,7 @@ class Service{
         
         //restock
         //add transactions  Restock(4)
+        echo "<font color='red'>add transactions</font><br>";
         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','import stock','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
@@ -1071,6 +1135,7 @@ class Service{
         $transaction_id = mysql_insert_id(Service::$database_connect);
         
         //add inventory transactions    New Inventory(4)
+        echo "<font color='red'>add inventory transactions</font><br>";
         $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
         values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','4','".$location_id."','".$created_by."','".$creation_date."')";
         echo $sql;
@@ -1094,28 +1159,42 @@ class Service{
         
         $handle = fopen($csv_file_name, "r");
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            if($row > 214){
+                $categories_id = 1;
+            }elseif($row > 117){
+                 $categories_id = 4;
+            }elseif($row > 95){
+                $categories_id = 3;
+            }
+            
             $num = count($data);
-            echo "<p> $num fields in line $row: <br /></p>\n";
+            echo "<font color='green'> $num fields in line $row: <br /></font>\n";
             
             for ($c=0; $c < $num; $c++) {
                 echo $c.": ".$data[$c] . "<br />\n";
             }
             
             //var_dump($data);
-            if(in_array($data[3], array('S','M','L','XL'))){
-                $data[1] = substr($data[1], 3);
-                
-                switch($data[5]){
+            if(in_array($data[4], array('S','M','L','XL'))){
+                //if(!is_int($data[2])){
+                //    $data[2] = substr($data[2], 3);
+                //}
+                                
+                switch($data[6]){
                     case "历精";
-                        $data[5] = 1;
+                        $data[6] = 1;
                         break;
                     
                     case "飞远";
-                        $data[5] = 4;
+                        $data[6] = 4;
                         break;
                     
                     case "恒丰利泰";
-                        $data[5] = 5;
+                        $data[6] = 5;
+                        break;
+                    
+                    default:
+                        $data[6] = 3;
                         break;
                 }
                 
@@ -1137,7 +1216,7 @@ class Service{
                 $data[3] = trim($data[3]);
                 $data[4] = trim($data[4]);
                 
-                $this->addInventory($categories_id, $data[0], $data[0], $data[0], $data[2], $data[1], $data[3], $data[4], $data[5]);
+                $this->addInventory($categories_id, $data[0], $data[1], $data[1], $data[3], $data[2], $data[4], $data[5], $data[6]);
                 //exit;
             }
 
@@ -1704,6 +1783,10 @@ switch($action){
     
     case "getCategories":
         $service->getCategories();
+        break;
+    
+    case "deleteInventory":
+        $service->deleteInventory();
         break;
 }
 
