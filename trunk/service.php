@@ -2,8 +2,8 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    const DATABASE_PASSWORD = '';
-    const DATABASE_NAME = 'tracmor';
+    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_NAME = 'inventory';
     private static $database_connect;
     
     public function __construct(){
@@ -1153,12 +1153,12 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         */
             
-        $categories_id = 2;
+        $categories_id = 4;
         $row = 1;
-        $manufacturer = array();
         
         $handle = fopen($csv_file_name, "r");
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            /*
             if($row > 214){
                 $categories_id = 1;
             }elseif($row > 117){
@@ -1166,7 +1166,7 @@ class Service{
             }elseif($row > 95){
                 $categories_id = 3;
             }
-            
+            */
             $num = count($data);
             echo "<font color='green'> $num fields in line $row: <br /></font>\n";
             
