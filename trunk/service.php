@@ -1775,6 +1775,22 @@ class Service{
         echo json_encode($array);
     }
     
+    public function getCategoriesTree(){
+	$sql = "select category_id,short_description from category where inventory_flag = 1";
+	//echo $sql;
+	$result = mysql_query($sql, Service::$database_connect);
+	$array = array();
+	$i = 0;
+	while($row = mysql_fetch_assoc($result)){
+	    $array[$i]['id'] = $row['category_id'];
+	    $array[$i]['text'] = $row['short_description'];
+	    $array[$i]['leaf'] = true;
+	    $i++;
+	}
+	echo json_encode($array);
+	mysql_free_result($result);
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -1843,6 +1859,10 @@ switch($action){
     
     case "deleteInventory":
         $service->deleteInventory();
+        break;
+    
+    case "getCategoriesTree":
+        $service->getCategoriesTree();
         break;
 }
 
