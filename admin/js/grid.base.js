@@ -10,7 +10,7 @@
 $.fn.jqGrid = function( p ) {
 	p = $.extend(true,{
 	url: "",
-	height: 150,
+	height: 650,
 	page: 1,
 	rowNum: 20,
 	records: 0,
@@ -1405,7 +1405,7 @@ $.fn.jqGrid = function( p ) {
 			});
 		}
 		this.appendChild(thead);
-		$.each(ts.p.colModel, function(i){if(!this.width) {this.width=150;}});
+		$.each(ts.p.colModel, function(i){if(!this.width) {this.width=650;}});
 		if(ts.p.autowidth===true) {
 			var pw = $(eg).innerWidth();
 			ts.p.width = pw > 0?  pw: 'nw';

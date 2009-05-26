@@ -1278,10 +1278,16 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         
+        /*
         $sql_1 = "select count(*) as count from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
         where cfs.entity_qtype_id = 2 and cfv.short_description < 3 and custom_field_id = '".$row['custom_field_id']."'";
+        */
+        
+        $sql_1 = "select count(*) as count from inventory_location as il where il.quantity <= (select cfv.short_description as count from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
+        where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."')";
         //echo $sql_1;
         //echo "<br>";
+        
         $result_1 = mysql_query($sql_1, Service::$database_connect);
         $row_1 = mysql_fetch_assoc($result_1);
         $count = $row_1['count'];
@@ -1298,8 +1304,6 @@ class Service{
 
         if ($page > $total_pages){
             $page = $total_pages;
-        }else{
-            $page = 1;
         }
         
         $responce->page = $page;
@@ -1308,22 +1312,30 @@ class Service{
         
         $start = $limit * $page - $limit; // do not put $limit*($page - 1)
         
+        /*
         $sql_2 = "select cfs.entity_id from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
         where cfs.entity_qtype_id = 2 and cfv.short_description < 3 and custom_field_id = '".$row['custom_field_id']."'";
+        */
+        
+        $sql_2 = "select il.inventory_model_id from inventory_location as il where il.quantity <= (select cfv.short_description from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
+        where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."') order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        //echo $sql_2;
+        //echo "<br>";
+        
         $i = 0;
         $result_2 = mysql_query($sql_2, Service::$database_connect);
         while($row_2 = mysql_fetch_assoc($result_2)){
             
             $sql_3 = "select im.inventory_model_id as id,im.week_flow as flow,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
             inventory_model as im left join inventory_location as il on (im.inventory_model_id=il.inventory_model_id) left join location as l on (il.location_id=l.location_id) 
-            where im.inventory_model_id = '".$row_2['entity_id']."' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+            where im.inventory_model_id = '".$row_2['inventory_model_id']."'";
             //echo $sql_3;
             //echo "<br>";
             $result_3 = mysql_query($sql_3, Service::$database_connect);
             $row_3 = mysql_fetch_assoc($result_3);
             
-            $responce->rows[$i]['id']= $row_2['entity_id'];
-            $responce->rows[$i]['cell'] = array($row_3['id'],$row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow'],$row_3['location']);
+            $responce->rows[$i]['id']= $row_2['inventory_model_id'];
+            $responce->rows[$i]['cell'] = array($row_3['id'],$row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
             $i++;
         }
         echo json_encode($responce);
@@ -1676,7 +1688,7 @@ class Service{
             
             if(empty($_POST['start']) && empty($_POST['limit'])){
                 $_POST['start'] = 0;
-                $_POST['limit'] = 10;
+                $_POST['limit'] = 20;
             }
             
             $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model limit ".$_POST['start'].",".$_POST['limit'];
@@ -1782,8 +1794,12 @@ class Service{
 	$array = array();
 	$i = 0;
 	while($row = mysql_fetch_assoc($result)){
-	    $array[$i]['id'] = $row['category_id'];
-	    $array[$i]['text'] = $row['short_description'];
+            $sql_1 = "select count(*) as count from inventory_model where category_id = '".$row['category_id']."'";
+	    $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $row_1 = mysql_fetch_assoc($result_1);
+
+            $array[$i]['id'] = $row['category_id'];
+	    $array[$i]['text'] = $row['short_description'] ." (".$row_1['count'].")";
 	    $array[$i]['leaf'] = true;
 	    $i++;
 	}
