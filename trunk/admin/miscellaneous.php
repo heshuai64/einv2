@@ -124,8 +124,8 @@
 							jQuery(document).ready(function(){
 								jQuery("#list").jqGrid({ url:'../service.php?action=stockAttention',
 											datatype: "json",
-											colNames:['Id', 'Model', 'Name', 'Quantity', 'Week Flow', 'Location'],
-											colModel:[ {name:'id',index:'id', width:100}, {name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:100}, {name:'flow',index:'flow', width:100}, {name:'location',index:'location', width:120}],
+											colNames:['Id', 'Model', 'Name', 'Quantity', 'Week Flow'],
+											colModel:[ {name:'id',index:'id', width:100}, {name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:100}, {name:'flow',index:'flow', width:100}],
 											rowNum:30,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
@@ -147,8 +147,8 @@
 							jQuery(document).ready(function(){
 								jQuery("#list").jqGrid({ url:'../service.php?action=outOfStock',
 											datatype: "json",
-											colNames:['Id', 'Model', 'Name', 'Quantity', 'Location'],
-											colModel:[ {name:'id',index:'id', width:100}, {name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:100}, {name:'location',index:'location', width:120}],
+											colNames:['Id', 'Model', 'Name', 'Quantity'],
+											colModel:[ {name:'id',index:'id', width:100}, {name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:100}],
 											rowNum:30,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",

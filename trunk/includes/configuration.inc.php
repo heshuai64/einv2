@@ -11,9 +11,9 @@
 		case 'test':
 		case 'stage':
 		case 'prod':
-			define ('__DOCROOT__', 'C:/xampp/htdocs');
+			define ('__DOCROOT__', '/export');
 			define ('__VIRTUAL_DIRECTORY__', '');
-			define ('__SUBDIRECTORY__', '/tracmor');
+			define ('__SUBDIRECTORY__', '/einv2');
 
 			define('DB_CONNECTION_1', serialize(array(
 				'adapter' => 'MySql',
@@ -21,7 +21,7 @@
 				'port' => null,
 				'database' => 'tracmor',
 				'username' => 'root',
-				'password' => '5333533',
+				'password' => '',
 				'profiling' => false)));
 			break;
 	}
