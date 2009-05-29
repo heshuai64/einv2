@@ -180,7 +180,7 @@ class Service{
             
             //sku stock out
             $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,shipment_id,shipment_method,shipment_fee) 
-            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."',".$shipment_fee.")";
+            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."','".$shipment_fee."')";
             $this->log("inventoryTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
@@ -188,7 +188,7 @@ class Service{
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                $this->log("inventoryTakeOut", $sql."<br>");
+                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 //echo $sql;
                 //echo "<br>";
                 $result = mysql_query($sql, Service::$database_connect);
