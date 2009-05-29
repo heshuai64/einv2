@@ -1807,6 +1807,15 @@ class Service{
 	mysql_free_result($result);
     }
     
+    public function getModelBySkuId(){
+        $sql = "select short_description from inventory_model where inventory_model_code = '".$_REQUEST['skuId']."'";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        //json_encode($row);
+        echo 'model:'.$row['short_description'];
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -1879,6 +1888,10 @@ switch($action){
     
     case "getCategoriesTree":
         $service->getCategoriesTree();
+        break;
+    
+    case "getModelBySkuId":
+        $service->getModelBySkuId();
         break;
 }
 
