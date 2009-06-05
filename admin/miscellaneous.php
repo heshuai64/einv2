@@ -12,6 +12,12 @@
 		<script type="text/javascript" src="js/jquery.layout.js"></script>
 		<script type="text/javascript" src="js/jqModal.js"></script>
 		<script type="text/javascript" src="js/jquery.jqGrid.js"></script>
+		<style>
+			.stock-attention{
+				float:left;
+				margin: 10px;
+			}
+		</style>
 </head>
 	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0">
 	<table cellspacing="0" cellpadding="0" width="100%" style="background: transparent url(../images/main_header_bg.png) repeat scroll 0% 0%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
@@ -121,19 +127,67 @@
 							?>
 							<script type="text/javascript">
 							jQuery(document).ready(function(){
-								jQuery("#list").jqGrid({ url:'../service.php?action=stockAttention',
+								jQuery("#sotck-attention-1-list").jqGrid({ url:'../service.php?action=stockAttention',
 											datatype: "json",
-											colNames:['Id', 'Model', 'Name', 'Quantity', 'Week Flow'],
-											colModel:[ {name:'id',index:'id', width:100}, {name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:100}, {name:'flow',index:'flow', width:100}],
+											colNames:['Model', 'Name', 'Quantity', 'Flow'],
+											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
 											rowNum:30,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
-											pager: jQuery('#pager'),
+											pager: jQuery('#sotck-attention-1-pager'),
 											sortname: 'quantity',
 											viewrecords: true,
 											sortorder: "asc",
-											caption:"Stock Attention" }
-											).navGrid('#pager',{search:false,edit:false,add:false,del:false}); 
+											caption:"Accessories Stock Attention" }
+											).navGrid('#sotck-attention-1-pager',{search:false,edit:false,add:false,del:false}); 
+							})
+							
+							jQuery(document).ready(function(){
+								jQuery("#sotck-attention-2-list").jqGrid({ url:'../service.php?action=stockAttention',
+											datatype: "json",
+											colNames:['Model', 'Name', 'Quantity', 'Flow'],
+											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											rowNum:30,
+											//rowList:[10,20,30],
+											imgpath: "../themes/basic/images",
+											pager: jQuery('#sotck-attention-2-pager'),
+											sortname: 'quantity',
+											viewrecords: true,
+											sortorder: "asc",
+											caption:"Battery Stock Attention" }
+											).navGrid('#sotck-attention-2-pager',{search:false,edit:false,add:false,del:false}); 
+							})
+							
+							jQuery(document).ready(function(){
+								jQuery("#sotck-attention-3-list").jqGrid({ url:'../service.php?action=stockAttention',
+											datatype: "json",
+											colNames:['Model', 'Name', 'Quantity', 'Flow'],
+											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											rowNum:30,
+											//rowList:[10,20,30],
+											imgpath: "../themes/basic/images",
+											pager: jQuery('#sotck-attention-3-pager'),
+											sortname: 'quantity',
+											viewrecords: true,
+											sortorder: "asc",
+											caption:"Game Stock Attention" }
+											).navGrid('#sotck-attention-3-pager',{search:false,edit:false,add:false,del:false}); 
+							})
+							
+							jQuery(document).ready(function(){
+								jQuery("#sotck-attention-4-list").jqGrid({ url:'../service.php?action=stockAttention',
+											datatype: "json",
+											colNames:['Model', 'Name', 'Quantity', 'Flow'],
+											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											rowNum:30,
+											//rowList:[10,20,30],
+											imgpath: "../themes/basic/images",
+											pager: jQuery('#sotck-attention-4-pager'),
+											sortname: 'quantity',
+											viewrecords: true,
+											sortorder: "asc",
+											caption:"Security Stock Attention" }
+											).navGrid('#sotck-attention-4-pager',{search:false,edit:false,add:false,del:false}); 
 							})
 							</script>
 							<?php
@@ -187,6 +241,28 @@
 				
 				?></div>
 				<br class="item_divider"/>
+				<!--  ***************   Stock  Attention ***************************  -->
+				<div id="sotck-attention-1" class="stock-attention">
+					<table id="sotck-attention-1-list" class="scroll" cellpadding="0" cellspacing="0"></table>
+					<div id="sotck-attention-1-pager" class="scroll" style="text-align:center;"></div>
+				</div>
+				
+				<div id="sotck-attention-2" class="stock-attention">
+					<table id="sotck-attention-2-list" class="scroll" cellpadding="0" cellspacing="0"></table>
+					<div id="sotck-attention-2-pager" class="scroll" style="text-align:center;"></div>
+				</div>
+					
+				<div id="sotck-attention-3" class="stock-attention">
+					<table id="sotck-attention-3-list" class="scroll" cellpadding="0" cellspacing="0"></table>
+					<div id="sotck-attention-3-pager" class="scroll" style="text-align:center;"></div>
+				</div>
+				
+				<div id="sotck-attention-4" class="stock-attention">
+					<table id="sotck-attention-4-list" class="scroll" cellpadding="0" cellspacing="0"></table>
+					<div id="sotck-attention-4-pager" class="scroll" style="text-align:center;"></div>
+				</div>
+				
+				<!--  ***************   ***************   ***************************  -->
 				<table id="list" class="scroll" cellpadding="0" cellspacing="0"></table>
 				<div id="pager" class="scroll" style="text-align:center;"></div>
 				<?php

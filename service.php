@@ -1335,7 +1335,77 @@ class Service{
             $row_3 = mysql_fetch_assoc($result_3);
             
             $responce->rows[$i]['id']= $row_2['inventory_model_id'];
-            $responce->rows[$i]['cell'] = array($row_3['id'],$row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
+            $responce->rows[$i]['cell'] = array($row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
+            $i++;
+        }
+        echo json_encode($responce);
+    }
+    
+    public function stockAttentionByCategory(){
+        $page = $_GET['page']; // get the requested page
+        $limit = $_GET['rows']; // get how many rows we want to have into the grid
+        $sidx = $_GET['sidx']; // get index row - i.e. user click to sort
+        $sord = $_GET['sord']; // get the direction
+        
+        
+        $sql = "select custom_field_id from custom_field where short_description = 'Lower Limit'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        
+        
+        $sql_1 = "select count(*) as count from inventory_location as il where il.quantity <= (select cfv.short_description as count from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
+        where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."')";
+        //echo $sql_1;
+        //echo "<br>";
+        
+        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $row_1 = mysql_fetch_assoc($result_1);
+        $count = $row_1['count'];
+        
+        //var_dump($count);
+        
+        if( $count > 0 ) {
+            $total_pages = ceil($count/$limit);
+        } else {
+            $total_pages = 1;
+        }
+        
+        //var_dump($total_pages);
+
+        if ($page > $total_pages){
+            $page = $total_pages;
+        }
+        
+        $responce->page = $page;
+        $responce->total = $total_pages;
+        $responce->records = $count;
+        
+        $start = $limit * $page - $limit; // do not put $limit*($page - 1)
+        
+        /*
+        $sql_2 = "select cfs.entity_id from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
+        where cfs.entity_qtype_id = 2 and cfv.short_description < 3 and custom_field_id = '".$row['custom_field_id']."'";
+        */
+        
+        $sql_2 = "select il.inventory_model_id from inventory_location as il where il.quantity <= (select cfv.short_description from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
+        where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."') order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        //echo $sql_2;
+        //echo "<br>";
+        
+        $i = 0;
+        $result_2 = mysql_query($sql_2, Service::$database_connect);
+        while($row_2 = mysql_fetch_assoc($result_2)){
+            
+            $sql_3 = "select im.inventory_model_id as id,im.week_flow as flow,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
+            inventory_model as im left join inventory_location as il on (im.inventory_model_id=il.inventory_model_id) left join location as l on (il.location_id=l.location_id) 
+            where im.inventory_model_id = '".$row_2['inventory_model_id']."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $row_3 = mysql_fetch_assoc($result_3);
+            
+            $responce->rows[$i]['id']= $row_2['inventory_model_id'];
+            $responce->rows[$i]['cell'] = array($row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
             $i++;
         }
         echo json_encode($responce);
