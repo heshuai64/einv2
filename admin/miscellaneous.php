@@ -104,7 +104,6 @@
 					<td align="center" width="30"><img name="shortcut1" src="/inventory/images/icons/weather_rain.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=2">Out Of Stock </a></td></tr><tr>
 					<td align="center" width="30"><img name="shortcut2" src="/inventory/images/icons/weather_sun.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=3">Top Sales</a></td></tr><tr>
 					<td align="center" width="30"><img name="shortcut3" src="/inventory/images/icons/money_yen.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../admin/miscellaneous.php?type=4">Postage By Date</a></td></tr><tr>
-					<td align="center" width="30"><img name="shortcut4" src="/inventory/images/icons/inventory_restock.png"/></td><td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);"><a class="graylink" href="../inventory/inventory_edit.php?intTransactionTypeId=4">Restock Inventory</a></td>
 				</tr>
 					</tbody></table>
 									</td>
@@ -196,19 +195,27 @@
 				<div id="postage-by-date">
 					<script type="text/javascript">
 						jQuery(document).ready(function(){
-							$('#datepicker').datepicker({
+							$('#start_datepicker').datepicker({
+								dateFormat: 'yy-mm-dd'
+							});
+							
+							$('#end_datepicker').datepicker({
 								dateFormat: 'yy-mm-dd',
-								inline: true,
+								//inline: true,
 								onSelect: function(dateText) {
+									var start_date = $("#start_datepicker").val();
+									var end_date = dateText;
 									$.ajax({
 										type: "Get",
-										url: "../service.php?action=totalPostageByDate",
+										url: "../service.php?action=totalPostageByDate&start_date="+start_date+"&end_date="+end_date,
 										data: "date="+dateText,
 										success: function(msg){
-											msg = dateText+": total postage "+msg+"<br>";
+											//console.log($('#start_datepicker'));
+											
+											msg = "From " + start_date + " to <br>" + end_date + " total postage: "+msg+"<br>*************************<br>";
 										  	$("#total-postage").append(msg);
 											jQuery("#postage-list").clearGridData();
-											jQuery("#postage-list").setGridParam( {url: '../service.php?action=postageByDate&date='+dateText}); 
+											jQuery("#postage-list").setGridParam( {url: '../service.php?action=postageByDate&start_date='+start_date+'&end_date='+end_date}); 
 											jQuery("#postage-list").trigger("reloadGrid");
 										}
 									});
@@ -244,15 +251,18 @@
 												rowNum:30,
 												imgpath: "../themes/basic/images",
 												pager: jQuery('#postage-pager'),
-												sortname: 'shipment_fee',
+												sortname: 'inventory_model_code',
 												viewrecords: true,
-												sortorder: "desc",
+												sortorder: "asc",
 												caption:"Shipment History" }
 											).navGrid('#postage-pager',{search:false,edit:false,add:false,del:false}); 
 						})
 					</script>
 					<div style="position:relative">
-						<div id="datepicker" style="float:left;position:"></div>
+						<div style="float:left;position:">
+							<p>Start Date: <input type="text" id="start_datepicker"></p>
+							<p>End   Date: <input type="text" id="end_datepicker"></p>
+						</div>
 						<div id="total-postage" style="float:left;padding-left:30px;left:200px;position:absolute"></div>
 						<div id="list002" style="float:left;position:absolute;left:450px;top:0px">
 							<table id="postage-list" class="scroll" cellpadding="0" cellspacing="0"></table>
