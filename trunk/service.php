@@ -1428,7 +1428,11 @@ class Service{
     }
     
     public function totalPostageByDate($date){
-        $sql = "select sum(shipment_fee) as total_shipment_fee from inventory_transaction where creation_date like '".$date."%'";
+        if(empty($_GET['start_date'])){
+            $sql = "select sum(shipment_fee) as total_shipment_fee from inventory_transaction where creation_date like '".date("Y-m-d")."%'"; 
+        }else{
+            $sql = "select sum(shipment_fee) as total_shipment_fee from inventory_transaction where creation_date between '".$_GET['start_date']."' and '".$_GET['end_date']."'";
+        }
         //echo $sql;
         //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
@@ -1445,33 +1449,40 @@ class Service{
         $limit = $_GET['rows']; // get how many rows we want to have into the grid
         $sidx = $_GET['sidx']; // get index row - i.e. user click to sort
         $sord = $_GET['sord']; // get the direction
-        if(empty($date)){
-            $date = date("Y-m-d");
+        if(empty($_GET['start_date'])){
+            $sql = "select count(*) as count from 
+            inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id where it.creation_date like '".date("Y-m-d")."%'";
+        }else{
+            $sql = "select count(*) as count from 
+            inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id where it.creation_date between '".$_GET['start_date']."' and '".$_GET['end_date']."'";
         }
-        $sql = "select count(*) as count from 
-        inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id where it.creation_date like '".$date."%'";
         //echo $sql;
         //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $count = $row['count'];
-        if( $count >0 ) {
+        if( $count > 0 ) {
             $total_pages = ceil($count/$limit);
         } else {
             $total_pages = 0;
         }
         
-        if($page ==0)
+        if($page == 0)
             $page = 1;
             
-        if ($page > $total_pages)
-            $page=$total_pages;
+        //if ($page > $total_pages)
+        //    $page = $total_pages;
         
-        $start = $limit*$page - $limit; // do not put $limit*($page - 1)
-        
-        $sql = "select im.inventory_model_code,it.quantity,it.shipment_method,it.shipment_fee from 
-        inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
-        where it.creation_date like '".$date."%' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        $start = $limit * $page - $limit; // do not put $limit*($page - 1)
+        if(empty($_GET['start_date'])){
+            $sql = "select im.inventory_model_code,it.quantity,it.shipment_method,it.shipment_fee from 
+            inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
+            where it.creation_date like '".date("Y-m-d")."%' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        }else{
+            $sql = "select im.inventory_model_code,it.quantity,it.shipment_method,it.shipment_fee from 
+            inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
+            where it.creation_date between '".$_GET['start_date']."' and '".$_GET['end_date']."' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        }
         //echo $sql;
         //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
