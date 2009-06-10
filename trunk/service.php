@@ -1274,14 +1274,13 @@ class Service{
         echo json_encode($responce);
         */
         
+        
+        //***********************************************************************************************
+        /*
         $sql = "select custom_field_id from custom_field where short_description = 'Lower Limit'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         
-        /*
-        $sql_1 = "select count(*) as count from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
-        where cfs.entity_qtype_id = 2 and cfv.short_description < 3 and custom_field_id = '".$row['custom_field_id']."'";
-        */
         
         $sql_1 = "select count(*) as count from inventory_location as il where il.quantity <= (select cfv.short_description as count from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
         where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."')";
@@ -1312,11 +1311,6 @@ class Service{
         
         $start = $limit * $page - $limit; // do not put $limit*($page - 1)
         
-        /*
-        $sql_2 = "select cfs.entity_id from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
-        where cfs.entity_qtype_id = 2 and cfv.short_description < 3 and custom_field_id = '".$row['custom_field_id']."'";
-        */
-        
         $sql_2 = "select il.inventory_model_id from inventory_location as il where il.quantity <= (select cfv.short_description from custom_field_value as cfv left join custom_field_selection as cfs on cfv.custom_field_value_id = cfs.custom_field_value_id 
         where il.inventory_model_id = cfs.entity_id and cfs.entity_qtype_id = 2 and custom_field_id = '".$row['custom_field_id']."') order by ".$sidx." ".$sord." limit ".$start.",".$limit;
         //echo $sql_2;
@@ -1338,6 +1332,78 @@ class Service{
             $responce->rows[$i]['cell'] = array($row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
             $i++;
         }
+        echo json_encode($responce);
+        */
+        
+        $game_category_id = 1;
+        $battery_category_id = 2;
+        $security_category_id = 3;
+        $accessories_category_id = 4;
+        $oil_painting_category_id = 5;
+        
+        //get stock day
+        $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $stock_day_field_id = $row['custom_field_id'];
+        
+        $sql_0 = "select count(*) as count from inventory_model where category_id = '".$_GET['category_id']."'";
+        $result_0 = mysql_query($sql_0, Service::$database_connect);
+        $row_0 = mysql_fetch_assoc($result_0);
+        $count = $row_0['count'];
+        
+        if( $count > 0 ) {
+            $total_pages = ceil($count/$limit);
+        } else {
+            $total_pages = 1;
+        }
+        
+        //var_dump($total_pages);
+
+        if ($page > $total_pages){
+            $page = $total_pages;
+        }
+        
+        $responce->page = $page;
+        $responce->total = $total_pages;
+        $responce->records = $count;
+        
+        $start = $limit * $page - $limit; // do not put $limit*($page - 1)
+        
+        $sql_1 = "select inventory_model_id,inventory_model_code,short_description,week_flow from inventory_model where category_id = '".$_GET['category_id']."' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        //echo $sql_1;
+        //echo "<br>";
+        
+        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $array = array();
+        $i = 0;
+        while($row_1 = mysql_fetch_assoc($result_1)){
+            //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
+            //$array[$i]['inventory_model_code'] = $row_1['inventory_model_code'];
+            //$array[$i]['short_description'] = $row_1['short_description'];
+            //$array[$i]['week_flow'] = $row_1['week_flow'];
+            
+            $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
+            //echo $sql_2;
+            //echo "<br>";
+            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $row_2 = mysql_fetch_assoc($result_2);
+            //$array[$i]['quantity'] = $row_2['quantity'];
+            
+            $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $row_3 = mysql_fetch_assoc($result_3);
+            //$array[$i]['stock_day'] = $row_3['short_description'];
+            
+            //$array[$i]['ready_stock'] = ($array[$i]['week_flow'] / 7 ) * $array[$i]['stock_day'];
+            
+            $responce->rows[$i]['id']= $row_1['inventory_model_id'];
+            $responce->rows[$i]['cell'] = array($row_1['inventory_model_code'], $row_1['short_description'], $row_2['quantity'], ($row_1['week_flow'] / 7 ) * $row_3['short_description'], $row_3['short_description'], $row_1['week_flow']);
+            $i++;
+        }
+        
         echo json_encode($responce);
     }
     
