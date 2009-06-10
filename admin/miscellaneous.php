@@ -127,31 +127,33 @@
 							?>
 							<script type="text/javascript">
 							jQuery(document).ready(function(){
-								jQuery("#sotck-attention-1-list").jqGrid({ url:'../service.php?action=stockAttention',
+								jQuery("#sotck-attention-1-list").jqGrid({ url:'../service.php?action=stockAttention&category_id=1',
 											datatype: "json",
-											colNames:['Model', 'Name', 'Quantity', 'Flow'],
-											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '周流量'],
+											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}],
 											rowNum:30,
+											//hiddengrid: true,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
 											pager: jQuery('#sotck-attention-1-pager'),
-											sortname: 'quantity',
+											sortname: 'inventory_model_code',
 											viewrecords: true,
 											sortorder: "asc",
-											caption:"Accessories Stock Attention" }
+											caption:"Game Stock Attention" }
 											).navGrid('#sotck-attention-1-pager',{search:false,edit:false,add:false,del:false}); 
 							})
 							
 							jQuery(document).ready(function(){
-								jQuery("#sotck-attention-2-list").jqGrid({ url:'../service.php?action=stockAttention',
+								jQuery("#sotck-attention-2-list").jqGrid({ url:'../service.php?action=stockAttention&category_id=2',
 											datatype: "json",
-											colNames:['Model', 'Name', 'Quantity', 'Flow'],
-											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '周流量'],
+											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}],
 											rowNum:30,
+											//hiddengrid: true,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
 											pager: jQuery('#sotck-attention-2-pager'),
-											sortname: 'quantity',
+											sortname: 'inventory_model_code',
 											viewrecords: true,
 											sortorder: "asc",
 											caption:"Battery Stock Attention" }
@@ -159,34 +161,36 @@
 							})
 							
 							jQuery(document).ready(function(){
-								jQuery("#sotck-attention-3-list").jqGrid({ url:'../service.php?action=stockAttention',
+								jQuery("#sotck-attention-3-list").jqGrid({ url:'../service.php?action=stockAttention&category_id=3',
 											datatype: "json",
-											colNames:['Model', 'Name', 'Quantity', 'Flow'],
-											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '周流量'],
+											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}],
 											rowNum:30,
+											//hiddengrid: true,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
 											pager: jQuery('#sotck-attention-3-pager'),
-											sortname: 'quantity',
+											sortname: 'inventory_model_code',
 											viewrecords: true,
 											sortorder: "asc",
-											caption:"Game Stock Attention" }
+											caption:"Security Stock Attention" }
 											).navGrid('#sotck-attention-3-pager',{search:false,edit:false,add:false,del:false}); 
 							})
 							
 							jQuery(document).ready(function(){
-								jQuery("#sotck-attention-4-list").jqGrid({ url:'../service.php?action=stockAttention',
+								jQuery("#sotck-attention-4-list").jqGrid({ url:'../service.php?action=stockAttention&category_id=4',
 											datatype: "json",
-											colNames:['Model', 'Name', 'Quantity', 'Flow'],
-											colModel:[{name:'model',index:'model', width:100}, {name:'name',index:'name', width:200, sortable:false}, {name:'quantity',index:'quantity', width:80}, {name:'flow',index:'flow', width:60}],
+											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '周流量'],
+											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}],
 											rowNum:30,
+											//hiddengrid: true,
 											//rowList:[10,20,30],
 											imgpath: "../themes/basic/images",
 											pager: jQuery('#sotck-attention-4-pager'),
-											sortname: 'quantity',
+											sortname: 'inventory_model_code',
 											viewrecords: true,
 											sortorder: "asc",
-											caption:"Security Stock Attention" }
+											caption:"Accessories Stock Attention" }
 											).navGrid('#sotck-attention-4-pager',{search:false,edit:false,add:false,del:false}); 
 							})
 							</script>
