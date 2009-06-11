@@ -2043,6 +2043,37 @@ class Service{
         echo 'model:'.$row['short_description'];
     }
     
+    public function getSkuCost(){
+        $this->log("getSkuCost", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
+        //get inventory model id
+        $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$_GET['data']."'";
+        $this->log("getSkuCost", $sql."<br>");
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $inventory_model_id = $row['inventory_model_id'];
+        
+        //-------------------------------------------    Cost    -----------------------------------------------
+        //get cost field id
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        $this->log("getSkuCost", $cost_field_sql."<br>");
+
+        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_row = mysql_fetch_assoc($cost_field_result);
+        
+        
+        //get cost value
+        $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+        on cfs.custom_field_value_id=cfv.custom_field_value_id
+        where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
+        $this->log("getSkuCost", $cost_value_sql."<br>");
+
+        $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+        $cost_value_row = mysql_fetch_assoc($cost_value_result);
+        $cost = $cost_value_row['short_description'];
+        $this->log("getSkuCost", "Cost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuCost'=>$cost));
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -2119,6 +2150,10 @@ switch($action){
     
     case "getModelBySkuId":
         $service->getModelBySkuId();
+        break;
+    
+    case "getSkuCost":
+        $service->getSkuCost();
         break;
 }
 
