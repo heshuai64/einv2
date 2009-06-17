@@ -1890,6 +1890,48 @@ class Service{
         echo json_encode(array('shippingMethod'=>$shippingMethod));
     }
     
+    public function getEnvelopeBySku(){
+        $envelope_field_value = "Envelope";
+        $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".$envelope_field_value."'";
+        echo $envelope_field_sql;
+        echo "<br>";
+        $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+        $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
+                        
+        $skuArray = json_decode($_GET['data']);
+        if(count($skuArray) > 1){
+        
+        }else{
+            //get inventory model id
+            $inventory_model_sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$skuArray['skuId']."'";
+            echo $inventory_model_sql;
+            echo "<br>";
+            $inventory_model_result = mysql_query($inventory_model_sql, Service::$database_connect);
+            $inventory_model_row = mysql_fetch_assoc($inventory_model_result);
+            $inventory_model_id = $inventory_model_row['inventory_model_id'];
+            
+            //get envelope value
+            $envelope_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+            on cfs.custom_field_value_id=cfv.custom_field_value_id
+            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
+            echo $envelope_value_sql;
+            echo "<br>";
+            $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+            $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
+            $envelope = $envelope_value_row['short_description'];
+            
+            if($envelope == "S"){
+                if($skuArray['quantity'] >= 2 && $skuArray['quantity'] <= 4){
+                    $envelope = "L";
+                }elseif($skuArray['quantity'] == 5){
+                    $envelope = "XL";
+                }
+            }else{
+                
+            }
+        }
+    }
+    
     public function calculateWeekFlow(){
         $seven_day_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
         $today = date("Y-m-d");
