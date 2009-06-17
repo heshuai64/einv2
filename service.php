@@ -2,6 +2,9 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
+    
+    //const DATABASE_PASSWORD = '';
+    //const DATABASE_NAME = 'tracmor';
     const DATABASE_PASSWORD = '5333533';
     const DATABASE_NAME = 'inventory';
     private static $database_connect;
@@ -992,7 +995,7 @@ class Service{
         
         
         $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
-        ($category_id,$manufacturer_id,'".$inventory_model_code."','".$short_description."','".$long_description."','".$created_by."','".$creation_date."')";
+        ($category_id,$manufacturer_id,'".$inventory_model_code."','".mysql_real_escape_string($short_description)."','".mysql_real_escape_string($long_description)."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
@@ -1060,7 +1063,7 @@ class Service{
             
             //insert sku
             $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
-            ($category_id,$manufacturer_id,'".$inventory_model_code."','".$short_description."','".$long_description."','".$created_by."','".$creation_date."')";
+            ($category_id,$manufacturer_id,'".$inventory_model_code."','".mysql_real_escape_string($short_description)."','".mysql_real_escape_string($long_description)."','".$created_by."','".$creation_date."')";
             echo $sql;
             echo "<br>";
             $result = mysql_query($sql, Service::$database_connect);
@@ -1215,8 +1218,9 @@ class Service{
                 $data[2] = trim($data[2]);
                 $data[3] = trim($data[3]);
                 $data[4] = trim($data[4]);
-                
-                $this->addInventory($categories_id, $data[0], $data[1], $data[1], $data[3], $data[2], $data[4], $data[5], $data[6]);
+                $data[7] = trim($data[7]);
+                //category_id, inventory_model_code, short_description, long_description, weight, cost, envelopes, quantity, manufacturer_id
+                $this->addInventory($categories_id, $data[0], $data[1], $data[7], $data[3], $data[2], $data[4], $data[5], $data[6]);
                 //exit;
             }
 
