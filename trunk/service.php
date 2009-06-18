@@ -1891,6 +1891,7 @@ class Service{
     }
     
     public function getEnvelopeBySku(){
+        $this->log("getEnvelopeBySku", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
         $envelope_field_value = "Envelope";
         $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".$envelope_field_value."'";
         echo $envelope_field_sql;
@@ -1900,10 +1901,86 @@ class Service{
                         
         $skuArray = json_decode($_GET['data']);
         if(count($skuArray) > 1){
-        
+            $envelopeArray = array("B"=>0,
+                                   "XL"=>0,
+                                   "L"=>0,
+                                   "M"=>0,
+                                   "S"=>0);
+            
+            foreach($skuArray as $value){
+                //get inventory model id
+                $inventory_model_sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$value['skuId']."'";
+                echo $inventory_model_sql;
+                echo "<br>";
+                $inventory_model_result = mysql_query($inventory_model_sql, Service::$database_connect);
+                $inventory_model_row = mysql_fetch_assoc($inventory_model_result);
+                $inventory_model_id = $inventory_model_row['inventory_model_id'];
+                
+                //get envelope value
+                $envelope_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+                on cfs.custom_field_value_id=cfv.custom_field_value_id
+                where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
+                echo $envelope_value_sql;
+                echo "<br>";
+                $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+                $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
+                $envelope = $envelope_value_row['short_description'];
+                
+                $envelopeArray[$envelope] += $value['quantity'];
+            }
+            
+            foreach($envelopeArray as $envelope){
+                switch($envelope){
+                    case "S":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'M'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 4 && $skuArray[0]['quantity'] <= 15){
+                            echo json_encode(array('envelope' => 'L'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 15 && $skuArray[0]['quantity'] <= 30){
+                            echo json_encode(array('envelope' => 'XL'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 30){
+                            echo json_encode(array('envelope' => 'B'));
+                            return 1;
+                        }
+                    break;
+                    
+                    case "M":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'L'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 4 && $skuArray[0]['quantity'] <= 6){
+                            echo json_encode(array('envelope' => 'XL'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 6){
+                            echo json_encode(array('envelope' => 'B'));
+                            return 1;
+                        }
+                    break;
+                    
+                    case "L":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'XL'));
+                            return 1;
+                        }elseif($skuArray[0]['quantity'] > 4){
+                            echo json_encode(array('envelope' => 'B'));
+                            return 1;
+                        }
+                    break;
+                
+                    case "XL":
+                        if($skuArray[0]['quantity'] > 2){
+                            echo json_encode(array('envelope' => 'B'));
+                            return 1;
+                        }
+                    break;
+                }
+            }
         }else{
             //get inventory model id
-            $inventory_model_sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$skuArray['skuId']."'";
+            $inventory_model_sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$skuArray[0]['skuId']."'";
             echo $inventory_model_sql;
             echo "<br>";
             $inventory_model_result = mysql_query($inventory_model_sql, Service::$database_connect);
@@ -1920,16 +1997,50 @@ class Service{
             $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
             $envelope = $envelope_value_row['short_description'];
             
-            if($envelope == "S"){
-                if($skuArray['quantity'] >= 2 && $skuArray['quantity'] <= 4){
-                    $envelope = "L";
-                }elseif($skuArray['quantity'] == 5){
-                    $envelope = "XL";
-                }
+            if($skuArray[0]['quantity'] <= 2){
+                echo json_encode(array('envelope' => $envelope));
             }else{
+                switch($envelope){
+                    case "S":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'M'));
+                        }elseif($skuArray[0]['quantity'] > 4 && $skuArray[0]['quantity'] <= 15){
+                            echo json_encode(array('envelope' => 'L'));
+                        }elseif($skuArray[0]['quantity'] > 15 && $skuArray[0]['quantity'] <= 30){
+                            echo json_encode(array('envelope' => 'XL'));
+                        }elseif($skuArray[0]['quantity'] > 30){
+                            echo json_encode(array('envelope' => 'B'));
+                        }
+                    break;
+                    
+                    case "M":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'L'));
+                        }elseif($skuArray[0]['quantity'] > 4 && $skuArray[0]['quantity'] <= 6){
+                            echo json_encode(array('envelope' => 'XL'));
+                        }elseif($skuArray[0]['quantity'] > 6){
+                            echo json_encode(array('envelope' => 'B'));
+                        }
+                    break;
+                    
+                    case "L":
+                        if($skuArray[0]['quantity'] > 2 && $skuArray[0]['quantity'] <= 4){
+                            echo json_encode(array('envelope' => 'XL'));
+                        }elseif($skuArray[0]['quantity'] > 4){
+                            echo json_encode(array('envelope' => 'B'));
+                        }
+                    break;
                 
+                    case "XL":
+                        if($skuArray[0]['quantity'] > 2){
+                            echo json_encode(array('envelope' => 'B'));
+                        }
+                    break;
+                }
             }
         }
+        
+        $this->log("getEnvelopeBySku", "<font color='red'><br>****************************************** End  ******************************************<br></font>");
     }
     
     public function calculateWeekFlow(){
