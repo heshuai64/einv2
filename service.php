@@ -2061,23 +2061,28 @@ class Service{
     }
     
     public function calculateWeekFlow(){
+        $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
         $seven_day_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
         $today = date("Y-m-d");
         $sql = "select im.inventory_model_code,sum(quantity) as week_flow from transaction as t left join inventory_transaction as it on 
         (t.transaction_id=it.transaction_id) left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
         where t.transaction_type_id = 5 and t.creation_date between '".$seven_day_ago."' and '".$today."' group by im.inventory_model_code";
-        echo $sql;
-        echo "<br>";
+        
+        $this->log("calculateWeekFlow", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
             $sql_1 = "update inventory_model set week_flow = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
-            echo $sql_1;
-            echo "<br>";
+            $this->log("calculateWeekFlow", $sql_1."<br>");
+            //echo $sql_1;
+            //echo "<br>";
             $result_1 = mysql_query($sql_1, Service::$database_connect);
         }
-        print_r($array);
+        //print_r($array);
+        $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  End  +++++++++++++++++++++++++++++++</font><br>");
     }
     
     public function getAllSkus(){
