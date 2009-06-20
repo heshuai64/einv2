@@ -191,10 +191,15 @@ class Service{
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+                $this->log("inventoryTakeOut", $weight_value_sql."<br>");
                 //echo $sql;
                 //echo "<br>";
                 $result = mysql_query($sql, Service::$database_connect);
+                
+                $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
+                $this->log("inventoryTakeOut", $weight_value_sql."<br>");
+                $result = mysql_query($sql, Service::$database_connect);
+                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 echo "take out success";
             }
         }else{
