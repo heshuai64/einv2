@@ -3,7 +3,7 @@ class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
     
-    //const DATABASE_PASSWORD = '';
+    //const DATABASE_PASSWORD = '5333533';
     //const DATABASE_NAME = 'tracmor';
     const DATABASE_PASSWORD = '5333533';
     const DATABASE_NAME = 'inventory';
@@ -1183,26 +1183,26 @@ class Service{
             }
             
             //var_dump($data);
-            if(in_array($data[4], array('S','M','L','XL'))){
+            if(in_array($data[5], array('S','M','L','XL'))){
                 //if(!is_int($data[2])){
                 //    $data[2] = substr($data[2], 3);
                 //}
                                 
-                switch($data[6]){
+                switch($data[7]){
                     case "历精";
-                        $data[6] = 1;
+                        $data[7] = 1;
                         break;
                     
                     case "飞远";
-                        $data[6] = 4;
+                        $data[7] = 4;
                         break;
                     
                     case "恒丰利泰";
-                        $data[6] = 5;
+                        $data[7] = 5;
                         break;
                     
                     default:
-                        $data[6] = 3;
+                        $data[7] = 3;
                         break;
                 }
                 
@@ -1223,9 +1223,11 @@ class Service{
                 $data[2] = trim($data[2]);
                 $data[3] = trim($data[3]);
                 $data[4] = trim($data[4]);
+                $data[5] = trim($data[5]);
+                $data[6] = trim($data[6]);
                 $data[7] = trim($data[7]);
                 //category_id, inventory_model_code, short_description, long_description, weight, cost, envelopes, quantity, manufacturer_id
-                $this->addInventory($categories_id, $data[0], $data[1], $data[7], $data[3], $data[2], $data[4], $data[5], $data[6]);
+                $this->addInventory($categories_id, $data[0], $data[1], $data[2], $data[4], $data[3], $data[5], $data[6], $data[7]);
                 //exit;
             }
 
