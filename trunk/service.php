@@ -1240,6 +1240,37 @@ class Service{
         fclose($handle);
     }
     
+    public function updateStockDays(){
+        $created_by = 1;
+        $creation_date = date("Y-m-d H:i:s");
+        $stock_days = 0;
+        $entity_qtype_id = 2; //inventory
+        
+        $inventory_model_id = 0;
+        
+        //get stock days field id
+        $stock_days_field_sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        echo $stock_days_field_sql;
+        echo "<br>";
+        $stock_days_field_result = mysql_query($stock_days_field_sql, Service::$database_connect);
+        $stock_days_field_row = mysql_fetch_assoc($stock_days_field_result);
+        $stock_days_field_id = $stock_days_field_row['custom_field_id'];
+        
+        //add stock days
+        echo "<font color='red'>add stock days</font><br>";
+        $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($stock_days_field_id,'".$stock_days."','".$created_by."','".$creation_date."')";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $stock_days_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        
+        $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($stock_days_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
+        echo $sql;
+        echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        
+    }
+    
     public function stockAttention(){
         $page = $_GET['page']; // get the requested page
         $limit = $_GET['rows']; // get how many rows we want to have into the grid
