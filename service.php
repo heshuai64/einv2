@@ -1241,12 +1241,14 @@ class Service{
     }
     
     public function updateStockDays(){
+        //select * from  custom_field_value as cfv left join custom_field_selection cfs on cfv.custom_field_value_id = cfs.custom_field_value_id where cfv.custom_field_id = 8 and cfs.entity_id = 1486;
         $created_by = 1;
         $creation_date = date("Y-m-d H:i:s");
-        $stock_days = 0;
+        $modified_by = 1;
+        $modified_date = date("Y-m-d H:i:s");
+        $stock_days = 2;
         $entity_qtype_id = 2; //inventory
-        
-        $inventory_model_id = 0;
+        $manufacturer_id = 1; //历精
         
         //get stock days field id
         $stock_days_field_sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
@@ -1255,20 +1257,41 @@ class Service{
         $stock_days_field_result = mysql_query($stock_days_field_sql, Service::$database_connect);
         $stock_days_field_row = mysql_fetch_assoc($stock_days_field_result);
         $stock_days_field_id = $stock_days_field_row['custom_field_id'];
-        
-        //add stock days
-        echo "<font color='red'>add stock days</font><br>";
-        $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($stock_days_field_id,'".$stock_days."','".$created_by."','".$creation_date."')";
-        echo $sql;
+            
+        $sql_1 = "select inventory_model_id from inventory_model where manufacturer_id <> '".$manufacturer_id."'";
+        echo $sql_1;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $stock_days_custom_field_value_id = mysql_insert_id(Service::$database_connect);
-        
-        $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($stock_days_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
-        echo $sql;
-        echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        
+        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        while($row_1 = mysql_fetch_assoc($result_1)){
+            $inventory_model_id = $row_1['inventory_model_id'];
+            
+            $sql = "select cfv.custom_field_value_id from custom_field_value as cfv left join custom_field_selection cfs on cfv.custom_field_value_id = cfs.custom_field_value_id where cfv.custom_field_id = '".$stock_days_field_id."' and cfs.entity_id = '".$inventory_model_id."'";
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            if(empty($row['custom_field_value_id'])){
+                //add stock days
+                echo "<font color='red'>add stock days</font><br>";
+                $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($stock_days_field_id,'".$stock_days."','".$created_by."','".$creation_date."')";
+                echo $sql;
+                echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+                $stock_days_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+                
+                $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($stock_days_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
+                echo $sql;
+                echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+            }else{
+                $sql = "update custom_field_value set short_description = '".$stock_days."',modified_by = '".$modified_by."',modified_date = '".$modified_date."' where custom_field_value_id = '".$row['custom_field_value_id']."'";
+                echo $sql;
+                echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+            }
+            
+            echo "<br>";
+            echo "<br>";
+            //exit;
+        }
     }
     
     public function stockAttention(){
@@ -2375,6 +2398,10 @@ switch($action){
     
     case "getEnvelopeBySku":
         $service->getEnvelopeBySku();
+        break;
+    
+    case "updateStockDays":
+        $service->updateStockDays();
         break;
 }
 
