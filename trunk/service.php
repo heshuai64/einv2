@@ -1465,7 +1465,7 @@ class Service{
             //$array[$i]['ready_stock'] = ($array[$i]['week_flow'] / 7 ) * $array[$i]['stock_day'];
             
             $responce->rows[$i]['id']= $row_1['inventory_model_id'];
-            $responce->rows[$i]['cell'] = array($row_1['inventory_model_code'], $row_1['short_description'], $row_2['quantity'], ($row_1['week_flow'] / 7 ) * $row_3['short_description'], $row_3['short_description'], $row_1['week_flow']);
+            $responce->rows[$i]['cell'] = array($row_1['inventory_model_code'], $row_1['short_description'], $row_2['quantity'], round(($row_1['week_flow'] / 14 ) * $row_3['short_description']), $row_3['short_description'], $row_1['week_flow']);
             $i++;
         }
         
@@ -2123,7 +2123,7 @@ class Service{
     
     public function calculateWeekFlow(){
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
-        $seven_day_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
+        $seven_day_ago = date("Y-m-d", time() - ((14 * 24 * 60 * 60)));
         $today = date("Y-m-d");
         $sql = "select im.inventory_model_code,sum(quantity) as week_flow from transaction as t left join inventory_transaction as it on 
         (t.transaction_id=it.transaction_id) left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
