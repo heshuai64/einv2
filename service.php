@@ -2314,6 +2314,36 @@ class Service{
         echo json_encode(array('skuCost'=>$cost));
     }
     
+    public function getSkuInfo(){
+    	$this->log("getSkuInfo", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
+        //get inventory model id
+        $sql = "select inventory_model_id,short_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
+        $this->log("getSkuInfo", $sql."<br>");
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $inventory_model_id = $row['inventory_model_id'];
+        $short_description = $row['short_description'];
+        //-------------------------------------------    Cost    -----------------------------------------------
+        //get cost field id
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        $this->log("getSkuInfo", $cost_field_sql."<br>");
+
+        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_row = mysql_fetch_assoc($cost_field_result);
+        
+        
+        //get cost value
+        $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+        on cfs.custom_field_value_id=cfv.custom_field_value_id
+        where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
+        $this->log("getSkuInfo", $cost_value_sql."<br>");
+
+        $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+        $cost_value_row = mysql_fetch_assoc($cost_value_result);
+        $cost = $cost_value_row['short_description'];
+        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost));
+    }
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -2403,6 +2433,10 @@ switch($action){
     case "updateStockDays":
         $service->updateStockDays();
         break;
+        
+    case "getSkuInfo":
+    	$service->getSkuInfo();
+    	break;
 }
 
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
