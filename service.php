@@ -2337,12 +2337,31 @@ class Service{
         on cfs.custom_field_value_id=cfv.custom_field_value_id
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
         $this->log("getSkuInfo", $cost_value_sql."<br>");
-
+		
+        //------------------------------------------- Weight -----------------------------------------
+        //get weight field id
+        $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+        $this->log("getSkuInfo", $weight_field_sql."<br>");
+                
+        $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+        $weight_field_row = mysql_fetch_assoc($weight_field_result);
+                
+                
+        //get weight value
+        $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+        on cfs.custom_field_value_id=cfv.custom_field_value_id 
+        where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+        $this->log("getSkuInfo", $weight_value_sql."<br>");
+                
+        $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+        $weight_value_row = mysql_fetch_assoc($weight_value_result);
+        $weight = (float) $weight_value_row['short_description'];
+                
         $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
-        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost));
+        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuWeight: ".$weight."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuWeight'=> $weight));
     }
     public function __destruct(){
         mysql_close(Service::$database_connect);
