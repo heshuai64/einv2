@@ -105,9 +105,77 @@
 		</td>
 	</tr>
 </table>
+<script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
+<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
+<script type="text/javascript" src="../js/jquery.tabs.min.js"></script>
+<link rel="stylesheet" href="../css/jquery.tabs.css" type="text/css" media="print, projection, screen">
+<!-- Additional IE/Win specific style sheet (Conditional Comments) -->
+<!--[if lte IE 7]>
+<link rel="stylesheet" href="../css/jquery.tabs-ie.css" type="text/css" media="projection, screen">
+<![endif]-->
+<?php
+/*
+CREATE TABLE `tracmor`.`description` (
+	`sku` VARCHAR( 50 ) NOT NULL ,
+	`english` TEXT NOT NULL ,
+	`french` TEXT NOT NULL ,
+	`germany` TEXT NOT NULL ,
+	PRIMARY KEY ( `sku` )
+) ENGINE = MYISAM
+*/
+if(!empty($_GET['intInventoryModelId'])){
+	$sql = "select inventory_model_code from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+	$sku = $row['inventory_model_code'];
+	
+	$sql = "select * from description where sku = '".$sku."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+
+?>
+<script type="text/javascript">
+	function updateDescription(){
+		$.post("/inventory/service.php?action=updateSkuDescription",
+		       {
+				sku     : $("#c19").val(),
+				english : $("#english").val(),
+				french  : $("#french").val(),
+				germany : $("#germany").val()
+		       },
+			function(data){
+				alert(data.msg)
+			}, "json"
+		);
+		return false;
+	}
+</script>	
+<div id="description-tabs" style="text-align: left;">
+	<ul>
+	    <li><a href="#fragment-1"><span>English</span></a></li>
+	    <li><a href="#fragment-2"><span>French</span></a></li>
+	    <li><a href="#fragment-3"><span>Germany</span></a></li>
+	</ul>
+	<div id="fragment-1">
+		<textarea id="english" rows="20" cols="80"><?=$row['english']?></textarea>
+	</div>
+	<div id="fragment-2">
+		<textarea id="french" rows="20" cols="80"><?=$row['french']?></textarea>
+	</div>
+	<div id="fragment-3">
+		<textarea id="germany" rows="20" cols="80"><?=$row['germany']?></textarea>
+	</div>
+	<button onclick="return updateDescription();">Update Description</button>
+</div>
+<br>
+<br>
+<script type="text/javascript">
+	$('#description-tabs').tabs();
+</script>
+<?php
+}
+?>	
 <div id="image-panel" style="position:relative;">
-	<script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
-	<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
 	<script type="text/javascript">
 		/*
 		$("#c17").bind("blur", function(e){
