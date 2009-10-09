@@ -3,10 +3,10 @@ class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
     
-    //const DATABASE_PASSWORD = '5333533';
-    //const DATABASE_NAME = 'tracmor';
     const DATABASE_PASSWORD = '5333533';
-    const DATABASE_NAME = 'inventory';
+    const DATABASE_NAME = 'tracmor';
+    //const DATABASE_PASSWORD = '5333533';
+    //const DATABASE_NAME = 'inventory';
     private static $database_connect;
     
     public function __construct(){
@@ -2363,6 +2363,55 @@ class Service{
         $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuWeight: ".$weight."<br><font color='red'>******************************************  End  ******************************************<br></font>");
         echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuWeight'=> $weight));
     }
+    
+    public function updateSkuDescription(){
+        $sql = "select count(*) as num from description where sku = '".$_POST['sku']."'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        if($row['num'] == 0){
+            $sql = "insert into description (sku,english,french,germany) values ('".$_POST['sku']."','".$_POST['english']."','".$_POST['french']."','".$_POST['germany']."')";
+            $result = mysql_query($sql, Service::$database_connect);
+            if($result){
+                echo json_encode(array("sucess"=> true,  "msg"=>"add description success."));
+            }else{
+                echo json_encode(array("sucess"=> false, "msg"=>"add description failure."));
+            }
+        }else{
+            $sql = "update description set english = '".$_POST['english']."',french = '".$_POST['french']."',germany = '".$_POST['germany']."' where sku = '".$_POST['sku']."'";
+            $result = mysql_query($sql, Service::$database_connect);
+            if($result){
+                echo json_encode(array("sucess"=> true,  "msg"=>"update description success."));
+            }else{
+                echo json_encode(array("sucess"=> false, "msg"=>"update description failure."));
+            }
+        }
+    }
+    
+    public function getSkuDescription(){
+        switch($_GET['site']){
+            case "US":
+                $languae = "english";
+            break;
+        
+            case "UK":
+                $languae = "english";
+            break;
+        
+            case "Australia":
+                $languae = "english";
+            break;
+        
+            case "France":
+                $languae = "french";
+            break;
+        }
+        $sql = "select ".$languae." from description where sku = '".$_GET['sku']."'";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        echo $row[$languae];
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -2456,6 +2505,14 @@ switch($action){
     case "getSkuInfo":
     	$service->getSkuInfo();
     	break;
+    
+    case "updateSkuDescription":
+        $service->updateSkuDescription();
+        break;
+    
+    case "getSkuDescription":
+        $service->getSkuDescription();
+        break;
 }
 
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
