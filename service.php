@@ -2404,6 +2404,10 @@ class Service{
             case "France":
                 $languae = "french";
             break;
+        
+            case "Germany":
+                $languae = "germany";
+            break;
         }
         $sql = "select ".$languae." from description where sku = '".$_GET['sku']."'";
         //echo $sql;
