@@ -3,10 +3,10 @@ class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
     
-    const DATABASE_PASSWORD = '5333533';
-    const DATABASE_NAME = 'tracmor';
     //const DATABASE_PASSWORD = '5333533';
-    //const DATABASE_NAME = 'inventory';
+    //const DATABASE_NAME = 'tracmor';
+    const DATABASE_PASSWORD = '5333533';
+    const DATABASE_NAME = 'inventory';
     private static $database_connect;
     
     public function __construct(){
@@ -2360,8 +2360,15 @@ class Service{
         $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
-        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuWeight: ".$weight."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuWeight'=> $weight));
+        
+        //----------------------------------------- Stock --------------------------------------------
+        $stock_sql = "select sum(quantity) as quantity from inventory_location where inventory_model_id = ".$inventory_model_id." group by inventory_model_id";
+        $stock_result = mysql_query($stock_sql, Service::$database_connect);
+        $stock_row = mysql_fetch_assoc($stock_result);
+        $stock = $stock_row['quantity'];
+        
+        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuWeight'=> $weight, 'skuStock'=>$stock));
     }
     
     public function updateSkuDescription(){
@@ -2369,7 +2376,7 @@ class Service{
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         if($row['num'] == 0){
-            $sql = "insert into description (sku,english,french,germany) values ('".$_POST['sku']."','".$_POST['english']."','".$_POST['french']."','".$_POST['germany']."')";
+            $sql = "insert into description (sku,english,french,germany) values ('".$_POST['sku']."','".htmlentities($_POST['english'], ENT_QUOTES)."','".htmlentities($_POST['french'], ENT_QUOTES)."','".htmlentities($_POST['germany'], ENT_QUOTES)."')";
             $result = mysql_query($sql, Service::$database_connect);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"add description success."));
@@ -2377,7 +2384,7 @@ class Service{
                 echo json_encode(array("sucess"=> false, "msg"=>"add description failure."));
             }
         }else{
-            $sql = "update description set english = '".$_POST['english']."',french = '".$_POST['french']."',germany = '".$_POST['germany']."' where sku = '".$_POST['sku']."'";
+            $sql = "update description set english = '".htmlentities($_POST['english'], ENT_QUOTES)."',french = '".htmlentities($_POST['french'], ENT_QUOTES)."',germany = '".htmlentities($_POST['germany'], ENT_QUOTES)."' where sku = '".$_POST['sku']."'";
             $result = mysql_query($sql, Service::$database_connect);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"update description success."));
@@ -2413,7 +2420,7 @@ class Service{
         //echo $sql;
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
-        echo $row[$languae];
+        echo html_entity_decode($row[$languae], ENT_QUOTES);
     }
     
     public function __destruct(){
