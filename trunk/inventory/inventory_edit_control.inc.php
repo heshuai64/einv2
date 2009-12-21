@@ -136,20 +136,39 @@ if(!empty($_GET['intInventoryModelId'])){
 ?>
 <script type="text/javascript">
 	function updateDescription(){
+
 		$.post("/inventory/service.php?action=updateSkuDescription",
 		       {
 				sku     : $("#c19").val(),
-				english : $("#english").val(),
-				french  : $("#french").val(),
-				germany : $("#germany").val()
+				english : e.getData(),
+				french  : f.getData(),
+				germany : g.getData()
 		       },
 			function(data){
-				alert(data.msg)
+		    	//console.log(data);
+				alert(data.msg);
+				//msg += data.msg;
+				
+		    	$.post("/eBayListing/service.php?action=updateSkuDescription",
+		 		       {
+		 				sku     : $("#c19").val(),
+		 				english : e.getData(),
+		 				french  : f.getData(),
+		 				germany : g.getData()
+		 		       },
+		 			function(data){
+		 				//console.log(data);
+		 		    	//msg += data.msg;
+		 		    	alert(data.msg);
+		 			}, "json"
+		 		);
 			}, "json"
 		);
+
 		return false;
 	}
 </script>	
+<script type="text/javascript" src="../js/ckeditor/ckeditor.js"></script>
 <div id="description-tabs" style="text-align: left;">
 	<ul>
 	    <li><a href="#fragment-1"><span>English</span></a></li>
@@ -157,19 +176,22 @@ if(!empty($_GET['intInventoryModelId'])){
 	    <li><a href="#fragment-3"><span>Germany</span></a></li>
 	</ul>
 	<div id="fragment-1">
-		<textarea id="english" rows="20" cols="80"><?=$row['english']?></textarea>
+		<textarea id="english" rows="40" cols="120"><?=html_entity_decode($row['english'], ENT_QUOTES)?></textarea>
 	</div>
 	<div id="fragment-2">
-		<textarea id="french" rows="20" cols="80"><?=$row['french']?></textarea>
+		<textarea id="french" rows="40" cols="120"><?=html_entity_decode($row['french'], ENT_QUOTES)?></textarea>
 	</div>
 	<div id="fragment-3">
-		<textarea id="germany" rows="20" cols="80"><?=$row['germany']?></textarea>
+		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
 	</div>
 	<button onclick="return updateDescription();">Update Description</button>
 </div>
 <br>
 <br>
 <script type="text/javascript">
+	var e = CKEDITOR.replace( 'english' );
+	var f = CKEDITOR.replace( 'french' );
+	var g = CKEDITOR.replace( 'germany' );
 	$('#description-tabs').tabs();
 </script>
 <?php
