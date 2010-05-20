@@ -2,11 +2,13 @@
 class Service{
     const DATABASE_HOST = 'localhost';
     const DATABASE_USER = 'root';
-    
+    const LOG_PATH = '/export/inventory/log';
+    const PO_PATH = '/export/inventory/PO';
     //const DATABASE_PASSWORD = '5333533';
     //const DATABASE_NAME = 'tracmor';
     const DATABASE_PASSWORD = '5333533';
     const DATABASE_NAME = 'inventory';
+    const ACTIVE_MQ = "tcp://192.168.1.168:61613";
     private static $database_connect;
     
     public function __construct(){
@@ -16,8 +18,12 @@ class Service{
             echo "Unable to connect to DB: " . mysql_error(Service::$database_connect);
             exit;
         }
-          
-        mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+        
+        if(!empty($_GET['action']) && $_GET['action'] != "stockAttention"){
+         	mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+        }elseif(empty($_GET['action'])){
+        	mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+        }
         
         if (!mysql_select_db(self::DATABASE_NAME, Service::$database_connect)) {
             echo "Unable to select mydbname: " . mysql_error(Service::$database_connect);
@@ -26,11 +32,38 @@ class Service{
     }
     
     private function log($file_name, $data){
-        file_put_contents("/export/inventory/log/".$file_name."-".date("Y-m-d").".html", $data, FILE_APPEND);
-        //echo $data;   
+        //echo $file_name.": ".$data."\n";
+	if(!file_exists(self::LOG_PATH."/".date("Ymd"))){
+            mkdir(self::LOG_PATH."/".date("Ymd"), 0777);
+        }
+        file_put_contents(self::LOG_PATH."/".date("Ymd")."/".$file_name.".html", $data, FILE_APPEND);
     }
     
-    public function inventoryTakeOut($inventory_model, $quantity, $shipment_id, $shipment_method){
+    private function sendMessageToAM($destination, $message){
+        require_once 'Stomp.php';
+        require_once 'Stomp/Message/Map.php';
+        
+        $con = new Stomp(Service::ACTIVE_MQ);
+        $conn->sync = false;
+        $con->connect();
+        
+        $header = array();
+        $header['transformation'] = 'jms-map-json';
+        $mapMessage = new StompMessageMap($message, $header);
+        $result = $con->send($destination, $mapMessage, array('persistent'=>'true'));
+        $con->disconnect();
+        if(!$result){
+            $this->log("sendMessageToAM", "send message to activemq failure,
+                       destination: $destination,
+                       mapMessage: ".print_r($mapMessage, true)."
+                       <br>");
+        }
+        return $result;
+    }
+    
+    private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id,$shipment_method){
+        $created_by = 1;
+        $source_location_id = 6;
         //B=Bulk,R=Registered,S=SpeedPost
         switch($shipment_method){
             case "B":
@@ -46,19 +79,7 @@ class Service{
                 break;
             
         }
-        $created_by = 1;
-        $source_location_id = 6;
         
-        //get sku model id
-        $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$inventory_model."'";
-        $this->log("inventoryTakeOut", $sql."<br>");
-        //echo $sql;
-        //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $row = mysql_fetch_assoc($result);
-        $inventory_model_id = $row['inventory_model_id'];
-        
-        //get sku location
         $sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
         $this->log("inventoryTakeOut", $sql."<br>");
         //echo $sql;
@@ -191,19 +212,114 @@ class Service{
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                $this->log("inventoryTakeOut", $weight_value_sql."<br>");
+                $this->log("inventoryTakeOut", $sql."<br>");
                 //echo $sql;
                 //echo "<br>";
                 $result = mysql_query($sql, Service::$database_connect);
                 
                 $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
-                $this->log("inventoryTakeOut", $weight_value_sql."<br>");
+                $this->log("inventoryTakeOut", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
                 $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
-                echo "take out success";
+                echo $inventory_model." take out success.<br>";
+                flush();
+                $this->sendMessageToAM("/topic/SkuOutOfLibrary",
+                        array("sku"=> $inventory_model,
+                              "quantity"=> $quantity,
+                              "shipment_id"=> $shipment_id,
+                              "shipment_method"=> $shipment_method));
             }
         }else{
-            echo "Sku Not In Location!<br>";
+            echo "sku not in location!";
+        }
+    }
+    
+    public function inventoryTakeOut($inventory_model='', $quantity='',$shipment_id='',$shipment_method=''){
+        $inventory_model = (($inventory_model!="")?$inventory_model:$_GET['inventory_model']);
+        $quantity = (($quantity!="")?$quantity:$_GET['quantity']);
+        $shipment_id = (($shipment_id!="")?$shipment_id:$_GET['shipment_id']);
+        $shipment_method = (($shipment_method!="")?$shipment_method:$_GET['shipment_method']);
+        
+        if(strpos($inventory_model, ",")){
+            $sku_array = explode(",", $inventory_model);
+            $quantiry_array = explode(",", $quantity);
+            $inventory_model_id_array = array();
+            $msg = "";
+            $flag = true;
+            $i = 0;
+            foreach($sku_array as $sku){
+                //get sku model id
+                $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
+                $this->log("inventoryTakeOut", $sql."<br>");
+                //echo $sql;
+                //echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+                $row = mysql_fetch_assoc($result);
+                $inventory_model_id = $row['inventory_model_id'];
+                $inventory_model_id_array[$i] = $inventory_model_id;
+                //get sku location
+                $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+                $this->log("inventoryTakeOut", $sql."<br>");
+                $result = mysql_query($sql, Service::$database_connect);
+                $row = mysql_fetch_assoc($result);
+                $location_quantity = $row['quantity'];
+                if($location_quantity > $quantiry_array[$i]){
+                    $msg .= $sku." has ".$location_quantity." in warehouse.<br>";
+                }else{
+                    $flag = false;
+                    $msg .= $sku." out of stock.<br>";
+                }
+                $i++;
+            }
+            
+            if($flag){
+                $i = 0;
+                echo $msg;
+                foreach($inventory_model_id_array as $inventory_model_id){
+                    $this->skuTakeOut($sku_array[$i], $inventory_model_id, $quantiry_array[$i], $shipment_id, $shipment_method);
+                    $i++;
+                }
+                return 1;
+            }else{
+                echo $msg." ship failure.<br>";
+                flush();
+                $this->sendMessageToAM("/topic/SkuOutOfStock",
+                            array("sku"=> $inventory_model,
+                                  "quantity"=> $quantity,
+                                  "shipment_id"=> $shipment_id,
+                                  "shipment_method"=> $shipment_method));
+                return 0;
+            }
+        }else{
+            //get sku model id
+            $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$inventory_model."'";
+            $this->log("inventoryTakeOut", $sql."<br>");
+            //echo $sql;
+            //echo "<br>";
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            $inventory_model_id = $row['inventory_model_id'];
+            
+            //get sku location
+            $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+            $this->log("inventoryTakeOut", $sql."<br>");
+            $result = mysql_query($sql, Service::$database_connect);
+            $row = mysql_fetch_assoc($result);
+            $location_quantity = $row['quantity'];
+            if($quantity > $location_quantity){
+                echo $inventory_model." out of stock.<br>";
+                flush();
+                $this->sendMessageToAM("/topic/SkuOutOfStock",
+                            array("sku"=> $inventory_model,
+                                  "quantity"=> $quantity,
+                                  "shipment_id"=> $shipment_id,
+                                  "shipment_method"=> $shipment_method));
+                return 0;
+            }else{
+                $msg .= $inventory_model." has ".$location_quantity." in warehouse.<br>";
+            }
+            echo $msg;
+            $this->skuTakeOut($inventory_model, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
         }
     }
     
@@ -950,7 +1066,7 @@ class Service{
         $result_2 = mysql_query($sql_2, Service::$database_connect);
     }
     
-    public function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
+    private function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
         //get weight field id
         $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
         echo $weight_field_sql;
@@ -1152,7 +1268,7 @@ class Service{
         
     }
     
-    public function importCsv($csv_file_name){
+    public function importCsv(){
         /*
         $creation_date = "2009-05-19 15:30:00";
         $sql = "delete from custom_field_value where creation_date > '".$creation_date."'";
@@ -1160,7 +1276,7 @@ class Service{
         echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
         */
-            
+        $csv_file_name = $_GET['file_name'];
         $categories_id = 4;
         $row = 1;
         
@@ -1435,13 +1551,23 @@ class Service{
         
         $start = $limit * $page - $limit; // do not put $limit*($page - 1)
         
-        $sql_1 = "select inventory_model_id,inventory_model_code,short_description,week_flow from inventory_model where category_id = '".$_GET['category_id']."' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
+        $manufacture = array();
+        $sql_4 = "select manufacturer_id,short_description from manufacturer";
+        $result_4 = mysql_query($sql_4, Service::$database_connect);
+        while($row_4 = mysql_fetch_assoc($result_4)){
+        	$manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
+        }
+        
+        $sql_1 = "select inventory_model_id,manufacturer_id,inventory_model_code,short_description,week_flow_1,week_flow_2,week_flow_3 from inventory_model where category_id = '".$_GET['category_id']."' order by ".$sidx." ".$sord." limit ".$start.",".$limit;
         //echo $sql_1;
         //echo "<br>";
         
         $result_1 = mysql_query($sql_1, Service::$database_connect);
         $array = array();
         $i = 0;
+        $xx = 0;
+        $responce->records = 0;
+        
         while($row_1 = mysql_fetch_assoc($result_1)){
             //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
             //$array[$i]['inventory_model_code'] = $row_1['inventory_model_code'];
@@ -1463,12 +1589,18 @@ class Service{
             //$array[$i]['stock_day'] = $row_3['short_description'];
             
             //$array[$i]['ready_stock'] = ($array[$i]['week_flow'] / 7 ) * $array[$i]['stock_day'];
-            
-            $responce->rows[$i]['id']= $row_1['inventory_model_id'];
-            $responce->rows[$i]['cell'] = array($row_1['inventory_model_code'], $row_1['short_description'], $row_2['quantity'], round(($row_1['week_flow'] / 14 ) * $row_3['short_description']), $row_3['short_description'], $row_1['week_flow']);
-            $i++;
+            if($row_1['week_flow_1'] > 0){// && $row_2['quantity'] <= ($row_1['week_flow_1'] / 7 ) * $row_3['short_description']){
+            	$responce->rows[$i]['id']= $row_1['inventory_model_id'];
+	            $responce->rows[$i]['cell'] = array($row_1['inventory_model_code'], $row_1['short_description'], $row_2['quantity'], round(($row_1['week_flow'] / 14 ) * $row_3['short_description']), $row_3['short_description'], $row_1['week_flow_1'], $row_1['week_flow_2'], $row_1['week_flow_3'], $manufacture[$row_1['manufacturer_id']]);
+	            $i++;
+	            $responce->records++;
+            }
         }
-        
+    	if( $i > 0 ) {
+            $responce->total = ceil($i/$limit);
+        } else {
+            $responce->total = 1;
+        }
         echo json_encode($responce);
     }
     
@@ -1527,7 +1659,7 @@ class Service{
         $result_2 = mysql_query($sql_2, Service::$database_connect);
         while($row_2 = mysql_fetch_assoc($result_2)){
             
-            $sql_3 = "select im.inventory_model_id as id,im.week_flow as flow,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
+            $sql_3 = "select im.inventory_model_id as id,im.week_flow_1,im.week_flow_2,im.week_flow_3,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
             inventory_model as im left join inventory_location as il on (im.inventory_model_id=il.inventory_model_id) left join location as l on (il.location_id=l.location_id) 
             where im.inventory_model_id = '".$row_2['inventory_model_id']."'";
             //echo $sql_3;
@@ -1536,7 +1668,7 @@ class Service{
             $row_3 = mysql_fetch_assoc($result_3);
             
             $responce->rows[$i]['id']= $row_2['inventory_model_id'];
-            $responce->rows[$i]['cell'] = array($row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow']);
+            $responce->rows[$i]['cell'] = array($row_3['model'],$row_3['name'],$row_3['quantity'],$row_3['flow_1'],$row_3['flow_2'],$row_3['flow_3']);
             $i++;
         }
         echo json_encode($responce);
@@ -1628,7 +1760,7 @@ class Service{
         echo json_encode($responce); 
     }
     
-    public function totalPostageByDate($date){
+    public function totalPostageByDate(){
         if(empty($_GET['start_date'])){
             $sql = "select sum(shipment_fee) as total_shipment_fee from inventory_transaction where creation_date like '".date("Y-m-d")."%'"; 
         }else{
@@ -1645,7 +1777,7 @@ class Service{
         }
     }
     
-    public function postageByDate($date){
+    public function postageByDate(){
         $page = $_GET['page']; // get the requested page
         $limit = $_GET['rows']; // get how many rows we want to have into the grid
         $sidx = $_GET['sidx']; // get index row - i.e. user click to sort
@@ -1925,7 +2057,9 @@ class Service{
             }
         }
         
-        if($total_weight > 1.4){
+        if($total_weight > 2){
+            $shippingMethod = "U";
+        }elseif($total_weight > 1.4){
             $shippingMethod = "S";
         }else{
             if(in_array($data->country, $AEACJ)){
@@ -2123,12 +2257,16 @@ class Service{
     
     public function calculateWeekFlow(){
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
-        $seven_day_ago = date("Y-m-d", time() - ((14 * 24 * 60 * 60)));
+        $three_day_ago = date("Y-m-d", time() - ((3 * 24 * 60 * 60)));
+	$one_week_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
+	$two_week_ago = date("Y-m-d", time() - ((14 * 24 * 60 * 60)));
+	$three_week_ago = date("Y-m-d", time() - ((21 * 24 * 60 * 60)));
         $today = date("Y-m-d");
-        $sql = "select im.inventory_model_code,sum(quantity) as week_flow from transaction as t left join inventory_transaction as it on 
-        (t.transaction_id=it.transaction_id) left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
-        where t.transaction_type_id = 5 and t.creation_date between '".$seven_day_ago."' and '".$today."' group by im.inventory_model_code";
-        
+	
+	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
+	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
+	where it.destination_location_id = 3 and it.creation_date between '".$three_day_ago."' and '".$today."' group by im.inventory_model_code";
+	
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
@@ -2136,7 +2274,63 @@ class Service{
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
-            $sql_1 = "update inventory_model set week_flow = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
+            $sql_1 = "update inventory_model set three_day_flow = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
+            $this->log("calculateWeekFlow", $sql_1."<br>");
+            //echo $sql_1;
+            //echo "<br>";
+            $result_1 = mysql_query($sql_1, Service::$database_connect);
+        }
+	//
+	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
+	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
+	where it.destination_location_id = 3 and it.creation_date between '".$one_week_ago."' and '".$today."' group by im.inventory_model_code";
+	
+        $this->log("calculateWeekFlow", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+            $sql_1 = "update inventory_model set week_flow_1 = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
+            $this->log("calculateWeekFlow", $sql_1."<br>");
+            //echo $sql_1;
+            //echo "<br>";
+            $result_1 = mysql_query($sql_1, Service::$database_connect);
+        }
+	
+	//
+	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
+	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
+	where it.destination_location_id = 3 and it.creation_date between '".$two_week_ago."' and '".$one_week_ago."' group by im.inventory_model_code";
+	
+        $this->log("calculateWeekFlow", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+            $sql_1 = "update inventory_model set week_flow_2 = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
+            $this->log("calculateWeekFlow", $sql_1."<br>");
+            //echo $sql_1;
+            //echo "<br>";
+            $result_1 = mysql_query($sql_1, Service::$database_connect);
+        }
+	
+	//
+	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
+	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
+	where it.destination_location_id = 3 and it.creation_date between '".$three_week_ago."' and '".$two_week_ago."' group by im.inventory_model_code";
+	
+        $this->log("calculateWeekFlow", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+            $sql_1 = "update inventory_model set week_flow_3 = ".$row['week_flow']." where inventory_model_code = '".$row['inventory_model_code']."'";
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
@@ -2423,6 +2617,342 @@ class Service{
         echo html_entity_decode($row[$languae], ENT_QUOTES);
     }
     
+    public function complaints(){
+        $sql = "insert into complaints (sku,content,time) values ('".$_POST['sku']."','".mysql_real_escape_string($_POST['content'])."','".date("Y-m-d H:i:s")."')";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        if($result){
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    
+    public function addSKuCombo(){
+        $sql = "insert into combo (sku,attachment,quantity) values ('".$_POST['sku']."','".$_POST['attachment']."','".$_POST['quantity']."') ";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        if($result){
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    
+    public function getSKuComboList(){
+        echo '
+        <table border=1>
+		<tr>
+			<th>
+				SKU
+			</th>
+			<th>
+				Quantity
+			</th>
+			<th>
+				Stock
+			</th>
+                        <th>
+				Operate
+			</th>
+		</tr>';
+	$sql = "select id,sku,attachment,quantity from combo where sku = '".$_GET['sku']."'";
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+		$sku = $row['attachment'];
+		$quantity = $row['quantity'];
+		
+		//get sku model id
+		$sql_1 = "select inventory_model_id from inventory_model where inventory_model_code='".$row['attachment']."'";
+		//echo $sql;
+		//echo "<br>";
+		$result_1 = mysql_query($sql_1);
+		$row_1 = mysql_fetch_assoc($result_1);
+		$inventory_model_id = $row_1['inventory_model_id'];
+		
+		//get sku location
+		$sql_2 = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
+		//echo $sql;
+		//echo "<br>";
+		$result_2 = mysql_query($sql_2);
+		$row_2 = mysql_fetch_assoc($result_2);
+		$stock = $row_2['quantity'];
+		echo "<tr>";
+		echo "<td>".$sku."</td>";
+		echo "<td>".$quantity."</td>";
+		echo "<td>".$stock."</td>";
+                echo "<td><input type='button' value='Delete' onClick='deleteSkuCombo(".$row['id'].")'/></td>";
+		echo "</tr>";
+	}
+	echo '</table>';
+    }
+    
+    public function deleteSkuCombo(){
+        $sql = "delete from combo where id = '".$_POST['id']."'";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        if($result){
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    
+    public function getSkuStatusGrid(){
+    	//get status field id
+        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_result = mysql_query($status_field_sql);
+        $status_field_row = mysql_fetch_assoc($status_field_result);
+        
+        $status_array_1 = array();
+        $status_array_2 = array();
+        $status_string = "";
+        $sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
+        $result_1 = mysql_query($sql_1);
+        while($row_1 = mysql_fetch_assoc($result_1)){
+        	$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
+        	$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
+        	$status_string .= $row_1['custom_field_value_id'].",";
+        }
+        $status_string = substr($status_string, 0, -1);
+        
+    	$sql = "select count(*) as totalCount from 
+		inventory_model as im left join custom_field_selection as cfs on im.inventory_model_id = cfs.entity_id 
+		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']];
+		$result = mysql_query($sql);
+		$row = mysql_fetch_assoc($result);
+		$totalCount = $row['totalCount'];
+		
+		$array = array();
+		$sql = "select inventory_model_id,inventory_model_code,short_description from 
+		inventory_model as im left join custom_field_selection as cfs on im.inventory_model_id = cfs.entity_id 
+		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']]." limit ".$_POST['start'].",".$_POST['limit'];
+		$result = mysql_query($sql);
+		while ($row = mysql_fetch_assoc($result)) {
+			$array[] = $row;
+		}
+		echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
+		mysql_free_result($result);
+    }
+    
+    public function getSkuStatusCount(){
+    	//get status field id
+        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_result = mysql_query($status_field_sql);
+        $status_field_row = mysql_fetch_assoc($status_field_result);
+        
+        $status_array_1 = array();
+        $status_array_2 = array();
+        $status_string = "";
+        $sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
+        $result_1 = mysql_query($sql_1);
+        while($row_1 = mysql_fetch_assoc($result_1)){
+        	$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
+        	$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
+        	$status_string .= $row_1['custom_field_value_id'].",";
+        }
+        $status_string = substr($status_string, 0, -1);
+        
+    	$sql = "select custom_field_value_id,count(*) as total from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") group by custom_field_value_id";
+		$result = mysql_query($sql);
+		while ($row = mysql_fetch_assoc($result)) {
+			$row['status'] = str_replace(" ","-", $status_array_1[$row['custom_field_value_id']]);
+			unset($row['custom_field_value_id']);
+			$array[] = $row;
+		}
+		echo json_encode($array);
+		mysql_free_result($result);
+    }
+    
+    public function changeStatus(){
+    	//get status field id
+        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_result = mysql_query($status_field_sql);
+        $status_field_row = mysql_fetch_assoc($status_field_result);
+        
+        $status_array_1 = array();
+        $status_array_2 = array();
+        $status_string = "";
+        $sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
+        $result_1 = mysql_query($sql_1);
+        while($row_1 = mysql_fetch_assoc($result_1)){
+        	$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
+        	$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
+        	$status_string .= $row_1['custom_field_value_id'].",";
+        }
+        $status_string = substr($status_string, 0, -1);
+        
+    	if($_POST['status'] == "inactive" || $_POST['status'] == "under review"){
+            $this->sendMessageToAM("/queue/SkuStatus",
+                        array("skus"=> $_POST['skus'],
+                              "status"=> $_POST['status']));
+        }
+        
+        if(strpos($_POST['ids'], ",") != false){
+            $id_array = explode(",", $_POST['ids']);
+            foreach($id_array as $id){
+                $sql = "update custom_field_selection set custom_field_value_id = ".$status_array_2[$_POST['status']]." where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") and entity_id = ".$id;
+                $result = mysql_query($sql);
+                echo $sql."\n";
+            }
+        }else{
+            $id = $_POST['ids'];
+            $sql = "update custom_field_selection set custom_field_value_id = ".$status_array_2[$_POST['status']]." where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") and entity_id = ".$id;
+            $result = mysql_query($sql);
+            echo $sql."\n";
+        }
+    }
+    
+    public function dealSkuStockMessage(){
+    	//ini_set('include_path', '../');
+        require_once 'Stomp.php';
+        require_once 'Stomp/Message/Map.php';
+        
+        $consumer = new Stomp(Service::ACTIVE_MQ);
+        $consumer->clientId = "inventory";
+        $consumer->connect();
+        $consumer->subscribe("/topic/SkuOutStock", array('transformation' => 'jms-map-json'));
+        while(1){
+            $msg = $consumer->readFrame();
+            if ( $msg != null) {
+                //echo "Message '$msg->body' received from queue\n";
+                //print_r($msg->map);
+                $this->inventoryTakeOut($msg->map['inventory_model'], $msg->map['quantity'], $msg->map['shipment_id'], $msg->map['shipment_method']);
+                $consumer->ack($msg);
+            }
+            sleep(1);
+        }
+    }
+    
+    public function updateSkuStatusFromCsv(){
+	$row = 1;
+	if (($handle = fopen("Inactive.csv", "r")) !== FALSE) {
+	    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+		echo $data[0] . "\n";
+		$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$data[0]."'";
+		$result = mysql_query($sql);
+		$row = mysql_fetch_assoc($result);
+		
+		$status = 5919;
+		$sql = "update custom_field_selection set custom_field_value_id = ".$status." where entity_qtype_id = 2 and custom_field_value_id in (5915,5916,5917,5918,5919,5920) and entity_id = ".$row['inventory_model_id'];
+		echo $sql."\n";
+		$result = mysql_query($sql);
+	    }
+	    fclose($handle);
+	}
+    }
+    
+    public function updateSkuStatusFromTxt(){
+	/*
+	 Array ( 
+	 5915] => new
+	 [5916] => waiting for approve
+	 [5917] => under review
+	 [5918] => active
+	 [5919] => inactive
+	 [5920] => out of stock
+	 )
+	 
+	 Array ( [new] => 5915
+	 [waiting for approve] => 5916
+	 [under review] => 5917
+	 [active] => 5918
+	 [inactive] => 5919
+	 [out of stock] => 5920
+	 ) 
+	*/
+	$content = file_get_contents("temp.txt");
+	$ids = explode("\n", $content);
+	$sku = "";
+	foreach($ids as $id){
+	    $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$id."'";
+	    $result = mysql_query($sql);
+	    $row = mysql_fetch_assoc($result);
+	    $sku .= "'".$id."',";
+	    
+	    $status = 5919;
+	    $sql = "update custom_field_selection set custom_field_value_id = ".$status." where entity_qtype_id = 2 and custom_field_value_id in (5915,5916,5917,5918,5919,5920) and entity_id = ".$row['inventory_model_id'];
+	    echo $sql."\n";
+	    $result = mysql_query($sql);
+	  
+	}
+	$sku = substr($sku, 0, -1);
+	file_put_contents("temp1.txt", $sku);
+    }
+    
+    public function generatePurchaseOrder(){
+	//get stock day
+        $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $stock_day_field_id = $row['custom_field_id'];
+	
+	//get lower limit
+	$sql = "select custom_field_id from custom_field where short_description = 'MOQ'";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $moq_field_id = $row['custom_field_id'];
+	
+	$manufacture = array();
+        $sql_4 = "select manufacturer_id,short_description from manufacturer";
+        $result_4 = mysql_query($sql_4, Service::$database_connect);
+        while($row_4 = mysql_fetch_assoc($result_4)){
+            $manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
+        }
+	
+	$sql_1 = "select inventory_model_id,manufacturer_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model";
+	$data = "SKU,英文名称,中文名称,最低起订数,建议采购数,(目前库存量-安全库存量)差值,目前库存量,最低（安全）库存量,备货天数,前三天销售数量,上周销售数量,上上周销售数量,上上上周销售数量";
+	while($row_1 = mysql_fetch_assoc($result_1)){
+            //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
+            //$array[$i]['inventory_model_code'] = $row_1['inventory_model_code'];
+            //$array[$i]['short_description'] = $row_1['short_description'];
+            //$array[$i]['week_flow'] = $row_1['week_flow'];
+            
+            $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
+            //echo $sql_2;
+            //echo "<br>";
+            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $row_2 = mysql_fetch_assoc($result_2);
+            //$array[$i]['quantity'] = $row_2['quantity'];
+	    
+	    $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $row_3 = mysql_fetch_assoc($result_3);
+	    
+	    $sql_4 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$moq_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_4 = mysql_query($sql_4, Service::$database_connect);
+            $row_4 = mysql_fetch_assoc($result_4);
+	    
+	    $safe_stock = $row_3['short_description'] * (($row_1['three_day_flow'] / 3) * 0.3 + ($row_1['week_flow_1'] / 7) * 0.3 + ($row_1['week_flow_2'] / 7) * 0.2 + ($row_1['week_flow_3'] / 7) * 0.2);
+	    $virtual_stock = $row_2['quantity'] - $safe_stock;
+	    
+	    if($virtual_stock > 0){
+		if($row_4['short_description'] > 0){
+		    if($row_4['short_description'] > $virtual_stock * -1){
+			$purchase = $row_4['short_description'];
+		    }else{
+			$purchase = $virtual_stock * -1;
+		    }
+		}else{
+		    $purchase = $virtual_stock * -1;
+		}
+		
+		$flow = ($row_1['week_flow_1'] * 0.5 + $row_1['week_flow_2'] * 0.3 + $row_1['week_flow_3'] * 0.2 / 3) / 7;
+		if($row_2['quantity'] < $flow * $row_3['short_description']){
+		    $data .= $row_1['inventory_model_code'].",".$row_1['short_description'].",".$row_1['long_description'].",".$purchase.",".
+		    $virtual_stock.",".$row_2['quantity'].",".$safe_stock.",".$row_3['short_description'].",".
+		    $row_1['three_day_flow'].",".$row_1['week_flow_1'].",".$row_1['week_flow_2'].",".$row_1['week_flow_3'];
+		}
+	    }
+	}
+	
+	file_put_contents(Service::PO_PATH."/".date("Y-m-d"), $data, FILE_APPEND);
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -2436,9 +2966,13 @@ if(!empty($argv[1])){
 }else{
     $action = (!empty($_GET['action']))?$_GET['action']:$_POST['action'];
 }
+
+$service->$action();
+
+/*
 switch($action){
     case "inventoryTakeOut":
-        $service->inventoryTakeOut($_GET['inventory_model'], $_GET['quantity'], $_GET['shipment_id'], $_GET['shipment_method']);
+        $service->inventoryTakeOut();
         break;
 
     case "stockAttention":
@@ -2454,11 +2988,11 @@ switch($action){
         break;
     
     case "totalPostageByDate":
-        $service->totalPostageByDate($_GET['date']);
+        $service->totalPostageByDate();
         break;
     
     case "postageByDate":
-        $service->postageByDate($_GET['date']);
+        $service->postageByDate();
         break;
     
     case "calculateWeekFlow":
@@ -2474,7 +3008,7 @@ switch($action){
         break;
     
     case "importCsv":
-        $service->importCsv($_GET['file_name']);
+        $service->importCsv();
         break;
     
     case "getAllSkus":
@@ -2524,8 +3058,25 @@ switch($action){
     case "getSkuDescription":
         $service->getSkuDescription();
         break;
+    
+    case "complaints":
+        $service->complaints();
+        break;
+    
+    case "addSKuCombo":
+        $service->addSKuCombo();
+        break;
+    
+    case "getSKuComboList":
+        $service->getSKuComboList();
+        break;
+    
+    case "deleteSkuCombo":
+        $service->deleteSkuCombo();
+        break;
+    
 }
-
+*/
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
 //http://127.0.0.1:6666/tracmor/service.php?action=syncAppertainStock
 //http://127.0.0.1:6666/tracmor/service.php?action=importCsv&file_name=

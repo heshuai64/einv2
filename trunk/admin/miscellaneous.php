@@ -124,13 +124,52 @@
 					switch($_GET['type']){
 						case 1:
 							echo "Stock Attention";
+							$conn = mysql_connect("localhost", "root", "5333533");
+
+							if (!$conn) {
+							    echo "Unable to connect to DB: " . mysql_error();
+							    exit;
+							}
+							  
+							if (!mysql_select_db("tracmor")) {
+							    echo "Unable to select mydbname: " . mysql_error();
+							    exit;
+							}
+							
+							$sql = "SELECT category_id,short_description from category";
+							
+							$result = mysql_query($sql);
+							echo '<script type="text/javascript">';
+							while ($row = mysql_fetch_assoc($result)) {
+							    echo 'jQuery(document).ready(function(){
+								jQuery("#sotck-attention-'.$row['category_id'].'-list").jqGrid({ url:"../service.php?action=stockAttention&category_id='.$row['category_id'].'",
+											datatype: "json",
+											colNames:["SKU", "名称", "库存", "应有库存", "备货天数", "第一周流量","第二周流量","第三周流量", "供应商"],
+											colModel:[{name:"inventory_model_code",index:"inventory_model_code", width:100}, {name:"short_description",index:"short_description", width:300}, {name:"quantity",index:"quantity", width:60, sortable:false}, {name:"ready_stock",index:"ready_stock", width:60, sortable:false}, {name:"stock_day",index:"stock_day", width:60, sortable:false}, {name:"week_flow_1",index:"week_flow_1", width:60}, {name:"week_flow_2",index:"week_flow_2", width:60}, {name:"week_flow_3",index:"week_flow_3", width:60}, {name:"manufacture",index:"manufacture", width:80}],
+											rowNum:15,
+											//hiddengrid: true,
+											//rowList:[10,20,30],
+											imgpath: "../themes/basic/images",
+											pager: jQuery("#sotck-attention-'.$row['category_id'].'-pager"),
+											sortname: "inventory_model_code",
+											viewrecords: true,
+											sortorder: "asc",
+											caption:"'.$row['short_description'].' Stock Attention" }
+											).navGrid("#sotck-attention-'.$row['category_id'].'-pager",{search:false,edit:false,add:false,del:false}); 
+								});
+								';
+							}
+							echo '</script>';
+							//mysql_free_result($result);
+
 							?>
 							<script type="text/javascript">
+							/*
 							jQuery(document).ready(function(){
 								jQuery("#sotck-attention-1-list").jqGrid({ url:'../service.php?action=stockAttention&category_id=1',
 											datatype: "json",
-											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '二周流量'],
-											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}],
+											colNames:['SKU', '名称', '库存', '应有库存', '备货天数', '二周流量', '供应商'],
+											colModel:[{name:'inventory_model_code',index:'inventory_model_code', width:100}, {name:'short_description',index:'short_description', width:200}, {name:'quantity',index:'quantity', width:60, sortable:false}, {name:'ready_stock',index:'ready_stock', width:60, sortable:false}, {name:'stock_day',index:'stock_day', width:60, sortable:false}, {name:'week_flow',index:'week_flow', width:60}, {name:'manufacture',index:'manufacture', width:80}],
 											rowNum:30,
 											//hiddengrid: true,
 											//rowList:[10,20,30],
@@ -193,6 +232,7 @@
 											caption:"Accessories Stock Attention" }
 											).navGrid('#sotck-attention-4-pager',{search:false,edit:false,add:false,del:false}); 
 							})
+							*/
 							</script>
 							<?php
 						break;
@@ -245,7 +285,7 @@
 				
 				?></div>
 				<br class="item_divider"/>
-				<!--  ***************   Stock  Attention ***************************  -->
+				<!--  ***************   Stock  Attention ***************************   
 				<div id="sotck-attention-1" class="stock-attention">
 					<table id="sotck-attention-1-list" class="scroll" cellpadding="0" cellspacing="0"></table>
 					<div id="sotck-attention-1-pager" class="scroll" style="text-align:center;"></div>
@@ -265,7 +305,18 @@
 					<table id="sotck-attention-4-list" class="scroll" cellpadding="0" cellspacing="0"></table>
 					<div id="sotck-attention-4-pager" class="scroll" style="text-align:center;"></div>
 				</div>
+				-->
+				<?php 
 				
+					$sql = "SELECT category_id,short_description from category";	
+					$result = mysql_query($sql);
+					while ($row = mysql_fetch_assoc($result)) {
+						echo '<div id="sotck-attention-'.$row['category_id'].'" class="stock-attention">
+									<table id="sotck-attention-'.$row['category_id'].'-list" class="scroll" cellpadding="0" cellspacing="0"></table>
+									<div id="sotck-attention-'.$row['category_id'].'-pager" class="scroll" style="text-align:center;"></div>
+							  </div>';
+					}
+				?>
 				<!--  ***************   ***************   ***************************  -->
 				<table id="list" class="scroll" cellpadding="0" cellspacing="0"></table>
 				<div id="pager" class="scroll" style="text-align:center;"></div>
