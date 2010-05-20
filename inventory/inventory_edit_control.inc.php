@@ -169,7 +169,8 @@ if(!empty($_GET['intInventoryModelId'])){
 	}
 </script>	
 <script type="text/javascript" src="../js/ckeditor/ckeditor.js"></script>
-<div id="description-tabs" style="text-align: left;">
+<br><br>
+<div id="description-tabs" style="text-align: left; border: dotted;">
 	<ul>
 	    <li><a href="#fragment-1"><span>English</span></a></li>
 	    <li><a href="#fragment-2"><span>French</span></a></li>
@@ -197,7 +198,7 @@ if(!empty($_GET['intInventoryModelId'])){
 <?php
 }
 ?>	
-<div id="image-panel" style="position:relative;">
+<div id="image-panel" style="position:relative; display: none;">
 	<script type="text/javascript">
 		/*
 		$("#c17").bind("blur", function(e){
@@ -261,7 +262,109 @@ if(!empty($_GET['intInventoryModelId'])){
 		<img style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=$this->lstCategory->SelectedValue?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/>
 	</div>
 </div>
+<?php 
+if(!empty($_GET['intInventoryModelId'])){
+?>
+<div id="combo-panel" style="border: dotted;">
+	<h2>Combo</h2>
+	<div id="add-combo-panel">
+		<form >
+			SKU: <input type="text" id="attachment"/>
+			Quantity: <input type="text" id="quantity"/>
+			<input id="add-combo" type="button" value="Add"/>
+		</form>
+	</div>
+	<script type="text/javascript">
+		$("#add-combo").click(function(){
+			$.post("/inventory/service.php?action=addSKuCombo", { sku: '<?=$sku?>', attachment: $("#attachment").val(), quantity: $("#quantity").val() },
+				function(data){
+				$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			} );
+		})
+		
+		function deleteSkuCombo(id){
+			$.post("/inventory/service.php?action=deleteSkuCombo", { id: id},
+				function(data){
+				$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			} );
+		}
+	</script>
+	<div id="combo-list-panel">
+	<table border=1>
+		<tr>
+			<th>
+				SKU
+			</th>
+			<th>
+				Quantity
+			</th>
+			<th>
+				Stock
+			</th>
+			<th>
+				Operate
+			</th>
+		</tr>
+	<?php
+	$sql = "select id,sku,attachment,quantity from combo where sku = '".@$sku."'";
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+		$sku = $row['attachment'];
+		$quantity = $row['quantity'];
+		
+		//get sku model id
+		$sql_1 = "select inventory_model_id from inventory_model where inventory_model_code='".$row['attachment']."'";
+		//echo $sql;
+		//echo "<br>";
+		$result_1 = mysql_query($sql_1);
+		$row_1 = mysql_fetch_assoc($result_1);
+		$inventory_model_id = $row_1['inventory_model_id'];
+		
+		//get sku location
+		$sql_2 = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
+		//echo $sql;
+		//echo "<br>";
+		$result_2 = mysql_query($sql_2);
+		$row_2 = mysql_fetch_assoc($result_2);
+		$stock = $row_2['quantity'];
+		echo "<tr>";
+		echo "<td>".$sku."</td>";
+		echo "<td>".$quantity."</td>";
+		echo "<td>".$stock."</td>";
+		echo "<td><input type='button' value='Delete' onClick='deleteSkuCombo(".$row['id'].")'/></td>";
+		echo "</tr>";
+	}
+	?>
+	</table>
+	</div>
+</div>
+<br><br>
+<div id="complaints-panel" style="border: dotted;">
+	<h2>Complaints</h2>
+	<table border=1>
+		<tr>
+			<th>
+				Content
+			</th>
+			<th>
+				Time
+			</th>
+		</tr>
+	<?php
+		$sql = "select content,time from complaints where sku = '".@$sku."'";
+		$result = mysql_query($sql);
+		while($row = mysql_fetch_assoc($result)){
+			echo "<tr>";
+			echo "<td>".$row['content']."</td>";
+			echo "<td>".$row['time']."</td>";
+			echo "</tr>";
+		}
+	?>
+	</table>
+</div>
+
 <?php
+}
 $this->pnlAttachments->Render();
 ?>
 
