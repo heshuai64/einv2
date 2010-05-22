@@ -4,12 +4,12 @@ class Service{
     const DATABASE_USER = 'root';
     const LOG_PATH = '/export/inventory/log';
     const PO_PATH = '/export/inventory/PO';
-    //const DATABASE_PASSWORD = '5333533';
     //const DATABASE_NAME = 'tracmor';
-    const DATABASE_PASSWORD = '5333533';
     const DATABASE_NAME = 'inventory';
+    const DATABASE_PASSWORD = '5333533';
     const ACTIVE_MQ = "tcp://192.168.1.168:61613";
     private static $database_connect;
+    private $log = true;
     
     public function __construct(){
         Service::$database_connect = mysql_connect(self::DATABASE_HOST, self::DATABASE_USER, self::DATABASE_PASSWORD);
@@ -32,11 +32,13 @@ class Service{
     }
     
     private function log($file_name, $data){
-        //echo $file_name.": ".$data."\n";
-	if(!file_exists(self::LOG_PATH."/".date("Ymd"))){
-            mkdir(self::LOG_PATH."/".date("Ymd"), 0777);
-        }
-        file_put_contents(self::LOG_PATH."/".date("Ymd")."/".$file_name.".html", $data, FILE_APPEND);
+	if($this->log){
+	    //echo $file_name.": ".$data."\n";
+	    if(!file_exists(self::LOG_PATH."/".$file_name)){
+		mkdir(self::LOG_PATH."/".$file_name, 0777);
+	    }
+	    file_put_contents(self::LOG_PATH."/".$file_name."/".date("Ymd").".html", $data, FILE_APPEND);
+	}
     }
     
     private function sendMessageToAM($destination, $message){
@@ -221,7 +223,7 @@ class Service{
                 $this->log("inventoryTakeOut", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
                 $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
-                echo $inventory_model." take out success.<br>";
+                echo $inventory_model." 出库成功.<br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfLibrary",
                         array("sku"=> $inventory_model,
@@ -230,7 +232,7 @@ class Service{
                               "shipment_method"=> $shipment_method));
             }
         }else{
-            echo "sku not in location!";
+            echo "SKU 不在仓库!";
         }
     }
     
@@ -264,10 +266,10 @@ class Service{
                 $row = mysql_fetch_assoc($result);
                 $location_quantity = $row['quantity'];
                 if($location_quantity > $quantiry_array[$i]){
-                    $msg .= $sku." has ".$location_quantity." in warehouse.<br>";
+                    $msg .= $sku." 有 ".$location_quantity." 在仓库.<br>";
                 }else{
                     $flag = false;
-                    $msg .= $sku." out of stock.<br>";
+                    $msg .= $sku." 没有库存.<br>";
                 }
                 $i++;
             }
@@ -281,7 +283,7 @@ class Service{
                 }
                 return 1;
             }else{
-                echo $msg." ship failure.<br>";
+                echo $msg." 包裹不能发送.<br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfStock",
                             array("sku"=> $inventory_model,
@@ -307,7 +309,7 @@ class Service{
             $row = mysql_fetch_assoc($result);
             $location_quantity = $row['quantity'];
             if($quantity > $location_quantity){
-                echo $inventory_model." out of stock.<br>";
+                echo $inventory_model." 没有库存.<br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfStock",
                             array("sku"=> $inventory_model,
@@ -316,7 +318,7 @@ class Service{
                                   "shipment_method"=> $shipment_method));
                 return 0;
             }else{
-                $msg .= $inventory_model." has ".$location_quantity." in warehouse.<br>";
+                $msg .= $inventory_model." 有 ".$location_quantity." 在仓库.<br>";
             }
             echo $msg;
             $this->skuTakeOut($inventory_model, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
@@ -1833,15 +1835,80 @@ class Service{
         
     }
     
-    public function getShippingMethodBySku(){
+    public function getShippingFeeBySku($sku="", $shipment_method="", $quantity=1){
+	switch($shipment_method){
+            case "B":
+                $shipment_method_descript = "Bulk";
+                break;
+            
+            case "R":
+                $shipment_method_descript = "Registered";
+                break;
+            
+            case "S":
+                $shipment_method_descript = "SpeedPost";
+                break;
+            
+        }
+	
+	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result_0 = mysql_query($sql_0, Service::$database_connect);
+        $row_0 = mysql_fetch_assoc($result_0);
+	$inventory_model_id = $row_0['inventory_model_id'];
+	
+	//-------------------------------------------   Weight   -----------------------------------------------
+	//get weight field id
+	//echo "<font color='red'><br>Weight Start<br></font>";
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+	//echo $weight_field_sql;
+	//echo "<br>";
+	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_row = mysql_fetch_assoc($weight_field_result);
+	
+	
+	//get weight value
+	$weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	on cfs.custom_field_value_id=cfv.custom_field_value_id
+	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+	//echo $weight_value_sql;
+	//echo "<br>";
+	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_row = mysql_fetch_assoc($weight_value_result);
+	$weight = (float)$weight_value_row['short_description'];
+	
+	switch($shipment_method){
+	    case "B":
+		$shipment_fee = 90 * $weight;
+		break;
+	    
+	    case "R":
+		$shipment_fee = (110 * $weight) + $quantity * 13;
+		break;
+	    
+	    case "S":
+		$shipment_fee = 240 + (($weight - 0.5 ) / 0.5 * 75) * 0.42;
+		break;
+	    
+	}
+	    
+	return $shipment_fee;
+    }
+    
+    public function getShippingMethodBySku($sku_json=""){
         $AEACJ = array('United States', 'United Kingdom', 'Australia', 'Canada', 'Japan');
         $_GET['data'] = str_replace("\\", "", $_GET['data']);
         $data = json_decode($_GET['data']);
-        //echo $_GET['data'];
-        //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
-        $sku_array = $data->sku_array;
-        //$sku_array = explode(",", $_GET['skuString']);
-        
+	if(!empty($sku_json)){
+	    $sku_array = json_decode($sku_json);
+	    $this->log = false;
+	}else{
+	    //echo $_GET['data'];
+	    //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
+	    $sku_array = $data->sku_array;
+	    //$sku_array = explode(",", $_GET['skuString']);
+	}
+       
+        //var_dump($sku_array);
         //$shippingMethod = array();
         $total_weight = 0;
         $total_cost = 0;
@@ -2082,7 +2149,26 @@ class Service{
         $this->log("getShippingMethodBySku", "Shipping Method: ".$shippingMethod."<br>");
         $this->log("getShippingMethodBySku", "<font color='black'><br>======================================  ".$data->id." End   ======================================<br><br><br><br></font>");
         //$shippingMethod = (!empty($shippingMethod[3])?$shippingMethod[3]:(!empty($shippingMethod[2])?$shippingMethod[2]:$shippingMethod[1]));
-        echo json_encode(array('shippingMethod'=>$shippingMethod));
+        if(empty($sku_json)){
+	    echo json_encode(array('shippingMethod'=>$shippingMethod));
+	}
+	return $shippingMethod;
+    }
+    
+    public function getSkuLowestPrice($sku=""){
+	global $argv;
+	if(!empty($argv[2])){
+	    $sku = $argv[2];
+	}else{
+	    $sku = $_GET['sku'];
+	}
+	$sku_shipping_fee = $this->getShippingFeeBySku($sku, $this->getShippingMethodBySku(json_encode(array('skuId'=>$sku, 'quantity'=>1))));
+	$sku_cost = $this->getSkuCost($sku);
+	//echo $sku_cost."\n";
+	//echo $sku_shipping_fee."\n";
+	$lowestPrice = ($sku_cost * 1 + $sku_shipping_fee) * 1.3;
+	//echo $lowestPrice."\n";
+	echo json_encode(array('C'=> $sku_cost, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice));
     }
     
     public function getEnvelopeBySku(){
@@ -2477,11 +2563,14 @@ class Service{
         echo 'model:'.$row['short_description'];
     }
     
-    public function getSkuCost(){
-        $this->log("getSkuCost", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
+    public function getSkuCost($sku=""){
+	if(!empty($sku)){
+	    $_GET['data'] = $sku;
+	}
+        //$this->log("getSkuCost", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
         //get inventory model id
         $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$_GET['data']."'";
-        $this->log("getSkuCost", $sql."<br>");
+        //$this->log("getSkuCost", $sql."<br>");
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $inventory_model_id = $row['inventory_model_id'];
@@ -2489,7 +2578,7 @@ class Service{
         //-------------------------------------------    Cost    -----------------------------------------------
         //get cost field id
         $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
-        $this->log("getSkuCost", $cost_field_sql."<br>");
+        //$this->log("getSkuCost", $cost_field_sql."<br>");
 
         $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
         $cost_field_row = mysql_fetch_assoc($cost_field_result);
@@ -2499,13 +2588,16 @@ class Service{
         $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
         on cfs.custom_field_value_id=cfv.custom_field_value_id
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
-        $this->log("getSkuCost", $cost_value_sql."<br>");
+        //$this->log("getSkuCost", $cost_value_sql."<br>");
 
         $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
-        $this->log("getSkuCost", "Cost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuCost'=>$cost));
+        //$this->log("getSkuCost", "Cost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        if(empty($sku)){
+	    echo json_encode(array('skuCost'=>$cost));
+	}
+	return $cost;
     }
     
     public function getSkuInfo(){
