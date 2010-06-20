@@ -10,7 +10,9 @@
 		    echo "Unable to connect to DB: " . mysql_error();
 		    exit;
 		}
-		  
+		
+		mysql_query("SET NAMES 'UTF8'");
+		
 		if (!mysql_select_db("inventory")) {
 		    echo "Unable to select mydbname: " . mysql_error();
 		    exit;
@@ -126,7 +128,7 @@
     <link rel="stylesheet" type="text/css" href="status-manage.css"/>
     <script type="text/javascript" src="/ext-3.2.0/adapter/ext/ext-base.js"></script>
     <script type="text/javascript" src="/ext-3.2.0/ext-all.js"></script>
-    <script type="text/javascript" src="js/status-manage.js"></script>
+    <script type="text/javascript" src="js/status-manage-min.js"></script>
 </head>
 <body>
 	<div id="menu-panel" style="position:relative; width: 200px;">
