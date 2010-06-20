@@ -114,6 +114,7 @@
 <link rel="stylesheet" href="../css/jquery.tabs-ie.css" type="text/css" media="projection, screen">
 <![endif]-->
 <?php
+//var_dump(QApplication::$objUserAccount->UserAccountId);
 /*
 CREATE TABLE `tracmor`.`description` (
 	`sku` VARCHAR( 50 ) NOT NULL ,
@@ -306,6 +307,7 @@ if(!empty($_GET['intInventoryModelId'])){
 			</th>
 		</tr>
 	<?php
+	mysql_query("SET NAMES 'UTF8'");
 	$sql = "select id,sku,attachment,quantity from combo where sku = '".@$sku."'";
 	$result = mysql_query($sql);
 	while($row = mysql_fetch_assoc($result)){
@@ -362,7 +364,92 @@ if(!empty($_GET['intInventoryModelId'])){
 	?>
 	</table>
 </div>
-
+<br><br>
+<div id="purchase-panel" style="border: dotted;">
+	<h2>Purchase In The Way</h2>
+	<div id="add-purchase-panel">
+		<form >
+			Quantity: <input type="text" id="purchase-quantity"/>
+			<input id="add-purchase" type="button" value="Add Quantity"/>
+		</form>
+	</div>
+	<div id="purchase-list-panel">
+		<table border=1>
+			<tr>
+				<th>
+					Quantity
+				</th>
+				<th>
+					Date Created
+				</th>
+				<th>
+					Date Modified
+				</th>
+				<th>
+					Status
+				</th>
+				<th>
+					Operate
+				</th>
+			</tr>
+			<?php
+				$sql = "select * from sku_purchase where sku = '".@$sku."' order by id desc";
+				$result = mysql_query($sql);
+				while($row = mysql_fetch_assoc($result)){
+					switch($row['status']){
+						case 0:
+							$status = "Processing";
+							$operate = "<input type='button' value='Storing To Warehouse' onClick='skuPurchaseStoring(".$row['id'].")'/> | <input type='button' value='Cancel' onClick='skuPurchaseCancel(".$row['id'].")'/>";
+						break;
+					
+						case 1:
+							$status = "In Warehouse";
+							$operate = "";
+						break;
+					
+						case 2:
+							$status = "Cancel";
+							$operate = "";
+						break;
+					}
+					
+					echo "<tr>";
+					echo "<td>".$row['quantity']."</td>";
+					echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
+					echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
+					echo "<td>".$status."</td>";
+					echo "<td>".$operate."</td>";
+					echo "</tr>";
+				}
+				
+				mysql_query("SET NAMES 'latin1'");
+			?>
+		</table>
+		<script type="text/javascript">
+			$("#add-purchase").click(function(){
+				$.post("/inventory/service.php?action=addSKuPurchase", { sku: '<?=$sku?>', by: '<?=QApplication::$objUserAccount->Username?>', quantity: $("#purchase-quantity").val() },
+					function(data){
+					$('#purchase-list-panel').load('/inventory/service.php?action=getSKuPurchaseList&sku=<?=$sku?>');		
+				} );
+			})
+			
+			function skuPurchaseStoring(id){
+				$.post("/inventory/service.php?action=skuPurchaseStoring", { id: id, byId: '<?=QApplication::$objUserAccount->UserAccountId?>', byName: '<?=QApplication::$objUserAccount->Username?>'},
+					function(data){
+					//$('#purchase-list-panel').load('/inventory/service.php?action=getSKuPurchaseList&sku=<?=$sku?>');				
+					window.location.reload(); 
+				} );
+			}
+			
+			function skuPurchaseCancel(id){
+				$.post("/inventory/service.php?action=skuPurchaseCancel", { id: id, by: '<?=QApplication::$objUserAccount->Username?>'},
+					function(data){
+					$('#purchase-list-panel').load('/inventory/service.php?action=getSKuPurchaseList&sku=<?=$sku?>');				
+				} );
+			}
+		</script>
+	</div>
+</div>
 <?php
 }
 $this->pnlAttachments->Render();

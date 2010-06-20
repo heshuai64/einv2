@@ -1,4 +1,20 @@
 Ext.onReady(function(){
+	function showWait(){
+          Ext.MessageBox.wait("please wait, thank you.");
+     }
+     
+     function hideWait(){
+          Ext.MessageBox.hide();
+     }
+     
+     function exception(){
+          Ext.Msg.alert('Failure', 'network error, please try again.');
+     }
+     
+     Ext.Ajax.on('beforerequest', showWait);
+     Ext.Ajax.on('requestcomplete', hideWait);
+     Ext.Ajax.on('requestexception', exception);
+     
 	var availableStatusStore =  new Ext.data.ArrayStore({
         fields: ['id', 'name']
     })
@@ -35,7 +51,19 @@ Ext.onReady(function(){
         },
         tbar: [{
         	xtype: 'tbtext',
-        	text: 'Change Status To'
+        	text: 'Input SKU'
+        },{
+        	id: 'search-sku',
+        	xtype: 'textfield'
+        },{
+        	text: 'Search',
+        	handler: function(){
+        		skuStatusStore.setBaseParam("sku", Ext.getCmp("search-sku").getValue());
+				skuStatusStore.load({params: {start: 0, limit: 20}});
+        	}
+        },'-',{
+        	xtype: 'tbtext',
+        	text: 'Change the selected SKU to'
         },{
         	id:"availableStatusCombo",
         	xtype: 'combo',
@@ -105,6 +133,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "new");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["waiting for approve", "Submit Approve"]]);
@@ -120,6 +149,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "waiting for approve");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["active", "Approve"], ["under review", "Not Approve"]]);
@@ -135,6 +165,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "under review");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["waiting for approve", "Re Approve"], ["inactive", "Freeze SKU"]]);
@@ -150,6 +181,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "active");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["inactive", "Freeze SKU"], ["under review", "Question SKU"]]);
@@ -165,6 +197,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "inactive");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["under review", "Reactivation SKU"]]);
@@ -180,6 +213,7 @@ Ext.onReady(function(){
 		listeners: {
 			click: function(t, e){
 				skuStatusStore.setBaseParam("status", "out of stock");
+				skuStatusStore.setBaseParam("sku", "");
 				skuStatusStore.load({params: {start: 0, limit: 20}});
 				Ext.getCmp("availableStatusCombo").setValue("");
 				availableStatusStore.loadData([["inactive", "Freeze SKU"]]);

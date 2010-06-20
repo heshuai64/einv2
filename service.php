@@ -10,6 +10,7 @@ class Service{
     const ACTIVE_MQ = "tcp://192.168.1.168:61613";
     private static $database_connect;
     private $log = true;
+    private static $q_action = array('stockAttention', 'getSkuStatusGrid');
     
     public function __construct(){
         Service::$database_connect = mysql_connect(self::DATABASE_HOST, self::DATABASE_USER, self::DATABASE_PASSWORD);
@@ -19,10 +20,10 @@ class Service{
             exit;
         }
         
-        if(!empty($_GET['action']) && $_GET['action'] != "stockAttention"){
-         	mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+        if(!empty($_GET['action']) && !in_array($_GET['action'], Service::$q_action)){
+            mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
         }elseif(empty($_GET['action'])){
-        	mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+            mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
         }
         
         if (!mysql_select_db(self::DATABASE_NAME, Service::$database_connect)) {
@@ -223,7 +224,7 @@ class Service{
                 $this->log("inventoryTakeOut", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
                 $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
-                echo $inventory_model." 出库成功.<br>";
+                echo $inventory_model." 出库成功(success).<br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfLibrary",
                         array("sku"=> $inventory_model,
@@ -2600,6 +2601,39 @@ class Service{
 	return $cost;
     }
     
+    public function getSkuStatus($sku=""){
+	global $argv;
+	if(!empty($sku)){
+	    $_GET['data'] = $sku;
+	}elseif(!empty($argv[2])){
+	    $_GET['data'] = $argv[2];
+	}
+	//get inventory model id
+        $sql = "select inventory_model_id,short_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
+        //echo $sql."\n";
+	$result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+	$inventory_model_id = $row['inventory_model_id'];
+	
+	//get status field
+	$status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_result = mysql_query($status_field_sql);
+        $status_field_row = mysql_fetch_assoc($status_field_result);
+        
+        
+	//get status value
+        $status_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+        on cfs.custom_field_value_id=cfv.custom_field_value_id 
+        where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$status_field_row['custom_field_id']."'";
+	//echo $status_value_sql."\n";
+	$status_value_result = mysql_query($status_value_sql, Service::$database_connect);
+        $status_value_row = mysql_fetch_assoc($status_value_result);
+	
+	$status = $status_value_row['short_description'];
+	
+	echo json_encode(array('status'=>$status));
+    }
+    
     public function getSkuInfo(){
     	$this->log("getSkuInfo", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
         //get inventory model id
@@ -2790,6 +2824,215 @@ class Service{
         }
     }
     
+    private function getUserName($user_account_id){
+	$sql = "select username from user_account where user_account_id = ".$user_account_id;
+	$result = mysql_query($sql, Service::$database_connect);
+	$row = mysql_fetch_assoc($result);
+	return $row['username'];
+    }
+    
+    public function addSKuPurchase(){
+	if(empty($_POST['by'])){
+	    $_POST['by'] = $this->getUserName($_POST['byId']);
+	}
+	$now = date('Y-m-d H:i:s');
+	$sql = "insert into sku_purchase (sku,quantity,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
+        //echo $sql;
+        $result = mysql_query($sql, Service::$database_connect);
+        if($result){
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    
+    public function getSKuPurchaseList(){
+	echo '<table border=1>
+			<tr>
+				<th>
+					Quantity
+				</th>
+				<th>
+					Date Created
+				</th>
+				<th>
+					Date Modified
+				</th>
+				<th>
+					Status
+				</th>
+				<th>
+					Operate
+				</th>
+			</tr>';
+				$sql = "select * from sku_purchase where sku = '".$_GET['sku']."' order by id desc";
+				$result = mysql_query($sql);
+				while($row = mysql_fetch_assoc($result)){
+					switch($row['status']){
+						case 0:
+							$status = "Processing";
+							$operate = "<input type='button' value='Storing To Warehouse' onClick='skuPurchaseStoring(".$row['id'].")'/> | <input type='button' value='Cancel' onClick='skuPurchaseCancel(".$row['id'].")'/>";
+						break;
+					
+						case 1:
+							$status = "In Warehouse";
+							$operate = "";
+						break;
+					
+						case 2:
+							$status = "Cancel";
+							$operate = "";
+						break;
+					}
+					
+					echo "<tr>";
+					echo "<td>".$row['quantity']."</td>";
+					echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
+					echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
+					echo "<td>".$status."</td>";
+					echo "<td>".$operate."</td>";
+					echo "</tr>";
+				}
+	echo '</table>';
+    }
+    
+    public function getPurchaseList(){
+	echo '<table border=1>
+			<tr>
+				<th>
+                                    SKU
+				</th>
+				<th>
+					Quantity
+				</th>
+				<th>
+					Date Created
+				</th>
+				<th>
+					Date Modified
+				</th>
+				<th>
+					Status
+				</th>
+				<th>
+					Operate
+				</th>
+			</tr>';
+			    $sql = "select * from sku_purchase where status = 0 order by sku,modified_date desc";
+                            $result = mysql_query($sql);
+                            while($row = mysql_fetch_assoc($result)){
+                                    switch($row['status']){
+                                            case 0:
+                                                    $status = "Processing";
+                                                    $operate = "<input type='button' value='Storing To Warehouse' onClick='skuPurchaseStoring(".$row['id'].")'/> | <input type='button' value='Cancel' onClick='skuPurchaseCancel(".$row['id'].")'/>";
+                                            break;
+                                    
+                                            case 1:
+                                                    $status = "In Warehouse";
+                                                    $operate = "";
+                                            break;
+                                    
+                                            case 2:
+                                                    $status = "Cancel";
+                                                    $operate = "";
+                                            break;
+                                    }
+                                    
+                                    echo "<tr>";
+                                    echo "<td>".$row['sku']."</td>";
+                                    echo "<td>".$row['quantity']."</td>";
+                                    echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
+                                    echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
+                                    echo "<td>".$status."</td>";
+                                    echo "<td>".$operate."</td>";
+                                    echo "</tr>";
+                            }
+	echo '</table>';
+    }
+    
+    public function skuPurchaseStoring(){
+	if(empty($_POST['byName'])){
+	    $_POST['byName'] = $this->getUserName($_POST['byId']);
+	}
+	$created_by = $_POST['byId'];
+	$sql = "select sku,quantity from sku_purchase where id = ".$_POST['id'];
+	$result = mysql_query($sql, Service::$database_connect);
+	$row = mysql_fetch_assoc($result);
+	$quantity = $row['quantity'];
+	
+	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['sku']."'";
+	$result = mysql_query($sql, Service::$database_connect);
+	$row = mysql_fetch_assoc($result);
+	$inventory_model_id = $row['inventory_model_id'];
+	
+	$sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
+        $this->log("skuPurchaseStoring", $sql."<br>");
+        //echo $sql;
+        //echo "<br>";
+        $result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+        $source_location_id = $row['location_id'];
+        $inventory_location_id = $row['inventory_location_id'];
+        
+        if(!empty($source_location_id)){
+	    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','','".$created_by."','".date("Y-m-d H:i:s")."')";
+            $this->log("skuPurchaseStoring", $sql."<br>");
+            //echo $sql;
+            //echo "<br>";
+            $result = mysql_query($sql, Service::$database_connect);
+            $transaction_id = mysql_insert_id(Service::$database_connect);
+	    
+	    //sku purchase storing
+            $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
+            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."',4,'".$source_location_id."','".$created_by."','".date("Y-m-d H:i:s")."')";
+            $this->log("skuPurchaseStoring", $sql."<br>");
+            //echo $sql;
+            //echo "<br>";
+            $result = mysql_query($sql, Service::$database_connect);
+            if($result){
+                //sku update stock quantity
+                $sql = "update inventory_location set quantity = quantity + ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
+                $this->log("skuPurchaseStoring", $sql."<br>");
+                //echo $sql;
+                //echo "<br>";
+                $result = mysql_query($sql, Service::$database_connect);
+                
+                $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
+                $this->log("skuPurchaseStoring", $sql."<br>");
+                $result = mysql_query($sql, Service::$database_connect);
+                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+                flush();
+		/*
+                $this->sendMessageToAM("/topic/SkuInToLibrary",
+                        array("sku"=> $inventory_model,
+                              "quantity"=> $quantity,
+                              "shipment_id"=> $shipment_id,
+                              "shipment_method"=> $shipment_method));
+		*/
+		$sql = "update sku_purchase set status = 1,modified_by='".$_POST['byName']."',modified_date='".date("Y-m-d H:i:s")."' where id = '".$_POST['id']."'";
+		$result = mysql_query($sql);
+		if($result){
+		    echo 1;
+		}else{
+		    echo 0;
+		}
+            }
+	}
+    }
+    
+    public function skuPurchaseCancel(){
+	if(empty($_POST['by'])){
+	    $_POST['by'] = $this->getUserName($_POST['byId']);
+	}
+	$sql = "update sku_purchase set status = 2,modified_by='".$_POST['by']."',modified_date='".date("Y-m-d H:i:s")."' where id = '".$_POST['id']."'";
+	$result = mysql_query($sql);
+	if($result){
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    
     public function getSkuStatusGrid(){
     	//get status field id
         $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
@@ -2808,9 +3051,14 @@ class Service{
         }
         $status_string = substr($status_string, 0, -1);
         
+        $sku_where = "";
+        if(!empty($_POST['sku'])){
+        	$sku_where = " and im.inventory_model_code like '".$_POST['sku']."%'";
+        }
+        
     	$sql = "select count(*) as totalCount from 
 		inventory_model as im left join custom_field_selection as cfs on im.inventory_model_id = cfs.entity_id 
-		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']];
+		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']].$sku_where;
 		$result = mysql_query($sql);
 		$row = mysql_fetch_assoc($result);
 		$totalCount = $row['totalCount'];
@@ -2818,7 +3066,7 @@ class Service{
 		$array = array();
 		$sql = "select inventory_model_id,inventory_model_code,short_description from 
 		inventory_model as im left join custom_field_selection as cfs on im.inventory_model_id = cfs.entity_id 
-		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']]." limit ".$_POST['start'].",".$_POST['limit'];
+		where cfs.custom_field_value_id = ".$status_array_2[$_POST['status']]." ".$sku_where." limit ".$_POST['start'].",".$_POST['limit'];
 		$result = mysql_query($sql);
 		while ($row = mysql_fetch_assoc($result)) {
 			$array[] = $row;
@@ -2909,7 +3157,7 @@ class Service{
             if ( $msg != null) {
                 //echo "Message '$msg->body' received from queue\n";
                 //print_r($msg->map);
-                $this->inventoryTakeOut($msg->map['inventory_model'], $msg->map['quantity'], $msg->map['shipment_id'], $msg->map['shipment_method']);
+                //$this->inventoryTakeOut($msg->map['inventory_model'], $msg->map['quantity'], $msg->map['shipment_id'], $msg->map['shipment_method']);
                 $consumer->ack($msg);
             }
             sleep(1);

@@ -63,7 +63,15 @@
 		}
 		
 		protected function btnLogin_Click($strFormId, $strControlId, $strParameter) {
-
+			if($_SERVER['REMOTE_ADDR'] != "127.0.0.1" && substr($_SERVER['REMOTE_ADDR'], 0, 8) != "192.168."){
+			  $ip_array = json_decode(file_get_contents("http://192.168.1.168:8888/eBayBO/service.php?action=getClientIp"));
+			  //file_put_contents("/tmp/xx.log", print_r($ip_array, true));
+			  if(!in_array($_SERVER['REMOTE_ADDR'], $ip_array)){
+			    $blnError = true;
+			    $this->txtUsername->Warning = 'Invalid username or password.';
+			    return 0;
+			  }
+			}
 			$blnError = false;
 			
 			$strUsername = $this->txtUsername->Text;
