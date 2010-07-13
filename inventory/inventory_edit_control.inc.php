@@ -108,7 +108,11 @@
 <script type="text/javascript" src="../js/jquery-1.3.2.js"></script>
 <script type="text/javascript" src="../js/ajaxfileupload.js"></script>
 <script type="text/javascript" src="../js/jquery.tabs.min.js"></script>
+<script type="text/javascript" src="../js/jquery.multiselect2side.js"></script>
+
 <link rel="stylesheet" href="../css/jquery.tabs.css" type="text/css" media="print, projection, screen">
+<link rel="stylesheet" href="../css/jquery.multiselect2side.css" type="text/css">
+
 <!-- Additional IE/Win specific style sheet (Conditional Comments) -->
 <!--[if lte IE 7]>
 <link rel="stylesheet" href="../css/jquery.tabs-ie.css" type="text/css" media="projection, screen">
@@ -125,16 +129,107 @@ CREATE TABLE `tracmor`.`description` (
 ) ENGINE = MYISAM
 */
 if(!empty($_GET['intInventoryModelId'])){
-	$sql = "select inventory_model_code from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
+	$sql = "select inventory_model_code,manufacturer_id from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
 	$sku = $row['inventory_model_code'];
+	$manufacturer_id = array(0 => $row['manufacturer_id']);
 	
 	$sql = "select * from description where sku = '".$sku."'";
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
-
+	
+	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
+	$result_1 = mysql_query($sql_1);
+	$row_1 = mysql_fetch_assoc($result_1);
+	$custom_field_value_id = $row_1['custom_field_value_id'];
+	
+	$sql_2 = "select count(*) as num from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id = ".$custom_field_value_id." and entity_id = ".$_GET['intInventoryModelId'];
+	$result_2 = mysql_query($sql_2);
+	$row_2 = mysql_fetch_assoc($result_2);
+	$active = $row_2['num'];
+	
+	/*
+	CREATE TABLE `sku_manufacturer` (
+	`sku` VARCHAR( 20 ) NOT NULL ,
+	`manufacturer_id` INT NOT NULL ,
+	INDEX ( `sku` , `manufacturer_id` )
+	)
+	*/
+	
+	$sql_3 = "select count(*) as num from sku_manufacturer where sku = '".$sku."'";
+	$result_3 = mysql_query($sql_3);
+	$row_3 = mysql_fetch_assoc($result_3);
+	
+	if($row_3['num'] > 0){
+		$manufacturer_id = array();
+		$sql_3 = "select manufacturer_id from sku_manufacturer where sku = '".$sku."'";
+		$result_3 = mysql_query($sql_3);
+		while($row_3 = mysql_fetch_assoc($result_3)){
+			$manufacturer_id[] = $row_3['manufacturer_id'];
+		}
+	}
+	
+	$sql_4 = "select manufacturer_id,short_description from manufacturer";
+	$result_4 = mysql_query($sql_4);
+	$manufacturer_option = "";
+	$i = 0;
+	while($row_4 = mysql_fetch_assoc($result_4)){
+		if(in_array($row_4['manufacturer_id'], $manufacturer_id)){
+			$manufacturer_option .= '<option selected="" value="'.$row_4['manufacturer_id'].'">'.$row_4['short_description'].'</option>';
+		}else{
+			$manufacturer_option .= '<option value="'.$row_4['manufacturer_id'].'">'.$row_4['short_description'].'</option>';
+		}
+		$i++;
+	}
+	
+	$manufacturer_select  = '<select multiple="multiple" id="manufacturer" name="sku_manufacturer[]" size="'.$i.'">';
+	$manufacturer_select  .= $manufacturer_option;
+	$manufacturer_select  .= '</select>';
 ?>
+
+<script type="text/javascript">
+	$().ready(function() {
+		$('#manufacturer').multiselect2side({moveOptions: false});
+	});
+	
+	function updateManufacturer(){
+		//alert($("#manufacturer").val());
+		var manufacturer;
+		if($.isArray($("#manufacturer").val())){
+			var xx = $("#manufacturer").val();
+			//alert(xx);
+			$.each(xx, function(index, value) {
+					manufacturer += value + ",";
+			});
+			manufacturer = manufacturer.substring(9, manufacturer.length - 1);
+		}else{
+			manufacturer = $("#manufacturer").val();
+		}
+		$.post("/inventory/service.php?action=updateManufacturer",
+		       {
+				sku     : $("#c19").val(),
+				manufacturer : manufacturer
+		       },
+			function(data){
+				//alert(data.msg);
+			}, "json"
+		);
+		       
+		return false;
+	}
+</script>
+
+<!--
+<div id="Suppliers" style="text-align: left; border: dotted; height: 200px;">
+	<h2>Suppliers</h2>
+	<div style="font-size: 12px; position: relative;"><div style="float: left;">Suppliers List</div><div style="position: absolute; float: left; left: 320px; color: green;">SKU Suppliers</div></div>
+	<?=$manufacturer_select?>
+	<div style="float: none;">
+	<button onclick="return updateManufacturer();">Update Manufacturer</button>
+	</div>
+</div>
+-->
 <script type="text/javascript">
 	function updateDescription(){
 
@@ -186,7 +281,9 @@ if(!empty($_GET['intInventoryModelId'])){
 	<div id="fragment-3">
 		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
 	</div>
+	<?php if($active == 0){?>
 	<button onclick="return updateDescription();">Update Description</button>
+	<?php }?>
 </div>
 <br>
 <br>
@@ -389,6 +486,9 @@ if(!empty($_GET['intInventoryModelId'])){
 					Status
 				</th>
 				<th>
+                    Remark
+                </th>
+				<th>
 					Operate
 				</th>
 			</tr>
@@ -418,6 +518,7 @@ if(!empty($_GET['intInventoryModelId'])){
 					echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
 					echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
 					echo "<td>".$status."</td>";
+					echo "<td>".$row['remark']."</td>";
 					echo "<td>".$operate."</td>";
 					echo "</tr>";
 				}

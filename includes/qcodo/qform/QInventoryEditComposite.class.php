@@ -356,6 +356,12 @@ class QInventoryEditComposite extends QControl {
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QAjaxControlAction($this, 'btnEdit_Click'));
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 		$this->btnEdit->CausesValidation = false;
+		
+		$this->btnDelete->Enabled = false;
+		if(@$this->arrCustomFields[7]['input']->SelectedValue == 5918){
+			$this->btnEdit->Enabled = false;
+		}
+		
 		QApplication::AuthorizeControl($this->objInventoryModel, $this->btnEdit, 2);
 	}
 
