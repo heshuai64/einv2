@@ -1,19 +1,21 @@
 <?php
 class Service{
-    const DATABASE_HOST = 'localhost';
-    const DATABASE_USER = 'root';
     const LOG_PATH = '/export/inventory/log';
     const PO_PATH = '/export/inventory/PO';
-    //const DATABASE_NAME = 'tracmor';
-    const DATABASE_NAME = 'inventory';
-    const DATABASE_PASSWORD = '5333533';
-    const ACTIVE_MQ = "tcp://192.168.1.168:61613";
+    private static $active_mq;
     private static $database_connect;
     private $log = true;
     private static $q_action = array('stockAttention', 'getSkuStatusGrid');
+    private static $field_array;
     
     public function __construct(){
-        Service::$database_connect = mysql_connect(self::DATABASE_HOST, self::DATABASE_USER, self::DATABASE_PASSWORD);
+	$config = parse_ini_file('config.ini', true);
+	
+	Service::$active_mq = $config['service']['activeMq'];
+	
+	Service::$field_array = $config['fieldArray'];
+	//print_r(Service::$field_array);
+        Service::$database_connect = mysql_connect($config['database']['host'], $config['database']['user'], $config['database']['password']);
 
         if (!Service::$database_connect) {
             echo "Unable to connect to DB: " . mysql_error(Service::$database_connect);
@@ -26,7 +28,7 @@ class Service{
             mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
         }
         
-        if (!mysql_select_db(self::DATABASE_NAME, Service::$database_connect)) {
+        if (!mysql_select_db($config['database']['name'], Service::$database_connect)) {
             echo "Unable to select mydbname: " . mysql_error(Service::$database_connect);
             exit;
         }
@@ -46,7 +48,7 @@ class Service{
         require_once 'Stomp.php';
         require_once 'Stomp/Message/Map.php';
         
-        $con = new Stomp(Service::ACTIVE_MQ);
+        $con = new Stomp(Service::$active_mq);
         $conn->sync = false;
         $con->connect();
         
@@ -64,8 +66,34 @@ class Service{
         return $result;
     }
     
-    private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id,$shipment_method){
-        $created_by = 1;
+    private function checkSkuCombo($inventory_model){
+	$sql = "select count(*) as num from combo where sku = '".$inventory_model."'";
+	$this->log("skuTakeOut", $sql."<br>");
+	$result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+	return $row['num'];
+    }
+    
+    private function skuComboTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method=''){
+	$sql = "select attachment,quantity from combo where sku = '".$inventory_model."'";
+	$this->log("skuTakeOut", $sql."<br>");
+	$result = mysql_query($sql, Service::$database_connect);
+        while($row = mysql_fetch_assoc($result)){
+	    $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['attachment']."'";
+	    $this->log("skuTakeOut", $sql_1."<br>");
+	    $result_1 = mysql_query($sql_1, Service::$database_connect);
+	    $row_1 = mysql_fetch_assoc($result_1);
+	    
+	    $this->skuTakeOut($row['attachment'],$row_1['inventory_model_id'],$row['quantity'],$shipment_id,$shipment_method);
+	}
+    }
+    
+    private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method=''){
+        if($this->checkSkuCombo($inventory_model)){
+	    $this->skuComboTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id,$shipment_method);
+	}
+	
+	$created_by = 1;
         $source_location_id = 6;
         //B=Bulk,R=Registered,S=SpeedPost
         switch($shipment_method){
@@ -84,7 +112,7 @@ class Service{
         }
         
         $sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
-        $this->log("inventoryTakeOut", $sql."<br>");
+        $this->log("skuTakeOut", $sql."<br>");
         //echo $sql;
         //echo "<br>";
         $result = mysql_query($sql, Service::$database_connect);
@@ -95,7 +123,7 @@ class Service{
         if(!empty($source_location_id)){
             //sku add stock out transaction
             $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','".$shipment_id.", ".$shipment_method_descript."','".$created_by."','".date("Y-m-d H:i:s")."')";
-            $this->log("inventoryTakeOut", $sql."<br>");
+            $this->log("skuTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
             $result = mysql_query($sql, Service::$database_connect);
@@ -104,8 +132,8 @@ class Service{
             //-------------------------------------------   Weight   -----------------------------------------------
             //get weight field id
             //echo "<font color='red'><br>Weight Start<br></font>";
-            $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
-            $this->log("inventoryTakeOut", $weight_field_sql."<br>");
+            $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
+            $this->log("skuTakeOut", $weight_field_sql."<br>");
             //echo $weight_field_sql;
             //echo "<br>";
             $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -116,7 +144,7 @@ class Service{
             $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
             on cfs.custom_field_value_id=cfv.custom_field_value_id
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
-            $this->log("inventoryTakeOut", $weight_value_sql."<br>");
+            $this->log("skuTakeOut", $weight_value_sql."<br>");
             //echo $weight_value_sql;
             //echo "<br>";
             $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
@@ -129,7 +157,7 @@ class Service{
             /*
             //get envelope field id
             echo "<font color='red'><br>Envelope Start<br></font>";
-            $envelope_field_sql = "select custom_field_id from custom_field where short_description = 'Envelope'";
+            $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
             echo $envelope_field_sql;
             echo "<br>";
             $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
@@ -208,22 +236,22 @@ class Service{
             //sku stock out
             $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,shipment_id,shipment_method,shipment_fee) 
             values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."','".$shipment_fee."')";
-            $this->log("inventoryTakeOut", $sql."<br>");
+            $this->log("skuTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
             $result = mysql_query($sql, Service::$database_connect);
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                $this->log("inventoryTakeOut", $sql."<br>");
+                $this->log("skuTakeOut", $sql."<br>");
                 //echo $sql;
                 //echo "<br>";
                 $result = mysql_query($sql, Service::$database_connect);
                 
                 $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
-                $this->log("inventoryTakeOut", $sql."<br>");
+                //$this->log("skuTakeOut", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
-                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+                $this->log("skuTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 echo $inventory_model." 出库成功(success).<br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfLibrary",
@@ -233,11 +261,12 @@ class Service{
                               "shipment_method"=> $shipment_method));
             }
         }else{
-            echo "SKU 不在仓库!";
+            echo "<font color=\'red\' size=\'7\'>SKU 不在仓库!</font>";
         }
     }
     
     public function inventoryTakeOut($inventory_model='', $quantity='',$shipment_id='',$shipment_method=''){
+	$this->log("skuTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
         $inventory_model = (($inventory_model!="")?$inventory_model:$_GET['inventory_model']);
         $quantity = (($quantity!="")?$quantity:$_GET['quantity']);
         $shipment_id = (($shipment_id!="")?$shipment_id:$_GET['shipment_id']);
@@ -270,7 +299,7 @@ class Service{
                     $msg .= $sku." 有 ".$location_quantity." 在仓库.<br>";
                 }else{
                     $flag = false;
-                    $msg .= $sku." 没有库存.<br>";
+                    $msg .= "<font color=\'red\' size=\'7\'>". $sku." 没有库存.</font><br>";
                 }
                 $i++;
             }
@@ -284,7 +313,7 @@ class Service{
                 }
                 return 1;
             }else{
-                echo $msg." 包裹不能发送.<br>";
+                echo "<font color=\'red\' size=\'7\'>".$msg." 包裹不能发送.</font><br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfStock",
                             array("sku"=> $inventory_model,
@@ -310,7 +339,7 @@ class Service{
             $row = mysql_fetch_assoc($result);
             $location_quantity = $row['quantity'];
             if($quantity > $location_quantity){
-                echo $inventory_model." 没有库存.<br>";
+                echo "<font color=\'red\' size=\'7\'>". $inventory_model." 没有库存.</font><br>";
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfStock",
                             array("sku"=> $inventory_model,
@@ -324,6 +353,7 @@ class Service{
             echo $msg;
             $this->skuTakeOut($inventory_model, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
         }
+	$this->log("skuTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
     }
     
     public function syncAppertainStock(){
@@ -1071,7 +1101,7 @@ class Service{
     
     private function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
         //get weight field id
-        $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+        $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
         echo $weight_field_sql;
         echo "<br>";
         $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -1079,7 +1109,7 @@ class Service{
         $weight_field_id = $weight_field_row['custom_field_id'];
         
         //get cost field id
-        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         echo $cost_field_sql;
         echo "<br>";
         $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
@@ -1087,7 +1117,7 @@ class Service{
         $cost_field_id =  $cost_field_row['custom_field_id'];
         
         //get envelope field id
-        $envelope_field_sql = "select custom_field_id from custom_field where short_description = 'Envelope'";
+        $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
         echo $envelope_field_sql;
         echo "<br>";
         $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
@@ -1370,7 +1400,7 @@ class Service{
         $manufacturer_id = 1; //历精
         
         //get stock days field id
-        $stock_days_field_sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $stock_days_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
         echo $stock_days_field_sql;
         echo "<br>";
         $stock_days_field_result = mysql_query($stock_days_field_sql, Service::$database_connect);
@@ -1461,7 +1491,7 @@ class Service{
         
         //***********************************************************************************************
         /*
-        $sql = "select custom_field_id from custom_field where short_description = 'Lower Limit'";
+        $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['lowerLimit']."'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         
@@ -1526,7 +1556,7 @@ class Service{
         $oil_painting_category_id = 5;
         
         //get stock day
-        $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $stock_day_field_id = $row['custom_field_id'];
@@ -1614,7 +1644,7 @@ class Service{
         $sord = $_GET['sord']; // get the direction
         
         
-        $sql = "select custom_field_id from custom_field where short_description = 'Lower Limit'";
+        $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['lowerLimit']."'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         
@@ -1836,6 +1866,111 @@ class Service{
         
     }
     
+    public function getCategoryBySku($sku){
+	$sql = "select category_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+	$category_id = $row['category_id'];
+	
+	$sql = "select short_description from category where category_id = ".$category_id;
+	$result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+	return $row['short_description'];
+    }
+    
+    public function getWeightBySku($sku){
+	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result_0 = mysql_query($sql_0, Service::$database_connect);
+        $row_0 = mysql_fetch_assoc($result_0);
+	$inventory_model_id = $row_0['inventory_model_id'];
+	
+	//-------------------------------------------   Weight   -----------------------------------------------
+	//get weight field id
+	//echo "<font color='red'><br>Weight Start<br></font>";
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
+	//echo $weight_field_sql;
+	//echo "<br>";
+	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_row = mysql_fetch_assoc($weight_field_result);
+	
+	
+	//get weight value
+	$weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	on cfs.custom_field_value_id=cfv.custom_field_value_id
+	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+	//echo $weight_value_sql;
+	//echo "<br>";
+	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_row = mysql_fetch_assoc($weight_value_result);
+	$weight = (float)$weight_value_row['short_description'];
+	
+	return $weight;
+    }
+    
+    public function getEPEBySku($sku){
+	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result_0 = mysql_query($sql_0, Service::$database_connect);
+        $row_0 = mysql_fetch_assoc($result_0);
+	$inventory_model_id = $row_0['inventory_model_id'];
+	
+	//-------------------------------------------   Weight   -----------------------------------------------
+	//get weight field id
+	//echo "<font color='red'><br>Weight Start<br></font>";
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['EPE']."'";
+	//echo $weight_field_sql;
+	//echo "<br>";
+	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_row = mysql_fetch_assoc($weight_field_result);
+	
+	
+	//get weight value
+	$weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	on cfs.custom_field_value_id=cfv.custom_field_value_id
+	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+	//echo $weight_value_sql;
+	//echo "<br>";
+	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_row = mysql_fetch_assoc($weight_value_result);
+	$weight = $weight_value_row['short_description'];
+	
+	return $weight;
+    }
+    
+    public function getProductGradeBySku($sku = ''){
+	global $argv;
+	if(!empty($argv[2])){
+	    $sku = $argv[2];
+	}
+	
+	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result_0 = mysql_query($sql_0, Service::$database_connect);
+        $row_0 = mysql_fetch_assoc($result_0);
+	$inventory_model_id = $row_0['inventory_model_id'];
+	
+	//-------------------------------------------   Weight   -----------------------------------------------
+	//get weight field id
+	//echo "<font color='red'><br>Weight Start<br></font>";
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['productGrade']."'";
+	//echo $weight_field_sql;
+	//echo "<br>";
+	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_row = mysql_fetch_assoc($weight_field_result);
+	
+	
+	//get weight value
+	$weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	on cfs.custom_field_value_id=cfv.custom_field_value_id
+	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
+	//echo $weight_value_sql;
+	//echo "<br>";
+	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_row = mysql_fetch_assoc($weight_value_result);
+	$weight = $weight_value_row['short_description'];
+	
+	//echo $weight;
+	return $weight;
+    }
+    
     public function getShippingFeeBySku($sku="", $shipment_method="", $quantity=1){
 	switch($shipment_method){
             case "B":
@@ -1860,7 +1995,7 @@ class Service{
 	//-------------------------------------------   Weight   -----------------------------------------------
 	//get weight field id
 	//echo "<font color='red'><br>Weight Start<br></font>";
-	$weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
 	//echo $weight_field_sql;
 	//echo "<br>";
 	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -1931,7 +2066,7 @@ class Service{
             //-------------------------------------------   Weight   -----------------------------------------------
             //get weight field id
             $this->log("getShippingMethodBySku", "<font color='red'><br>Weight Start<br></font>");
-            $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+            $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
             $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
             
             $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -1953,7 +2088,7 @@ class Service{
             //-------------------------------------------    Cost    -----------------------------------------------
             //get cost field id
             $this->log("getShippingMethodBySku", "<font color='red'><br>Cost Start<br></font>");
-            $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+            $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
             $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
 
             $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
@@ -1974,7 +2109,7 @@ class Service{
             //-----------------------------------------    Paper tube  ----------------------------------------------
             //get Paper tube field id
             $this->log("getShippingMethodBySku", "<font color='red'><br>Paper Start<br></font>");
-            $paper_field_sql = "select custom_field_id from custom_field where short_description = 'Paper tube'";
+            $paper_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['paperTube']."'";
             $this->log("getShippingMethodBySku", $paper_field_sql."<br>");
  
             $paper_field_result = mysql_query($paper_field_sql, Service::$database_connect);
@@ -2081,7 +2216,7 @@ class Service{
                 //-------------------------------------------   Weight   -----------------------------------------------
                 //get weight field id
                 $this->log("getShippingMethodBySku", "<font color='red'><br>******************************************  Weight Start  ******************************************<br></font>");
-                $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+                $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
                 $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
                 
                 $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -2103,7 +2238,7 @@ class Service{
                 //-------------------------------------------    Cost    -----------------------------------------------
                 //get cost field id
                 $this->log("getShippingMethodBySku", "<font color='red'><br>****************************************** Cost Start  ******************************************<br></font>");
-                $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+                $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
                 $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
     
                 $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
@@ -2164,26 +2299,125 @@ class Service{
 	    $sku = $_GET['sku'];
 	}
 	$sku_shipping_fee = $this->getShippingFeeBySku($sku, $this->getShippingMethodBySku(json_encode(array('skuId'=>$sku, 'quantity'=>1))));
+	$envelope = $this->getEnvelopeBySku($sku);
+	switch($envelope){
+	    case "S":
+		$envelope_cost = 0.8;
+	    break;
+	
+	    case "M":
+		$envelope_cost = 1.2;
+	    break;
+	
+	    case "L":
+		$envelope_cost = 4.6;
+	    break;
+	
+	    case "XL":
+		$envelope_cost = 6;
+	    break;
+	}
+	$category = $this->getCategoryBySku($sku);
+	switch($category){
+	    case "Battery":
+		$category_cost = 1.3;
+	    break;
+	
+	    case "Power Tools":
+		$category_cost = 1.3;
+	    break;
+	
+	    case "Game":
+		$category_cost = 1.4;
+	    break;
+	
+	    case "Security":
+		$category_cost = 1.3;
+	    break;
+	
+	    default:
+		$category_cost = 1.5;
+	    break;
+	}
+	
+	$epe_cost = $this->getEPEBySku($sku);
+	switch($epe_cost){
+	    case "2TX500mmX130mmX1":
+		$epe_cost = 1;
+	    break;
+	
+	    case "4TX500mmX130mmX2":
+		$epe_cost = 2;
+	    break;
+	
+	    case "4TX500mmX130mmX1":
+		$epe_cost = 1;
+	    break;
+	
+	    default:
+		$epe_cost = 1;
+	    break;
+	}
+	
+	$productGrade = $this->getProductGradeBySku($sku);
+	switch($productGrade){
+	    case "A":
+		$product_grade_cost = 1.28;
+	    break;
+	
+	    case "B":
+		$product_grade_cost = 1.30;
+	    break;
+	
+	    case "C":
+		$product_grade_cost = 1.35;
+	    break;
+	
+	    case "D":
+		$product_grade_cost = 1.4;
+	    break;
+	
+	    case "E":
+		$product_grade_cost = 1.45;
+	    break;
+	
+	    case "F":
+		$product_grade_cost = 1.5;
+	    break;
+	
+	    default :
+		$product_grade_cost = 1;
+	    break;
+	}
+	
 	$sku_cost = $this->getSkuCost($sku);
+	$sku_weight = $this->getWeightBySku($sku);
 	//echo $sku_cost."\n";
 	//echo $sku_shipping_fee."\n";
-	$lowestPrice = ($sku_cost * 1 + $sku_shipping_fee) * 1.3;
+	$lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $product_grade_cost;
 	//echo $lowestPrice."\n";
-	echo json_encode(array('C'=> $sku_cost, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice));
+	$formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$product_grade_cost;
+	echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
     }
     
-    public function getEnvelopeBySku(){
+    public function getEnvelopeBySku($sku=""){
+	if(!empty($sku)){
+	    $skuArray[0]->skuId = $sku;
+	    $this->log = false;
+	}else{
+	    $_GET['data'] = str_replace("\\", "", $_GET['data']);
+	    //$this->log("getEnvelopeBySku", $_GET['data']."<br>");                
+	    $skuArray = json_decode($_GET['data']);
+	}
         $this->log("getEnvelopeBySku", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
         $envelope_field_value = "Envelope";
-        $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".$envelope_field_value."'";
+        $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
         //echo $envelope_field_sql;
         //echo "<br>";
         $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
         $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
         
-        $_GET['data'] = str_replace("\\", "", $_GET['data']);
-        //$this->log("getEnvelopeBySku", $_GET['data']."<br>");                
-        $skuArray = json_decode($_GET['data']);
+        
         //$this->log("getEnvelopeBySku", print_r($skuArray, true));
         if(count($skuArray) > 1){
             $envelopeArray = array("B"=>0,
@@ -2291,6 +2525,10 @@ class Service{
                 $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
                 $envelope = $envelope_value_row['short_description'];
                 
+		if(!empty($sku)){
+		    return $envelope;
+		}
+		
                 $this->log("getEnvelopeBySku", $skuArray[0]->quantity. " X ". $envelope."<br>");
                 
                 if($skuArray[0]->quantity <= 2){
@@ -2428,6 +2666,7 @@ class Service{
     }
     
     public function getAllSkus(){
+	mysql_query("SET NAMES 'latin1'");
         if(count($_POST) == 0){
             $sql = "select count(*) as count from inventory_model";
             $result = mysql_query($sql, Service::$database_connect);
@@ -2514,6 +2753,7 @@ class Service{
     }
     
     public function getSuppliers(){
+	mysql_query("SET NAMES 'latin1'");
         $sql = "select manufacturer_id as id,short_description as name from manufacturer";
         $result = mysql_query($sql, Service::$database_connect);
         $array = array();
@@ -2578,7 +2818,7 @@ class Service{
         
         //-------------------------------------------    Cost    -----------------------------------------------
         //get cost field id
-        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         //$this->log("getSkuCost", $cost_field_sql."<br>");
 
         $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
@@ -2616,7 +2856,7 @@ class Service{
 	$inventory_model_id = $row['inventory_model_id'];
 	
 	//get status field
-	$status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+	$status_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['skuStatus']."'";
         $status_field_result = mysql_query($status_field_sql);
         $status_field_row = mysql_fetch_assoc($status_field_result);
         
@@ -2645,7 +2885,7 @@ class Service{
         $short_description = $row['short_description'];
         //-------------------------------------------    Cost    -----------------------------------------------
         //get cost field id
-        $cost_field_sql = "select custom_field_id from custom_field where short_description = 'Cost'";
+        $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         $this->log("getSkuInfo", $cost_field_sql."<br>");
 
         $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
@@ -2660,7 +2900,7 @@ class Service{
 		
         //------------------------------------------- Weight -----------------------------------------
         //get weight field id
-        $weight_field_sql = "select custom_field_id from custom_field where short_description = 'Weight'";
+        $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
         $this->log("getSkuInfo", $weight_field_sql."<br>");
                 
         $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
@@ -2712,6 +2952,24 @@ class Service{
                 echo json_encode(array("sucess"=> false, "msg"=>"update description failure."));
             }
         }
+    }
+    
+    public function updateManufacturer(){
+	//print_r($_POST['manufacturer']);
+	if(strpos($_POST['manufacturer'], ",")){
+	    $sql = "delete from sku_manufacturer where sku = '".$_POST['sku']."'";
+	    $result = mysql_query($sql, Service::$database_connect);
+	    foreach(explode(",", $_POST['manufacturer']) as $value){
+		$sql = "insert into sku_manufacturer (sku,manufacturer_id) values ('".$_POST['sku']."', '".$value."')";
+		echo $sql."\n";
+		$result = mysql_query($sql, Service::$database_connect);
+		//var_dump($result);
+	    }
+	}else{
+	    $sql = "update inventory_model set manufacturer_id = '".$_POST['manufacturer']."' where inventory_model_code = '".$_POST['sku']."'";
+	    echo $sql;
+	    $result = mysql_query($sql, Service::$database_connect);
+	}
     }
     
     public function getSkuDescription(){
@@ -2836,7 +3094,7 @@ class Service{
 	    $_POST['by'] = $this->getUserName($_POST['byId']);
 	}
 	$now = date('Y-m-d H:i:s');
-	$sql = "insert into sku_purchase (sku,quantity,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
+	$sql = "insert into sku_purchase (sku,quantity,remark,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['remark']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
         //echo $sql;
         $result = mysql_query($sql, Service::$database_connect);
         if($result){
@@ -2861,6 +3119,9 @@ class Service{
 				<th>
 					Status
 				</th>
+				<th>
+                    Remark
+                </th>
 				<th>
 					Operate
 				</th>
@@ -2890,6 +3151,7 @@ class Service{
 					echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
 					echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
 					echo "<td>".$status."</td>";
+					echo "<td>".$row['remark']."</td>";
 					echo "<td>".$operate."</td>";
 					echo "</tr>";
 				}
@@ -2900,7 +3162,7 @@ class Service{
 	echo '<table border=1>
 			<tr>
 				<th>
-                                    SKU
+                    SKU
 				</th>
 				<th>
 					Quantity
@@ -2914,6 +3176,9 @@ class Service{
 				<th>
 					Status
 				</th>
+				<th>
+                    Remark
+                </th>
 				<th>
 					Operate
 				</th>
@@ -2944,6 +3209,7 @@ class Service{
                                     echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
                                     echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
                                     echo "<td>".$status."</td>";
+                                    echo "<td>".$row['remark']."</td>";
                                     echo "<td>".$operate."</td>";
                                     echo "</tr>";
                             }
@@ -3035,7 +3301,7 @@ class Service{
     
     public function getSkuStatusGrid(){
     	//get status field id
-        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['skuStatus']."'";
         $status_field_result = mysql_query($status_field_sql);
         $status_field_row = mysql_fetch_assoc($status_field_result);
         
@@ -3077,7 +3343,7 @@ class Service{
     
     public function getSkuStatusCount(){
     	//get status field id
-        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['skuStatus']."'";
         $status_field_result = mysql_query($status_field_sql);
         $status_field_row = mysql_fetch_assoc($status_field_result);
         
@@ -3106,7 +3372,7 @@ class Service{
     
     public function changeStatus(){
     	//get status field id
-        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+        $status_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['skuStatus']."'";
         $status_field_result = mysql_query($status_field_sql);
         $status_field_row = mysql_fetch_assoc($status_field_result);
         
@@ -3148,7 +3414,7 @@ class Service{
         require_once 'Stomp.php';
         require_once 'Stomp/Message/Map.php';
         
-        $consumer = new Stomp(Service::ACTIVE_MQ);
+        $consumer = new Stomp(Service::$active_mq);
         $consumer->clientId = "inventory";
         $consumer->connect();
         $consumer->subscribe("/topic/SkuOutStock", array('transformation' => 'jms-map-json'));
@@ -3222,13 +3488,13 @@ class Service{
     
     public function generatePurchaseOrder(){
 	//get stock day
-        $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $stock_day_field_id = $row['custom_field_id'];
 	
 	//get lower limit
-	$sql = "select custom_field_id from custom_field where short_description = 'MOQ'";
+	$sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['MOQ']."'";
         $result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
         $moq_field_id = $row['custom_field_id'];
