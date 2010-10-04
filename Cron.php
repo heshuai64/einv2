@@ -4,6 +4,8 @@ class Cron{
     const DATABASE_USER = 'root';
     const LOG_PATH = '/export/inventory/log';
     const PO_PATH = '/export/inventory/PO';
+    const EXCEL_PATH = '/export/inventory/excel';
+    
     //const DATABASE_NAME = 'tracmor';
     const DATABASE_NAME = 'inventory';
     const DATABASE_PASSWORD = '5333533';
@@ -339,6 +341,26 @@ class Cron{
 	}
         $writer = PHPExcel_IOFactory::createWriter($php_excel, 'Excel5');
 	$writer->save(Cron::PO_PATH."/".date("Y-m-d").".xls");
+    }
+    
+    public function generateComplaints(){
+        require_once '/export/inventory/class/PHPExcel.php';
+        require_once '/export/inventory/class/PHPExcel/IOFactory.php';
+        $php_excel = new PHPExcel();
+        
+        mysql_query("SET NAMES 'latin1'", Cron::$database_connect);
+        
+        $php_excel->setActiveSheetIndex(0);
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(0, 1, 'No');
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(1, 1, 'SKU');
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(2, 1, '问题');
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(3, 1, '坏品损坏个数');
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(4, 1, '售出个数');
+        $php_excel->getActiveSheet()->setCellValueByColumnAndRow(5, 1, '坏品率');
+        
+        $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
+        $result = mysql_query($sql, Cron::$database_connect);
+        $row = mysql_fetch_assoc($result);
     }
     
     public function dealSkuOutOfLibrary(){
