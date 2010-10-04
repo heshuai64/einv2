@@ -1,50 +1,58 @@
-<?php 
-		ini_set('include_path', '../');
-		require_once 'Stomp.php';
-		require_once 'Stomp/Message/Map.php';
-		define("ACTIVE_MQ", "tcp://192.168.1.168:61613");
-		
-		$conn = mysql_connect("localhost", "root", "5333533");
+<?php
+ini_set('include_path', '../');
+session_start();
 
-		if (!$conn) {
-		    echo "Unable to connect to DB: " . mysql_error();
-		    exit;
-		}
+if(empty($_SESSION['intUserAccountId'])){
+    header('Location: /inventory/login.php');
+}
+
+$config = parse_ini_file('config.ini', true);
+
+require_once 'Stomp.php';
+require_once 'Stomp/Message/Map.php';
+define("ACTIVE_MQ", "tcp://192.168.1.168:61613");
+
+$conn = mysql_connect($config['database']['host'], $config['database']['user'], $config['database']['password']);
+
+if (!$conn) {
+    echo "Unable to connect to DB: " . mysql_error();
+    exit;
+}
+
+mysql_query("SET NAMES 'UTF8'");
+
+if (!mysql_select_db($config['database']['name'])) {
+    echo "Unable to select mydbname: " . mysql_error();
+    exit;
+}
 		
-		mysql_query("SET NAMES 'UTF8'");
-		
-		if (!mysql_select_db("inventory")) {
-		    echo "Unable to select mydbname: " . mysql_error();
-		    exit;
-		}
-		
-		//get status field id
-        $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
-        $status_field_result = mysql_query($status_field_sql);
-        $status_field_row = mysql_fetch_assoc($status_field_result);
-        
-        $status_array_1 = array();
-        $status_array_2 = array();
-        $status_string = "";
-        $sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
-        $result_1 = mysql_query($sql_1);
-        while($row_1 = mysql_fetch_assoc($result_1)){
-        	$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
-        	$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
-        	$status_string .= $row_1['custom_field_value_id'].",";
-        }
-        $status_string = substr($status_string, 0, -1);
-        
-        //print_r($status_array_1);
-        //print_r($status_array_2);
-        /*
-        $status_value = array();
-        $sql_2 = "select custom_field_value_id from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") and entity_id = 16";
-        $result_2 = mysql_query($sql_2);
-        $row_2 = mysql_fetch_assoc($result_2);
-        $status_value = $status_array_1[$row_2['custom_field_value_id']];
-        //var_dump($row_2);
-        */
+//get status field id
+$status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+$status_field_result = mysql_query($status_field_sql);
+$status_field_row = mysql_fetch_assoc($status_field_result);
+
+$status_array_1 = array();
+$status_array_2 = array();
+$status_string = "";
+$sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
+$result_1 = mysql_query($sql_1);
+while($row_1 = mysql_fetch_assoc($result_1)){
+$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
+$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
+$status_string .= $row_1['custom_field_value_id'].",";
+}
+$status_string = substr($status_string, 0, -1);
+
+//print_r($status_array_1);
+//print_r($status_array_2);
+/*
+$status_value = array();
+$sql_2 = "select custom_field_value_id from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") and entity_id = 16";
+$result_2 = mysql_query($sql_2);
+$row_2 = mysql_fetch_assoc($result_2);
+$status_value = $status_array_1[$row_2['custom_field_value_id']];
+//var_dump($row_2);
+*/
         
     if(!empty($_GET)){    
 		switch ($_GET['action']){
@@ -92,7 +100,7 @@
 					}
 					$sku_str = substr($sku_str, 0, -1);
 					
-					$con = new Stomp(ACTIVE_MQ);
+					$con = new Stomp($config['service']['activeMq']);
 					$con->connect();
 					// send a message to the queue
 					$body = array("skus"=> $sku_str, "status"=> $_POST['status']);
@@ -123,7 +131,7 @@
 ?>
 <html>
 <head>
-	<title>SKU Status Manage</title>
+    <title>SKU Status Manage</title>
     <link rel="stylesheet" type="text/css" href="/ext-3.2.0/resources/css/ext-all.css"/>
     <link rel="stylesheet" type="text/css" href="status-manage.css"/>
     <script type="text/javascript" src="/ext-3.2.0/adapter/ext/ext-base.js"></script>

@@ -20,11 +20,11 @@
  */
 	
 	// Build array of all fields to display
-		$arrInventoryFields[] = array('name' => 'Short Description:',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
-		$arrInventoryFields[] = array('name' => 'Category:', 'value' => $this->lblCategory->Render(false) . $this->lstCategory->RenderWithError(false));
-		$arrInventoryFields[] = array('name' => 'Manufacturer:', 'value' => $this->lblManufacturer->Render(false) . $this->lstManufacturer->RenderWithError(false));
-		$arrInventoryFields[] = array('name' => 'Inventory Code:', 'value' => $this->lblInventoryModelCode->Render(false) . $this->txtInventoryModelCode->RenderWithError(false));
-		$arrInventoryFields[] = array('name' => 'Long Description:', 'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => 'Short Description:',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => 'Category:', 'value' => $this->lblCategory->Render(false) . $this->lstCategory->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => 'Manufacturer:', 'value' => $this->lblManufacturer->Render(false) . $this->lstManufacturer->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => 'Inventory Code:', 'value' => $this->lblInventoryModelCode->Render(false) . $this->txtInventoryModelCode->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => 'Long Description:', 'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));
 	
 	// Custom Fields
 	if ($this->arrCustomFields) {
@@ -129,25 +129,27 @@ CREATE TABLE `tracmor`.`description` (
 ) ENGINE = MYISAM
 */
 if(!empty($_GET['intInventoryModelId'])){
-	$sql = "select inventory_model_code,manufacturer_id from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
+	//mysql_query("SET NAMES 'latin1'");
+	mysql_query("CHARACTER SET 'latin1'");
+	
+	$sql = "select inventory_model_code from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
 	$sku = $row['inventory_model_code'];
-	$manufacturer_id = array(0 => $row['manufacturer_id']);
 	
-	$sql = "select * from description where sku = '".$sku."'";
+	$role = array();
+	$sql = "select role_id,short_description from role";
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+		$role[$row['role_id']] = $row['short_description'];
+	}
+	
+	$role_1 = array('Administrator', 'PPMC');
+	
+	$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
-	
-	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
-	$result_1 = mysql_query($sql_1);
-	$row_1 = mysql_fetch_assoc($result_1);
-	$custom_field_value_id = $row_1['custom_field_value_id'];
-	
-	$sql_2 = "select count(*) as num from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id = ".$custom_field_value_id." and entity_id = ".$_GET['intInventoryModelId'];
-	$result_2 = mysql_query($sql_2);
-	$row_2 = mysql_fetch_assoc($result_2);
-	$active = $row_2['num'];
+	$currency_user_role = $role[$row['role_id']];
 	
 	/*
 	CREATE TABLE `sku_manufacturer` (
@@ -155,7 +157,33 @@ if(!empty($_GET['intInventoryModelId'])){
 	`manufacturer_id` INT NOT NULL ,
 	INDEX ( `sku` , `manufacturer_id` )
 	)
-	*/
+	
+	CREATE TABLE `suppliers` (
+	`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+	`name` VARCHAR( 255 ) NOT NULL ,
+	`description` TEXT NOT NULL ,
+	`created_by` INT NOT NULL ,
+	`creation_date` DATETIME NOT NULL ,
+	`modified_by` INT NOT NULL ,
+	`modified_date` DATETIME NOT NULL
+	) 
+	
+	CREATE TABLE `sku_suppliers` (
+	`sku` VARCHAR( 20 ) NOT NULL ,
+	`suppliers_id` INT NOT NULL ,
+	`modified_by` INT NOT NULL ,
+	`modified_date` DATETIME NOT NULL ,
+	INDEX ( `sku` , `suppliers_id` )
+	) 
+	
+	ALTER TABLE `sku_purchase` ADD `suppliers_id` INT NOT NULL AFTER `quantity` ;
+	ALTER TABLE `sku_purchase` ADD INDEX ( `suppliers_id` );
+ 
+	$sql = "select inventory_model_code,manufacturer_id from inventory_model where inventory_model_id = '".$_GET['intInventoryModelId']."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+	$sku = $row['inventory_model_code'];
+	$manufacturer_id = array(0 => $row['manufacturer_id']);
 	
 	$sql_3 = "select count(*) as num from sku_manufacturer where sku = '".$sku."'";
 	$result_3 = mysql_query($sql_3);
@@ -169,47 +197,56 @@ if(!empty($_GET['intInventoryModelId'])){
 			$manufacturer_id[] = $row_3['manufacturer_id'];
 		}
 	}
+	*/
 	
-	$sql_4 = "select manufacturer_id,short_description from manufacturer";
-	$result_4 = mysql_query($sql_4);
-	$manufacturer_option = "";
-	$i = 0;
-	while($row_4 = mysql_fetch_assoc($result_4)){
-		if(in_array($row_4['manufacturer_id'], $manufacturer_id)){
-			$manufacturer_option .= '<option selected="" value="'.$row_4['manufacturer_id'].'">'.$row_4['short_description'].'</option>';
-		}else{
-			$manufacturer_option .= '<option value="'.$row_4['manufacturer_id'].'">'.$row_4['short_description'].'</option>';
+	if(in_array($currency_user_role, $role_1)){
+		$suppliers_id = array();
+		$sql_3 = "select suppliers_id from sku_suppliers where sku = '".$sku."'";
+		$result_3 = mysql_query($sql_3);
+		while($row_3 = mysql_fetch_assoc($result_3)){
+			$suppliers_id[] = $row_3['suppliers_id'];
 		}
-		$i++;
-	}
-	
-	$manufacturer_select  = '<select multiple="multiple" id="manufacturer" name="sku_manufacturer[]" size="'.$i.'">';
-	$manufacturer_select  .= $manufacturer_option;
-	$manufacturer_select  .= '</select>';
+		
+		$sql_4 = "select id,name from suppliers";
+		$result_4 = mysql_query($sql_4);
+		$suppliers_option = "";
+		$i = 0;
+		while($row_4 = mysql_fetch_assoc($result_4)){
+			if(in_array($row_4['id'], $suppliers_id)){
+				$suppliers_option .= '<option selected="" value="'.$row_4['id'].'">'.$row_4['name'].'</option>';
+			}else{
+				$suppliers_option .= '<option value="'.$row_4['id'].'">'.$row_4['name'].'</option>';
+			}
+			$i++;
+		}
+		
+		$suppliers_select  = '<select multiple="multiple" id="suppliers" name="sku_suppliers[]" size="'.$i.'">';
+		$suppliers_select  .= $suppliers_option;
+		$suppliers_select  .= '</select>';
 ?>
 
 <script type="text/javascript">
 	$().ready(function() {
-		$('#manufacturer').multiselect2side({moveOptions: false});
+		$('#suppliers').multiselect2side({moveOptions: false});
 	});
 	
-	function updateManufacturer(){
+	function updateSuppliers(){
 		//alert($("#manufacturer").val());
-		var manufacturer;
-		if($.isArray($("#manufacturer").val())){
-			var xx = $("#manufacturer").val();
+		var suppliers;
+		if($.isArray($("#suppliers").val())){
+			var xx = $("#suppliers").val();
 			//alert(xx);
 			$.each(xx, function(index, value) {
-					manufacturer += value + ",";
+				suppliers += value + ",";
 			});
-			manufacturer = manufacturer.substring(9, manufacturer.length - 1);
+			suppliers = suppliers.substring(9, suppliers.length - 1);
 		}else{
-			manufacturer = $("#manufacturer").val();
+			suppliers = $("#suppliers").val();
 		}
-		$.post("/inventory/service.php?action=updateManufacturer",
+		$.post("/inventory/service.php?action=updateSuppliers",
 		       {
 				sku     : $("#c19").val(),
-				manufacturer : manufacturer
+				suppliers : suppliers
 		       },
 			function(data){
 				//alert(data.msg);
@@ -220,16 +257,25 @@ if(!empty($_GET['intInventoryModelId'])){
 	}
 </script>
 
-<!--
-<div id="Suppliers" style="text-align: left; border: dotted; height: 200px;">
+<br><br>
+<div id="Suppliers" style="text-align: left; border: dotted; height: 860px; position: relative;">
 	<h2>Suppliers</h2>
-	<div style="font-size: 12px; position: relative;"><div style="float: left;">Suppliers List</div><div style="position: absolute; float: left; left: 320px; color: green;">SKU Suppliers</div></div>
-	<?=$manufacturer_select?>
+	<div style="font-size: 12px; position: relative;"><div style="float: left; color: blue;">Suppliers List</div><div style="position: absolute; float: left; left: 320px; color: green;">SKU Suppliers</div></div>
+	<?=$suppliers_select?>
 	<div style="float: none;">
-	<button onclick="return updateManufacturer();">Update Manufacturer</button>
+	<button style="position: absolute; top: 10px; left: 100px;" onclick="return updateSuppliers();">Update Suppliers</button>
 	</div>
 </div>
--->
+
+<?php
+}
+mysql_query("SET NAMES 'UTF8'");
+$sql = "select * from description where sku = '".$sku."'";
+$result = mysql_query($sql);
+$row = mysql_fetch_assoc($result);
+
+?>
+
 <script type="text/javascript">
 	function updateDescription(){
 
@@ -281,7 +327,18 @@ if(!empty($_GET['intInventoryModelId'])){
 	<div id="fragment-3">
 		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
 	</div>
-	<?php if($active == 0){?>
+	<?php
+	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
+	$result_1 = mysql_query($sql_1);
+	$row_1 = mysql_fetch_assoc($result_1);
+	$custom_field_value_id = $row_1['custom_field_value_id'];
+	
+	$sql_2 = "select count(*) as num from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id = ".$custom_field_value_id." and entity_id = ".$_GET['intInventoryModelId'];
+	$result_2 = mysql_query($sql_2);
+	$row_2 = mysql_fetch_assoc($result_2);
+	$active = $row_2['num'];
+	
+	if($active == 0){?>
 	<button onclick="return updateDescription();">Update Description</button>
 	<?php }?>
 </div>
@@ -404,7 +461,6 @@ if(!empty($_GET['intInventoryModelId'])){
 			</th>
 		</tr>
 	<?php
-	mysql_query("SET NAMES 'UTF8'");
 	$sql = "select id,sku,attachment,quantity from combo where sku = '".@$sku."'";
 	$result = mysql_query($sql);
 	while($row = mysql_fetch_assoc($result)){
@@ -486,8 +542,8 @@ if(!empty($_GET['intInventoryModelId'])){
 					Status
 				</th>
 				<th>
-                    Remark
-                </th>
+					Remark
+				</th>
 				<th>
 					Operate
 				</th>

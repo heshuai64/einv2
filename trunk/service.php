@@ -68,7 +68,7 @@ class Service{
     
     private function checkSkuCombo($inventory_model){
 	$sql = "select count(*) as num from combo where sku = '".$inventory_model."'";
-	$this->log("skuTakeOut", $sql."<br>");
+	//$this->log("skuTakeOut", $sql."<br>");
 	$result = mysql_query($sql, Service::$database_connect);
         $row = mysql_fetch_assoc($result);
 	return $row['num'];
@@ -84,12 +84,55 @@ class Service{
 	    $result_1 = mysql_query($sql_1, Service::$database_connect);
 	    $row_1 = mysql_fetch_assoc($result_1);
 	    
-	    $this->skuTakeOut($row['attachment'],$row_1['inventory_model_id'],$row['quantity'],$shipment_id,$shipment_method);
+	    $this->skuTakeOut($row['attachment'],$row_1['inventory_model_id'],$row['quantity'] * $quantity,$shipment_id,$shipment_method);
+	}
+    }
+    
+    private function getSkuStock($sku){
+	$sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
+	$result = mysql_query($sql, Service::$database_connect);
+        $row = mysql_fetch_assoc($result);
+	$inventory_model_id = $row['inventory_model_id'];
+	
+	$sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+	$this->log("inventoryTakeOut", $sql."<br>");
+	$result = mysql_query($sql, Service::$database_connect);
+	$row = mysql_fetch_assoc($result);
+	return $row['quantity'];
+    }
+    
+    private function getStock($inventory_model_id){
+	$sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
+	$this->log("inventoryTakeOut", $sql."<br>");
+	$result = mysql_query($sql, Service::$database_connect);
+	$row = mysql_fetch_assoc($result);
+	return $row['quantity'];
+    }
+    
+    private function checkSkuStock($sku, $quantity){
+	if($this->checkSkuCombo($sku)){
+	    $this->log("inventoryTakeOut", "<font color='yellow'>" . $sku." is combo!</font>");
+	    $sql = "select attachment,quantity from combo where sku = '".$sku."'";
+	    $result = mysql_query($sql, Service::$database_connect);
+	    while($row = mysql_fetch_assoc($result)){
+		if($this->getSkuStock($row['attachment']) < $quantity * $row['quantity']){
+		    return false;
+		}
+	    }
+	    return true;
+	}else{
+	    if($this->getSkuStock($sku) >= $quantity){
+		return true;
+	    }else{
+		return false;
+	    }
 	}
     }
     
     private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method=''){
-        if($this->checkSkuCombo($inventory_model)){
+        $this->log("skuTakeOut", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+	
+	if($this->checkSkuCombo($inventory_model)){
 	    $this->skuComboTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id,$shipment_method);
 	}
 	
@@ -266,12 +309,12 @@ class Service{
     }
     
     public function inventoryTakeOut($inventory_model='', $quantity='',$shipment_id='',$shipment_method=''){
-	$this->log("skuTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
         $inventory_model = (($inventory_model!="")?$inventory_model:$_GET['inventory_model']);
         $quantity = (($quantity!="")?$quantity:$_GET['quantity']);
         $shipment_id = (($shipment_id!="")?$shipment_id:$_GET['shipment_id']);
         $shipment_method = (($shipment_method!="")?$shipment_method:$_GET['shipment_method']);
         
+	$this->log("inventoryTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++ ".$shipment_id." ++++++++++++++++++++++++++++++++++++</font><br>");
         if(strpos($inventory_model, ",")){
             $sku_array = explode(",", $inventory_model);
             $quantiry_array = explode(",", $quantity);
@@ -280,6 +323,20 @@ class Service{
             $flag = true;
             $i = 0;
             foreach($sku_array as $sku){
+		if($this->checkSkuStock($sku, $quantiry_array[$i]) == false){
+		    echo "<font color=\'red\' size=\'7\'>". $sku." 没有库存.</font><br>";
+		    echo "<font color=\'red\' size=\'7\'>包裹不能发送.</font><br>";
+		    
+		    $this->log("inventoryTakeOut", "<font color='yellow'>" . $inventory_model." no stock!</font>");
+		    flush();
+		    $this->sendMessageToAM("/topic/SkuOutOfStock",
+				array("sku"=> $inventory_model,
+				      "quantity"=> $quantity,
+				      "shipment_id"=> $shipment_id,
+				      "shipment_method"=> $shipment_method));
+		    return 0;
+		}
+		
                 //get sku model id
                 $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
                 $this->log("inventoryTakeOut", $sql."<br>");
@@ -289,21 +346,34 @@ class Service{
                 $row = mysql_fetch_assoc($result);
                 $inventory_model_id = $row['inventory_model_id'];
                 $inventory_model_id_array[$i] = $inventory_model_id;
-                //get sku location
+		
+                /*
+		//get sku location
                 $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
                 $this->log("inventoryTakeOut", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
                 $row = mysql_fetch_assoc($result);
                 $location_quantity = $row['quantity'];
-                if($location_quantity > $quantiry_array[$i]){
-                    $msg .= $sku." 有 ".$location_quantity." 在仓库.<br>";
-                }else{
+		
+		$location_quantity = $this->getStock($inventory_model_id);
+		
+                if($quantiry_array[$i] > $location_quantity){
                     $flag = false;
                     $msg .= "<font color=\'red\' size=\'7\'>". $sku." 没有库存.</font><br>";
+		    $this->log("inventoryTakeOut", "<font color='yellow'>" . $sku." no stock!</font>");
+                }else{
+		    $msg .= $sku." 有 ".$location_quantity." 在仓库.<br>";
+		    $this->log("inventoryTakeOut", "<font color='green'>".$sku." in stock!</font><br>");
                 }
+		*/
+		
+		$location_quantity = $this->getStock($inventory_model_id);
+		$msg .= $sku." 有 ".$location_quantity." 在仓库.<br>";
+		$this->log("inventoryTakeOut", "<font color='green'>".$sku." in stock!</font><br>");
                 $i++;
             }
             
+	    /*
             if($flag){
                 $i = 0;
                 echo $msg;
@@ -322,7 +392,30 @@ class Service{
                                   "shipment_method"=> $shipment_method));
                 return 0;
             }
+	    */
+	    
+	    $i = 0;
+	    echo $msg;
+	    foreach($inventory_model_id_array as $inventory_model_id){
+		$this->skuTakeOut($sku_array[$i], $inventory_model_id, $quantiry_array[$i], $shipment_id, $shipment_method);
+		$i++;
+	    }
+	    return 1;
         }else{
+	    if($this->checkSkuStock($inventory_model, $quantity) == false){
+		echo "<font color=\'red\' size=\'7\'>". $sku." 没有库存.</font><br>";
+		echo "<font color=\'red\' size=\'7\'>包裹不能发送.</font><br>";
+		
+		$this->log("inventoryTakeOut", "<font color='yellow'>" . $inventory_model." no stock!</font>");
+		flush();
+		$this->sendMessageToAM("/topic/SkuOutOfStock",
+                            array("sku"=> $inventory_model,
+                                  "quantity"=> $quantity,
+                                  "shipment_id"=> $shipment_id,
+                                  "shipment_method"=> $shipment_method));
+		return 0;
+	    }
+
             //get sku model id
             $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$inventory_model."'";
             $this->log("inventoryTakeOut", $sql."<br>");
@@ -331,15 +424,20 @@ class Service{
             $result = mysql_query($sql, Service::$database_connect);
             $row = mysql_fetch_assoc($result);
             $inventory_model_id = $row['inventory_model_id'];
-            
+	    
+            /*
             //get sku location
             $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             $this->log("inventoryTakeOut", $sql."<br>");
             $result = mysql_query($sql, Service::$database_connect);
             $row = mysql_fetch_assoc($result);
             $location_quantity = $row['quantity'];
+	    
+	    $location_quantity = $this->getStock($inventory_model_id);
+	    
             if($quantity > $location_quantity){
                 echo "<font color=\'red\' size=\'7\'>". $inventory_model." 没有库存.</font><br>";
+		$this->log("inventoryTakeOut", "<font color='yellow'>" . $inventory_model." no stock!</font>");
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfStock",
                             array("sku"=> $inventory_model,
@@ -349,11 +447,17 @@ class Service{
                 return 0;
             }else{
                 $msg .= $inventory_model." 有 ".$location_quantity." 在仓库.<br>";
+		$this->log("inventoryTakeOut", "<font color='green'>" . $inventory_model." in stock!</font>");
             }
-            echo $msg;
+	    */
+	    
+	    $location_quantity = $this->getStock($inventory_model_id);
+	    echo $inventory_model." 有 ".$location_quantity." 在仓库.<br>";
+	    $this->log("inventoryTakeOut", "<font color='green'>" . $inventory_model." in stock!</font>");
+	    
             $this->skuTakeOut($inventory_model, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
         }
-	$this->log("skuTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+	$this->log("inventoryTakeOut", "<br><font color='blue'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
     }
     
     public function syncAppertainStock(){
@@ -1872,10 +1976,14 @@ class Service{
         $row = mysql_fetch_assoc($result);
 	$category_id = $row['category_id'];
 	
-	$sql = "select short_description from category where category_id = ".$category_id;
-	$result = mysql_query($sql, Service::$database_connect);
-        $row = mysql_fetch_assoc($result);
-	return $row['short_description'];
+	if(!empty($category_id)){
+	    $sql = "select short_description from category where category_id = ".$category_id;
+	    $result = mysql_query($sql, Service::$database_connect);
+	    $row = mysql_fetch_assoc($result);
+	    return $row['short_description'];
+	}else{
+	    return "";
+	}
     }
     
     public function getWeightBySku($sku){
@@ -2291,7 +2399,7 @@ class Service{
 	return $shippingMethod;
     }
     
-    public function getSkuLowestPrice($sku=""){
+    public function getSkuLowestPrice($sku="", $internal=false){
 	global $argv;
 	if(!empty($argv[2])){
 	    $sku = $argv[2];
@@ -2390,14 +2498,19 @@ class Service{
 	    break;
 	}
 	
-	$sku_cost = $this->getSkuCost($sku);
+	$sku_cost = $this->getSkuCost($sku, true);
 	$sku_weight = $this->getWeightBySku($sku);
 	//echo $sku_cost."\n";
 	//echo $sku_shipping_fee."\n";
 	$lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $product_grade_cost;
 	//echo $lowestPrice."\n";
 	$formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$product_grade_cost;
-	echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
+	
+	if($internal){
+	    return $lowestPrice;
+	}else{
+	    echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
+	}
     }
     
     public function getEnvelopeBySku($sku=""){
@@ -2804,7 +2917,7 @@ class Service{
         echo 'model:'.$row['short_description'];
     }
     
-    public function getSkuCost($sku=""){
+    public function getSkuCost($sku="", $internal=false){
 	if(!empty($sku)){
 	    $_GET['data'] = $sku;
 	}
@@ -2835,7 +2948,7 @@ class Service{
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
         //$this->log("getSkuCost", "Cost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        if(empty($sku)){
+        if(empty($sku) && $internal == false){
 	    echo json_encode(array('skuCost'=>$cost));
 	}
 	return $cost;
@@ -2927,8 +3040,11 @@ class Service{
         $stock_row = mysql_fetch_assoc($stock_result);
         $stock = $stock_row['quantity'];
         
-        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuWeight'=> $weight, 'skuStock'=>$stock));
+	//-----------------------------------------  Lowest Price  ------------------------------------
+	$sku_lowest_price = $this->getSkuLowestPrice($_GET['data'], true);
+	
+        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuLowestPrice: ".$sku_lowest_price.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=> $weight, 'skuStock'=>$stock));
     }
     
     public function updateSkuDescription(){
@@ -2954,20 +3070,24 @@ class Service{
         }
     }
     
-    public function updateManufacturer(){
+    public function updateSuppliers(){
 	//print_r($_POST['manufacturer']);
-	if(strpos($_POST['manufacturer'], ",")){
-	    $sql = "delete from sku_manufacturer where sku = '".$_POST['sku']."'";
+	session_start();
+	if(strpos($_POST['suppliers'], ",")){
+	    $sql = "delete from sku_suppliers where sku = '".$_POST['sku']."'";
 	    $result = mysql_query($sql, Service::$database_connect);
-	    foreach(explode(",", $_POST['manufacturer']) as $value){
-		$sql = "insert into sku_manufacturer (sku,manufacturer_id) values ('".$_POST['sku']."', '".$value."')";
+	    foreach(explode(",", $_POST['suppliers']) as $value){
+		$sql = "insert into sku_suppliers (sku,suppliers_id,modified_by,modified_date) values ('".$_POST['sku']."', '".$value."','".$_SESSION['intUserAccountId']."',now())";
 		echo $sql."\n";
 		$result = mysql_query($sql, Service::$database_connect);
 		//var_dump($result);
 	    }
 	}else{
-	    $sql = "update inventory_model set manufacturer_id = '".$_POST['manufacturer']."' where inventory_model_code = '".$_POST['sku']."'";
-	    echo $sql;
+	    $sql = "delete from sku_suppliers where sku = '".$_POST['sku']."'";
+	    $result = mysql_query($sql, Service::$database_connect);
+	    
+	    $sql = "insert into sku_suppliers (sku,suppliers_id,modified_by,modified_date) values ('".$_POST['sku']."', '".$_POST['suppliers']."','".$_SESSION['intUserAccountId']."',now())";
+	    echo $sql."\n";
 	    $result = mysql_query($sql, Service::$database_connect);
 	}
     }
@@ -3094,7 +3214,7 @@ class Service{
 	    $_POST['by'] = $this->getUserName($_POST['byId']);
 	}
 	$now = date('Y-m-d H:i:s');
-	$sql = "insert into sku_purchase (sku,quantity,remark,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['remark']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
+	$sql = "insert into sku_purchase (sku,quantity,price,suppliers_id,remark,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['price']."','".$_POST['suppliers_id']."','".$_POST['remark']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
         //echo $sql;
         $result = mysql_query($sql, Service::$database_connect);
         if($result){
@@ -3120,8 +3240,8 @@ class Service{
 					Status
 				</th>
 				<th>
-                    Remark
-                </th>
+					Remark
+				</th>
 				<th>
 					Operate
 				</th>
@@ -3159,60 +3279,76 @@ class Service{
     }
     
     public function getPurchaseList(){
+	mysql_query("SET NAMES 'latin1'");
+	$sql_4 = "select id,name from suppliers";
+	$result_4 = mysql_query($sql_4);
+	while($row_4 = mysql_fetch_assoc($result_4)){
+	    $suppliers[$row_4['id']] = $row_4['name'];
+	}
+
 	echo '<table border=1>
-			<tr>
-				<th>
-                    SKU
-				</th>
-				<th>
-					Quantity
-				</th>
-				<th>
-					Date Created
-				</th>
-				<th>
-					Date Modified
-				</th>
-				<th>
-					Status
-				</th>
-				<th>
-                    Remark
-                </th>
-				<th>
-					Operate
-				</th>
-			</tr>';
-			    $sql = "select * from sku_purchase where status = 0 order by sku,modified_date desc";
-                            $result = mysql_query($sql);
-                            while($row = mysql_fetch_assoc($result)){
-                                    switch($row['status']){
-                                            case 0:
-                                                    $status = "Processing";
-                                                    $operate = "<input type='button' value='Storing To Warehouse' onClick='skuPurchaseStoring(".$row['id'].")'/> | <input type='button' value='Cancel' onClick='skuPurchaseCancel(".$row['id'].")'/>";
-                                            break;
-                                    
-                                            case 1:
-                                                    $status = "In Warehouse";
-                                                    $operate = "";
-                                            break;
-                                    
-                                            case 2:
-                                                    $status = "Cancel";
-                                                    $operate = "";
-                                            break;
-                                    }
-                                    
-                                    echo "<tr>";
-                                    echo "<td>".$row['sku']."</td>";
-                                    echo "<td>".$row['quantity']."</td>";
-                                    echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
-                                    echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
-                                    echo "<td>".$status."</td>";
-                                    echo "<td>".$row['remark']."</td>";
-                                    echo "<td>".$operate."</td>";
-                                    echo "</tr>";
-                            }
+		<tr>
+			<th>
+				SKU
+			</th>
+			<th>
+				Price
+                        </th>
+			<th>
+				Quantity
+			</th>
+			<th>
+				Suppliers
+			</th>
+			<th>
+				Date Created
+			</th>
+			<th>
+				Date Modified
+			</th>
+			<th>
+				Status
+			</th>
+			<th>
+				Remark
+			</th>
+			<th>
+				Operate
+			</th>
+		</tr>';
+	mysql_query("SET NAMES 'UTF8'");
+	$sql = "select * from sku_purchase where status = 0 order by sku,modified_date desc";
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+		switch($row['status']){
+			case 0:
+				$status = "Processing";
+				$operate = "<input type='button' value='Storing To Warehouse' onClick='skuPurchaseStoring(".$row['id'].")'/> <br> <input type='button' value='Cancel' onClick='skuPurchaseCancel(".$row['id'].")'/>";
+			break;
+		
+			case 1:
+				$status = "In Warehouse";
+				$operate = "";
+			break;
+		
+			case 2:
+				$status = "Cancel";
+				$operate = "";
+			break;
+		}
+		
+		echo "<tr>";
+		echo "<td>".$row['sku']."</td>";
+		echo "<td>".$row['price']."</td>";
+		echo "<td>".$row['quantity']."</td>";
+		echo "<td>".$suppliers[$row['suppliers_id']]."</td>";
+		echo "<td>".$row['created_by'].' by '.$row['creation_date']."</td>";
+		echo "<td>".$row['modified_by'].' by '.$row['modified_date']."</td>";
+		echo "<td>".$status."</td>";
+		echo "<td>".$row['remark']."</td>";
+		echo "<td>".$operate."</td>";
+		echo "</tr>";
+	}
 	echo '</table>';
     }
     
@@ -3221,10 +3357,11 @@ class Service{
 	    $_POST['byName'] = $this->getUserName($_POST['byId']);
 	}
 	$created_by = $_POST['byId'];
-	$sql = "select sku,quantity from sku_purchase where id = ".$_POST['id'];
+	$sql = "select sku,quantity,remark from sku_purchase where id = ".$_POST['id'];
 	$result = mysql_query($sql, Service::$database_connect);
 	$row = mysql_fetch_assoc($result);
 	$quantity = $row['quantity'];
+	$note = $row['remark'];
 	
 	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['sku']."'";
 	$result = mysql_query($sql, Service::$database_connect);
@@ -3240,8 +3377,17 @@ class Service{
         $source_location_id = $row['location_id'];
         $inventory_location_id = $row['inventory_location_id'];
         
+	if(empty($source_location_id)){
+	    $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
+	    values ('".$inventory_model_id."','6','0','".$created_by."','".date("Y-m-d H:i:s")."')";
+	    $this->log("skuPurchaseStoring", $sql."<br>");
+	    $result = mysql_query($sql, Service::$database_connect);
+	    $inventory_location_id = mysql_insert_id(Service::$database_connect);
+	    $source_location_id = 6;
+	}
+	
         if(!empty($source_location_id)){
-	    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','','".$created_by."','".date("Y-m-d H:i:s")."')";
+	    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','".$note."','".$created_by."','".date("Y-m-d H:i:s")."')";
             $this->log("skuPurchaseStoring", $sql."<br>");
             //echo $sql;
             //echo "<br>";
@@ -3266,7 +3412,7 @@ class Service{
                 $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
                 $this->log("skuPurchaseStoring", $sql."<br>");
                 $result = mysql_query($sql, Service::$database_connect);
-                $this->log("inventoryTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+                $this->log("skuPurchaseStoring", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 flush();
 		/*
                 $this->sendMessageToAM("/topic/SkuInToLibrary",
@@ -3559,6 +3705,11 @@ class Service{
 	file_put_contents(Service::PO_PATH."/".date("Y-m-d"), $data, FILE_APPEND);
     }
     
+    public function caclCost(){
+	//echo "3.68 * ".$_GET['price']." - 79.65 * ".$_GET['weight']." - 4.07";
+	echo 3.95 * $_GET['price'] - 81.8 * $_GET['weight'] - 4.2;
+    }
+    
     public function __destruct(){
         mysql_close(Service::$database_connect);
     }
@@ -3574,115 +3725,6 @@ if(!empty($argv[1])){
 }
 
 $service->$action();
-
-/*
-switch($action){
-    case "inventoryTakeOut":
-        $service->inventoryTakeOut();
-        break;
-
-    case "stockAttention":
-        $service->stockAttention();
-        break;
-    
-    case "outOfStock":
-        $service->outOfStock();
-        break;
-    
-    case "topSales":
-        $service->topSales();
-        break;
-    
-    case "totalPostageByDate":
-        $service->totalPostageByDate();
-        break;
-    
-    case "postageByDate":
-        $service->postageByDate();
-        break;
-    
-    case "calculateWeekFlow":
-        $service->calculateWeekFlow();
-        break;
-    
-    case "getShippingMethodBySku":
-        $service->getShippingMethodBySku();
-        break;
-    
-    case "syncAppertainStock":
-        $service->syncAppertainStock();
-        break;
-    
-    case "importCsv":
-        $service->importCsv();
-        break;
-    
-    case "getAllSkus":
-        $service->getAllSkus();
-        break;
-    
-    case "getSuppliers":
-        $service->getSuppliers();
-        break;
-    
-    case "getCategories":
-        $service->getCategories();
-        break;
-    
-    case "deleteInventory":
-        $service->deleteInventory();
-        break;
-    
-    case "getCategoriesTree":
-        $service->getCategoriesTree();
-        break;
-    
-    case "getModelBySkuId":
-        $service->getModelBySkuId();
-        break;
-    
-    case "getSkuCost":
-        $service->getSkuCost();
-        break;
-    
-    case "getEnvelopeBySku":
-        $service->getEnvelopeBySku();
-        break;
-    
-    case "updateStockDays":
-        $service->updateStockDays();
-        break;
-        
-    case "getSkuInfo":
-    	$service->getSkuInfo();
-    	break;
-    
-    case "updateSkuDescription":
-        $service->updateSkuDescription();
-        break;
-    
-    case "getSkuDescription":
-        $service->getSkuDescription();
-        break;
-    
-    case "complaints":
-        $service->complaints();
-        break;
-    
-    case "addSKuCombo":
-        $service->addSKuCombo();
-        break;
-    
-    case "getSKuComboList":
-        $service->getSKuComboList();
-        break;
-    
-    case "deleteSkuCombo":
-        $service->deleteSkuCombo();
-        break;
-    
-}
-*/
 //http://127.0.0.1:6666/tracmor/service.php?action=inventoryTakeOut&inventory_model=a008&quantity=10&note=test&shipment_method=B
 //http://127.0.0.1:6666/tracmor/service.php?action=syncAppertainStock
 //http://127.0.0.1:6666/tracmor/service.php?action=importCsv&file_name=
