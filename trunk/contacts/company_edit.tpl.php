@@ -35,35 +35,35 @@
 
 <?php		
 		// Build array of all fields to display
-			$arrCompanyFields[] = array('name' => 'Company Name:',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Description:',  'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));		
-			$arrCompanyFields[] = array('name' => 'Website:',  'value' => $this->lblWebsite->Render(false) . $this->txtWebsite->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Email:',  'value' => $this->lblEmail->Render(false) . $this->txtEmail->RenderWithError(false));		
-			$arrCompanyFields[] = array('name' => 'Telephone:',  'value' => $this->lblTelephone->Render(false) . $this->txtTelephone->RenderWithError(false));	
-			$arrCompanyFields[] = array('name' => 'Fax:',  'value' => $this->lblFax->Render(false) . $this->txtFax->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Company Name').':',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Description').':',  'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));		
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Website').':',  'value' => $this->lblWebsite->Render(false) . $this->txtWebsite->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Email').':',  'value' => $this->lblEmail->Render(false) . $this->txtEmail->RenderWithError(false));		
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Telephone').':',  'value' => $this->lblTelephone->Render(false) . $this->txtTelephone->RenderWithError(false));	
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Fax').':',  'value' => $this->lblFax->Render(false) . $this->txtFax->RenderWithError(false));
 	    
 			// Custom Fields
 		if ($this->arrCustomFields) {
 			foreach ($this->arrCustomFields as $field) {
 				if(!$this->blnEditMode || $field['blnView']){
-					$arrCompanyFields[] = array('name' => $field['lbl']->Name . ":", 'value' => $field['lbl']->RenderWithError(false) . $field['input']->RenderWithError(false));
+					$arrCompanyFields[] = array('name' => QApplication::Translate($field['lbl']->Name) . ":", 'value' => $field['lbl']->RenderWithError(false) . $field['input']->RenderWithError(false));
 				}
 			}
 		}
 		
 		// Only display Primary Address field if this is not a new company
 		if ($this->blnEditMode) {
-			$arrCompanyFields[] = array('name' => 'Primary Address:',  'value' => $this->lblAddress->Render(false) . $this->lstAddress->RenderWithError(false));	
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Primary Address').':',  'value' => $this->lblAddress->Render(false) . $this->lstAddress->RenderWithError(false));	
 		}
 		// Show address fields to create the primary address
 		else {
-			$arrCompanyFields[] = array('name' => 'Address Name:', 'value' => $this->txtAddressShortDescription->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Address Line 1:', 'value' => $this->txtAddress1->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Address Line 2:', 'value' => $this->txtAddress2->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'City:', 'value' => $this->txtCity->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'State/Province:', 'value' => $this->lstStateProvince->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Postal Code:', 'value' => $this->txtPostalCode->RenderWithError(false));
-			$arrCompanyFields[] = array('name' => 'Country:', 'value' => $this->lstCountry->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Address Name').':', 'value' => $this->txtAddressShortDescription->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Address Line 1').':', 'value' => $this->txtAddress1->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Address Line 2').':', 'value' => $this->txtAddress2->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('City').':', 'value' => $this->txtCity->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('State/Province').':', 'value' => $this->lstStateProvince->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Postal Code').':', 'value' => $this->txtPostalCode->RenderWithError(false));
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Country').':', 'value' => $this->lstCountry->RenderWithError(false));
 			if ($this->arrAddressCustomFields) {
 				foreach ($this->arrAddressCustomFields as $field) {
 					if(!$this->blnEditMode || $field['blnView']){
@@ -75,8 +75,8 @@
 
 		// Display Metadata fields if this is not a new company
 		if ($this->blnEditMode) {
-			$arrCompanyFields[] = array('name' => 'Date Created:',  'value' => $this->lblCreationDate->Render(false));	
-			$arrCompanyFields[] = array('name' => 'Date Modified:',  'value' => $this->lblModifiedDate->Render(false));	
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Date Created').':',  'value' => $this->lblCreationDate->Render(false));	
+			$arrCompanyFields[] = array('name' => QApplication::Translate('Date Modified').':',  'value' => $this->lblModifiedDate->Render(false));	
 		}
 		
 	?>

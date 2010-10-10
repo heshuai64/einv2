@@ -1,3 +1,6 @@
+<?php 
+include('../includes/configuration.inc.php');
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 	<head>
@@ -36,12 +39,19 @@
 							<table cellspacing="0" cellpadding="0">
 								<tbody><tr style="height: 24px;">
 									<td style="width: 15px; background-image: url(../images/emptyTabSpace.gif); background-repeat: repeat-x;"><img height="1" width="15" src="../images/empty.gif"/></td>
-									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td><td class="other_tab_middle"><a border="0" class="other_tab_label" href="../inventory/">Inventory</a></td><td class="other_tab_right">
-									<img height="1" width="12" src="../images/empty.gif"/></td>
-									<td class="current_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td><td class="current_tab_middle"><a class="current_tab_label" href="../admin/miscellaneous.php?type=1">Miscellaneous</a></td><td class="current_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
-									<img height="1" width="12" src="../images/empty.gif"/></td><td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>
-									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td><td class="other_tab_middle"><a class="other_tab_label" href="../admin/category_list.php">Admin</a></td><td class="other_tab_right">
-									<img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_middle"><a border="0" class="other_tab_label" href="../inventory/">Inventory</a></td>
+									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_middle"><a class="other_tab_label" href="../purchase/index.php">Purchase</a></td>
+									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="current_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="current_tab_middle"><a class="current_tab_label" href="../admin/miscellaneous.php?type=1">Miscellaneous</a></td>
+									<td class="current_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>
+									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_middle"><a class="other_tab_label" href="../admin/category_list.php">Admin</a></td>
+									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
 									<td width="100%" class="empty_tab_space"> </td>
 								</tr>
 							</tbody></table>
@@ -124,14 +134,15 @@
 					switch($_GET['type']){
 						case 1:
 							echo "Stock Attention";
-							$conn = mysql_connect("localhost", "root", "5333533");
-
+							$db_conf = unserialize(DB_CONNECTION_1);
+							$conn = mysql_connect($db_conf['server'], $db_conf['username'], $db_conf['password']);
+			
 							if (!$conn) {
 							    echo "Unable to connect to DB: " . mysql_error();
 							    exit;
 							}
 							  
-							if (!mysql_select_db("tracmor")) {
+							if (!mysql_select_db($db_conf['database'])) {
 							    echo "Unable to select mydbname: " . mysql_error();
 							    exit;
 							}

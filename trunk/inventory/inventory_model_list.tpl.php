@@ -38,7 +38,7 @@
 			<img src="../images/empty.gif" width="10">
 		</td>
 		<td width="100%" valign="top">
-		<div class="title">&nbsp;Inventory Search</div>
+		<div class="title">&nbsp;<?=QApplication::Translate("Inventory Search")?></div>
 		<table style="border:1px solid #AAAAAA;background-color:#EEEEEE;font-family:verdana;font-size:10px;color:#444444;height:40px" width="100%">
 			<tr>
 				<td style="vertical-align:top;" noWrap>

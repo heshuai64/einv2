@@ -46,7 +46,7 @@
 										if ($this->objRoleModuleArray) {
 											foreach ($this->objRoleModuleArray as $objRoleModule) {
 												//var_dump($objRoleModule->Module->ShortDescription);
-												if(in_array($objRoleModule->Module->ShortDescription, array("assets","contacts","shipping","receiving","reports"))){
+												if(in_array($objRoleModule->Module->ShortDescription, array("assets",/*"contacts",*/"shipping","receiving","reports"))){
 													continue;
 												}
 												$link = '../' . $objRoleModule->Module->ShortDescription . '/';
@@ -57,13 +57,21 @@
 													$strTabClass = 'other_tab_';
 												}
 												echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-												echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel" border="0">%s</a></td>', $strTabClass, $link, $strTabClass, ucfirst($objRoleModule->Module->ShortDescription)));
+												echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel" border="0">%s</a></td>', $strTabClass, $link, $strTabClass, QApplication::Translate(ucfirst($objRoleModule->Module->ShortDescription))));
 												echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 												echo('<td class="empty_tab_space"><img src="../images/empty.gif" width="1" height="1"></td>');
 											}
 										}
 									?>
 									<?php
+										if(empty($_GET['type'])){
+											$strTabClass = 'other_tab_';
+										}else{
+											$strTabClass = 'current_tab_';
+										}
+										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Purchase</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
+										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 
 										if(empty($_GET['type'])){
 											$strTabClass = 'other_tab_';
@@ -73,7 +81,7 @@
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Miscellaneous</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										
+
 										if (QApplication::$objUserAccount->AdminFlag) {
 											if (QApplication::$objRoleModule) {
 												$strTabClass = 'other_tab_';

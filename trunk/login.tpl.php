@@ -78,7 +78,7 @@
 		<td align="center">
 			<table align="center" width="300">
 				<tr>
-					<td style="text-align:center;"><h1>Inventory Management System</h1></td>
+					<td style="text-align:center;"><h1><?=QApplication::Translate('Inventory Management System')?></h1></td>
 				</tr>
 				<tr>
 					<td>
@@ -90,7 +90,7 @@
 								<td style="text-align:center;">
 									<table style="text-align:center;padding:8px">
 										<tr style="height:40px;">
-											<td style="vertical-align:top;color:#615c5c;" class="item_label">Please enter your username and password.</td>
+											<td style="vertical-align:top;color:#615c5c;" class="item_label"><?=QApplication::Translate('Please enter your username and password.')?></td>
 										</tr>
 										<tr>
 											<td><?php $this->txtUsername->RenderDesignedNoRequired(); ?></td>

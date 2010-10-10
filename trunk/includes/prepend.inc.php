@@ -286,6 +286,7 @@
 				QApplication::$LanguageCode = $_SESSION['language_code'];
 		}
 
+		QApplication::$LanguageCode = 'zh_cn';
 		// Initialize I18n if QApplication::$LanguageCode is set
 		if (QApplication::$LanguageCode)
 			QI18n::Initialize();
