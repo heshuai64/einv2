@@ -140,7 +140,7 @@
 		// Setup the First Name Search Input
 	  protected function txtFirstName_Create() {
 	    $this->txtFirstName = new QTextBox($this);
-			$this->txtFirstName->Name = 'First Name';
+			$this->txtFirstName->Name = QApplication::Translate('First Name');
       $this->txtFirstName->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtFirstName->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -148,7 +148,7 @@
 	  // Setup the Last Name Search Input
 	  protected function txtLastName_Create() {
 	    $this->txtLastName = new QTextBox($this);
-			$this->txtLastName->Name = 'Last Name';
+			$this->txtLastName->Name = QApplication::Translate('Last Name');
       $this->txtLastName->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtLastName->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -156,7 +156,7 @@
 	  // Setup the Company Search Input
 	  protected function txtCompany_Create() {
 	    $this->txtCompany = new QTextBox($this);
-			$this->txtCompany->Name = 'Company';
+			$this->txtCompany->Name = QApplication::Translate('Company');
       $this->txtCompany->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtCompany->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -169,7 +169,7 @@
 	  protected function btnSearch_Create() {
 			$this->btnSearch = new QButton($this);
 			$this->btnSearch->Name = 'search';
-			$this->btnSearch->Text = 'Search';
+			$this->btnSearch->Text = QApplication::Translate('Search');
 			$this->btnSearch->AddAction(new QClickEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -179,7 +179,7 @@
 	  protected function btnClear_Create() {
 	  	$this->btnClear = new QButton($this);
 			$this->btnClear->Name = 'clear';
-			$this->btnClear->Text = 'Clear';
+			$this->btnClear->Text = QApplication::Translate('Clear');
 			$this->btnClear->AddAction(new QClickEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -189,7 +189,7 @@
 	  protected function lblAdvanced_Create() {
 	  	$this->lblAdvanced = new QLabel($this);
 	  	$this->lblAdvanced->Name = 'Advanced';
-	  	$this->lblAdvanced->Text = 'Advanced Search';
+	  	$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QToggleDisplayAction($this->ctlAdvanced));
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QAjaxAction('lblAdvanced_Click'));
 	  	$this->lblAdvanced->SetCustomStyle('text-decoration', 'underline');
@@ -225,10 +225,10 @@
       $this->dtgContact->ItemsPerPage = 20;
           
       $this->dtgContact->AddColumn(new QDataGridColumnExt('<img src=../images/icons/attachment_gray.gif border=0 title=Attachments alt=Attachments>', '<?= Attachment::toStringIcon($_ITEM->GetVirtualAttribute(\'attachment_count\')); ?>', 'SortByCommand="__attachment_count ASC"', 'ReverseSortByCommand="__attachment_count DESC"', 'CssClass="dtg_column"', 'HtmlEntities="false"'));
-      $this->dtgContact->AddColumn(new QDataGridColumnExt('Name', '<?= $_ITEM->__toStringWithLink("bluelink") ?>', 'SortByCommand="last_name ASC, first_name DESC"', 'ReverseSortByCommand="last_name DESC, first_name DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
-      $this->dtgContact->AddColumn(new QDataGridColumnExt('Title', '<?= $_ITEM->Title ?>', 'Width=200', 'SortByCommand="title ASC"', 'ReverseSortByCommand="title DESC"', 'CssClass="dtg_column"'));
-      $this->dtgContact->AddColumn(new QDataGridColumnExt('Company', '<?= $_ITEM->Company->__toStringWithLink("bluelink") ?>', 'SortByCommand="contact__company_id__short_description ASC"', 'ReverseSortByCommand="contact__company_id__short_description DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
-      $this->dtgContact->AddColumn(new QDataGridColumnExt('Email', '<?= $_ITEM->Email ?>', 'SortByCommand="email ASC"', 'ReverseSortByCommand="email DESC"', 'CssClass="dtg_column"'));
+      $this->dtgContact->AddColumn(new QDataGridColumnExt(QApplication::Translate('Name'), '<?= $_ITEM->__toStringWithLink("bluelink") ?>', 'SortByCommand="last_name ASC, first_name DESC"', 'ReverseSortByCommand="last_name DESC, first_name DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
+      $this->dtgContact->AddColumn(new QDataGridColumnExt(QApplication::Translate('Title'), '<?= $_ITEM->Title ?>', 'Width=200', 'SortByCommand="title ASC"', 'ReverseSortByCommand="title DESC"', 'CssClass="dtg_column"'));
+      $this->dtgContact->AddColumn(new QDataGridColumnExt(QApplication::Translate('Company'), '<?= $_ITEM->Company->__toStringWithLink("bluelink") ?>', 'SortByCommand="contact__company_id__short_description ASC"', 'ReverseSortByCommand="contact__company_id__short_description DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
+      $this->dtgContact->AddColumn(new QDataGridColumnExt(QApplication::Translate('Email'), '<?= $_ITEM->Email ?>', 'SortByCommand="email ASC"', 'ReverseSortByCommand="email DESC"', 'CssClass="dtg_column"'));
       
       // Add the custom field columns with Display set to false. These can be shown by using the column toggle menu.
       $objCustomFieldArray = CustomField::LoadObjCustomFieldArray(8, false);
@@ -293,13 +293,13 @@
 	  protected function lblAdvanced_Click() {
 	  	if ($this->blnAdvanced) {
 	  		$this->blnAdvanced = false;
-	  		$this->lblAdvanced->Text = 'Advanced Search';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  		
 	  		$this->ctlAdvanced->ClearControls();
 	  	}
 	  	else {
 	  		$this->blnAdvanced = true;
-	  		$this->lblAdvanced->Text = 'Hide Advanced';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Hide Advanced');
 	  	}
 	  }
 

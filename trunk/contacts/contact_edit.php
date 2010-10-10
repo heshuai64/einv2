@@ -463,7 +463,7 @@ class ContactEditForm extends ContactEditFormBase {
 	// Setup Edit Button
 	protected function btnEdit_Create() {
 		$this->btnEdit = new QButton($this);
-		$this->btnEdit->Text = 'Edit';
+		$this->btnEdit->Text = QApplication::Translate('Edit');
 		$this->btnEdit->AddAction(new QClickEvent(), new QAjaxAction('btnEdit_Click'));
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnEdit_Click'));
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -474,7 +474,7 @@ class ContactEditForm extends ContactEditFormBase {
 	// Setup Save Button
 	protected function btnSave_Create() {
 		$this->btnSave = new QButton($this);
-		$this->btnSave->Text = 'Save';
+		$this->btnSave->Text = QApplication::Translate('Save');
 		$this->btnSave->AddAction(new QClickEvent(), new QAjaxAction('btnSave_Click'));
 		$this->btnSave->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnSave_Click'));
 		$this->btnSave->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -485,7 +485,7 @@ class ContactEditForm extends ContactEditFormBase {
 	// Setup Cancel Button
 	protected function btnCancel_Create() {
 		$this->btnCancel = new QButton($this);
-		$this->btnCancel->Text = 'Cancel';
+		$this->btnCancel->Text = QApplication::Translate('Cancel');
 		$this->btnCancel->AddAction(new QClickEvent(), new QAjaxAction('btnCancel_Click'));
 		$this->btnCancel->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnCancel_Click'));
 		$this->btnCancel->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -496,7 +496,7 @@ class ContactEditForm extends ContactEditFormBase {
 	// Setup Delete Button
 	protected function btnDelete_Create() {
 		$this->btnDelete = new QButton($this);
-		$this->btnDelete->Text = 'Delete';
+		$this->btnDelete->Text = QApplication::Translate('Delete');
 		$this->btnDelete->AddAction(new QClickEvent(), new QConfirmAction(sprintf(QApplication::Translate('Are you SURE you want to DELETE this %s?'), 'Contact')));
 		$this->btnDelete->AddAction(new QClickEvent(), new QAjaxAction('btnDelete_Click'));
 		$this->btnDelete->AddAction(new QEnterKeyEvent(), new QConfirmAction(sprintf(QApplication::Translate('Are you SURE you want to DELETE this %s?'), 'Contact')));

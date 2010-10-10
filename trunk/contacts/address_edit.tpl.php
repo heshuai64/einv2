@@ -35,24 +35,24 @@
 <?php
 
 	// Build array of all fields to display
-			$arrAddressFields[] = array('name' => 'Address Name:', 'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
-			$arrAddressFields[] = array('name' => 'Country:', 'value' => $this->lblCountry->Render(false) . $this->lstCountry->RenderWithError(false));
-			$arrAddressFields[] = array('name' => 'Address Line 1:', 'value' => $this->lblAddress1->Render(false) . $this->txtAddress1->RenderWithError(false));
-			$arrAddressFields[] = array('name' => 'Address Line 2:', 'value' => $this->lblAddress2->Render(false) . $this->txtAddress2->RenderWithError(false));	
-			$arrAddressFields[] = array('name' => 'City:', 'value' => $this->lblCity->Render(false) . $this->txtCity->RenderWithError(false));
-			$arrAddressFields[] = array('name' => 'State/Province:', 'value' => $this->lblStateProvince->Render(false) . $this->lstStateProvince->RenderWithError(false));
-			$arrAddressFields[] = array('name' => 'Postal Code:', 'value' => $this->lblPostalCode->Render(false) . $this->txtPostalCode->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('Address Name').':', 'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('Country').':', 'value' => $this->lblCountry->Render(false) . $this->lstCountry->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('Address Line 1').':', 'value' => $this->lblAddress1->Render(false) . $this->txtAddress1->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('Address Line 2').':', 'value' => $this->lblAddress2->Render(false) . $this->txtAddress2->RenderWithError(false));	
+			$arrAddressFields[] = array('name' => QApplication::Translate('City').':', 'value' => $this->lblCity->Render(false) . $this->txtCity->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('State/Province').':', 'value' => $this->lblStateProvince->Render(false) . $this->lstStateProvince->RenderWithError(false));
+			$arrAddressFields[] = array('name' => QApplication::Translate('Postal Code').':', 'value' => $this->lblPostalCode->Render(false) . $this->txtPostalCode->RenderWithError(false));
 	
 	if ($this->arrCustomFields) {
 		foreach ($this->arrCustomFields as $field) {
 			if(!$this->blnEditMode || $field['blnView'])
-				$arrAddressFields[] = array('name' => $field['lbl']->Name . ":", 'value' => $field['lbl']->RenderWithError(false) . $field['input']->RenderWithError(false));
+				$arrAddressFields[] = array('name' => QApplication::Translate($field['lbl']->Name) . ":", 'value' => $field['lbl']->RenderWithError(false) . $field['input']->RenderWithError(false));
 		}
 	}	
 	
 	if ($this->blnEditMode) {
-		$arrAddressFields[] = array('name' => 'Date Created:',  'value' => $this->lblCreationDate->Render(false));
-		$arrAddressFields[] = array('name' => 'Date Modified:',  'value' => $this->lblModifiedDate->Render(false));	
+		$arrAddressFields[] = array('name' => QApplication::Translate('Date Created').':',  'value' => $this->lblCreationDate->Render(false));
+		$arrAddressFields[] = array('name' => QApplication::Translate('Date Modified').':',  'value' => $this->lblModifiedDate->Render(false));	
 	}
 	
 ?>
