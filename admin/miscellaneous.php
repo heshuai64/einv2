@@ -43,6 +43,9 @@ include('../includes/configuration.inc.php');
 									<td class="other_tab_middle"><a border="0" class="other_tab_label" href="../inventory/">Inventory</a></td>
 									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
 									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_middle"><a border="0" class="other_tab_label" href="../contacts/">Contacts</a></td>
+									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
+									<td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
 									<td class="other_tab_middle"><a class="other_tab_label" href="../purchase/index.php">Purchase</a></td>
 									<td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
 									<td class="current_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>

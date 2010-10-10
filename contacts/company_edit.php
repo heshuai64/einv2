@@ -485,7 +485,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Edit Button
 	protected function btnEdit_Create() {
 		$this->btnEdit = new QButton($this);
-		$this->btnEdit->Text = 'Edit';
+		$this->btnEdit->Text = QApplication::Translate('Edit');
 		$this->btnEdit->AddAction(new QClickEvent(), new QAjaxAction('btnEdit_Click'));
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnEdit_Click'));
 		$this->btnEdit->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -496,7 +496,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Save Button
 	protected function btnSave_Create() {
 		$this->btnSave = new QButton($this);
-		$this->btnSave->Text = 'Save';
+		$this->btnSave->Text = QApplication::Translate('Save');
 		$this->btnSave->AddAction(new QClickEvent(), new QAjaxAction('btnSave_Click'));
 		$this->btnSave->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnSave_Click'));
 		$this->btnSave->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -507,7 +507,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Cancel Button
 	protected function btnCancel_Create() {
 		$this->btnCancel = new QButton($this);
-		$this->btnCancel->Text = 'Cancel';
+		$this->btnCancel->Text = QApplication::Translate('Cancel');
 		$this->btnCancel->AddAction(new QClickEvent(), new QAjaxAction('btnCancel_Click'));
 		$this->btnCancel->AddAction(new QEnterKeyEvent(), new QAjaxAction('btnCancel_Click'));
 		$this->btnCancel->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -517,7 +517,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Delete Button
 	protected function btnDelete_Create() {
 		$this->btnDelete = new QButton($this);
-		$this->btnDelete->Text = 'Delete';
+		$this->btnDelete->Text = QApplication::Translate('Delete');
 		$this->btnDelete->AddAction(new QClickEvent(), new QConfirmAction(sprintf(QApplication::Translate('Are you SURE you want to DELETE this %s?'), 'Company')));
 		$this->btnDelete->AddAction(new QClickEvent(), new QAjaxAction('btnDelete_Click'));
 		$this->btnDelete->AddAction(new QEnterKeyEvent(), new QConfirmAction(sprintf(QApplication::Translate('Are you SURE you want to DELETE this %s?'), 'Company')));
@@ -541,7 +541,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Create Address Button
 	protected function btnCreateAddress_Create() {
 		$this->btnCreateAddress = new QButton($this);
-		$this->btnCreateAddress->Text = 'Create New Address';
+		$this->btnCreateAddress->Text = QApplication::Translate('Create New Address');
 		$this->btnCreateAddress->AddAction(new QClickEvent(), new QServerAction('btnCreateAddress_Click'));
 		$this->btnCreateAddress->AddAction(new QEnterKeyEvent(), new QServerAction('btnCreateAddress_Click'));
 		$this->btnCreateAddress->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -552,7 +552,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 	// Setup Create Contact Button
 	protected function btnCreateContact_Create() {
 		$this->btnCreateContact = new QButton($this);
-		$this->btnCreateContact->Text = 'Create New Contact';
+		$this->btnCreateContact->Text = QApplication::Translate('Create New Contact');
 		$this->btnCreateContact->AddAction(new QClickEvent(), new QServerAction('btnCreateContact_Click'));
 		$this->btnCreateContact->AddAction(new QEnterKeyEvent(), new QServerAction('btnCreateContact_Click'));
 		$this->btnCreateContact->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -575,9 +575,9 @@ class CompanyEditForm extends CompanyEditFormBase {
 		$this->dtgContact->Paginator = $objPaginator;
 		$this->dtgContact->ItemsPerPage = 10;
 
-		$this->dtgContact->AddColumn(new QDataGridColumn('Name', '<?= $_ITEM->__toStringWithLink("bluelink") ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->LastName), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->LastName, false), 'CssClass' => "dtg_column", 'HtmlEntities' => false)));
-		$this->dtgContact->AddColumn(new QDataGridColumn('Title', '<?= $_ITEM->Title ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->Title), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->Title, false), 'Width' => "200", 'CssClass' => "dtg_column")));
-		$this->dtgContact->AddColumn(new QDataGridColumn('Email', '<?= $_ITEM->Email ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->Email), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->Email, false), 'CssClass' => "dtg_column")));
+		$this->dtgContact->AddColumn(new QDataGridColumn(QApplication::Translate('Name'), '<?= $_ITEM->__toStringWithLink("bluelink") ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->LastName), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->LastName, false), 'CssClass' => "dtg_column", 'HtmlEntities' => false)));
+		$this->dtgContact->AddColumn(new QDataGridColumn(QApplication::Translate('Title'), '<?= $_ITEM->Title ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->Title), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->Title, false), 'Width' => "200", 'CssClass' => "dtg_column")));
+		$this->dtgContact->AddColumn(new QDataGridColumn(QApplication::Translate('Email'), '<?= $_ITEM->Email ?>', array('OrderByClause' => QQ::OrderBy(QQN::Contact()->Email), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Contact()->Email, false), 'CssClass' => "dtg_column")));
 
 		$this->dtgContact->SortColumnIndex = 0;
 		$this->dtgContact->SortDirection = 0;
@@ -611,8 +611,8 @@ class CompanyEditForm extends CompanyEditFormBase {
 		$this->dtgAddress->Paginator = $objPaginator;
 		$this->dtgAddress->ItemsPerPage = 10;
 
-		$this->dtgAddress->AddColumn(new QDataGridColumn('Name', '<?= $_ITEM->__toStringWithLink("bluelink") ?>', array('OrderByClause' => QQ::OrderBy(QQN::Address()->ShortDescription), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Address()->ShortDescription, false), 'HtmlEntities' => false, 'CssClass' => "dtg_column")));
-		$this->dtgAddress->AddColumn(new QDataGridColumn('Address', '<?= $_ITEM->__toStringFullAddress() ?>', array('Width' => "200", 'CssClass' => "dtg_column", 'HtmlEntities' => false)));
+		$this->dtgAddress->AddColumn(new QDataGridColumn(QApplication::Translate('Name'), '<?= $_ITEM->__toStringWithLink("bluelink") ?>', array('OrderByClause' => QQ::OrderBy(QQN::Address()->ShortDescription), 'ReverseOrderByClause' => QQ::OrderBy(QQN::Address()->ShortDescription, false), 'HtmlEntities' => false, 'CssClass' => "dtg_column")));
+		$this->dtgAddress->AddColumn(new QDataGridColumn(QApplication::Translate('Address'), '<?= $_ITEM->__toStringFullAddress() ?>', array('Width' => "200", 'CssClass' => "dtg_column", 'HtmlEntities' => false)));
 
 		$this->dtgAddress->SortColumnIndex = 0;
 		$this->dtgAddress->SortDirection = 0;

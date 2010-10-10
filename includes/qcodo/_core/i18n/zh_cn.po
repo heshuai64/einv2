@@ -152,7 +152,7 @@ MsgStr "操作人员"
 MsgId "Date"
 MsgStr "日期"
 
-#Contacts
+#Company
 MsgId "Company Name"
 MsgStr "公司名"
 
@@ -198,3 +198,36 @@ MsgStr "地址行2"
 MsgId "Postal Code"
 MsgStr "邮政编码"
 
+MsgId "Create New Address"
+MsgStr "创建新的地址"
+
+MsgId "Create New Contact"
+MsgStr "创建新联系人"
+
+#Contact
+MsgId "Company"
+MsgStr "公司"
+
+MsgId "Name"
+MsgStr "姓名"
+
+MsgId "First Name"
+MsgStr "姓"
+
+MsgId "Last Name"
+MsgStr "名"
+
+MsgId "Title"
+MsgStr "标题"
+
+MsgId "Office Phone"
+MsgStr "办公室电话"
+
+MsgId "Home Phone"
+MsgStr "住宅电话"
+
+MsgId "Mobile Phone"
+MsgStr "移动电话"
+
+MsgId "Address"
+MsgStr "地址"

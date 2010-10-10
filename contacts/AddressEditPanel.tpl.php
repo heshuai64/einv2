@@ -23,20 +23,20 @@
 <?php
 
 	// Build array of all fields to display
-	$arrAddressFields[] = array('name' => 'Company:', 'value' => $_CONTROL->lstCompany->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'Address Name:', 'value' => $_CONTROL->txtShortDescription->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'Country:', 'value' => $_CONTROL->lstCountry->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'Address Line 1:', 'value' => $_CONTROL->txtAddress1->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'Address Line 2:', 'value' => $_CONTROL->txtAddress2->RenderWithError(false));	
-	$arrAddressFields[] = array('name' => 'City:', 'value' => $_CONTROL->txtCity->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'State/Province:', 'value' => $_CONTROL->lstStateProvince->RenderWithError(false));
-	$arrAddressFields[] = array('name' => 'Postal Code:', 'value' => $_CONTROL->txtPostalCode->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Company').':', 'value' => $_CONTROL->lstCompany->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Address Name').':', 'value' => $_CONTROL->txtShortDescription->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Country').':', 'value' => $_CONTROL->lstCountry->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Address Line 1').':', 'value' => $_CONTROL->txtAddress1->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Address Line 2').':', 'value' => $_CONTROL->txtAddress2->RenderWithError(false));	
+	$arrAddressFields[] = array('name' => QApplication::Translate('City').':', 'value' => $_CONTROL->txtCity->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('State/Province').':', 'value' => $_CONTROL->lstStateProvince->RenderWithError(false));
+	$arrAddressFields[] = array('name' => QApplication::Translate('Postal Code').':', 'value' => $_CONTROL->txtPostalCode->RenderWithError(false));
 	
 	// Custom Fields
 	if ($_CONTROL->arrCustomFields) {
 		foreach ($_CONTROL->arrCustomFields as $field) {
 			if(!$this->blnEditMode || $field['blnView']){
-				$arrAddressFields[] = array('name' => $field['input']->Name.':', 'value' => $field['input']->RenderWithError(false));
+				$arrAddressFields[] = array('name' => QApplication::Translate($field['input']->Name).':', 'value' => $field['input']->RenderWithError(false));
 			}
 		}
 	}
