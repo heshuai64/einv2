@@ -1,0 +1,200 @@
+MsgId "Inventory"
+MsgStr "Inventory"
+
+MsgId "Inventory Management System"
+MsgStr "库存管理系统"
+
+MsgId "Please enter your username and password."
+MsgStr "请输入用户名和密码"
+
+MsgId "Username"
+MsgStr "用户名"
+
+MsgId "Password"
+MsgStr "密码"
+
+MsgId "Login"
+MsgStr "登录"
+
+MsgId "Invalid username or password."
+MsgStr "错误的用户名或密码."
+
+# For QIntegerTextBox and QFloatTextBox controls
+MsgId "Invalid Integer"
+MsgStr "错误的整型"
+
+MsgId "Invalid Float"
+MsgStr "错误的浮点型"
+
+MsgId "Value must be less than %s"
+MsgStr "值必须小于 %s"
+
+MsgId "Value must be greater than %s"
+MsgStr "值必须大于 %s"
+
+# For QPaginatedControl controls
+MsgId "item"
+MsgStr "记录"
+
+MsgId "items"
+MsgStr "记录"
+
+# For QDataGrid controls
+MsgId "<b>Results:</b>&nbsp;Viewing&nbsp;%s&nbsp;%s-%s&nbsp;of&nbsp;%s."
+MsgStr "<b>结果:</b>&nbsp;显示&nbsp;%s&nbsp;%s-%s&nbsp;of&nbsp;%s."
+
+MsgId "<b>Results:</b> No %s found."
+MsgStr "<b>结果:</b> 没 %s 发现."
+
+MsgId "<b>Results:</b> 1 %s found."
+MsgId_Plural "<b>结果:</b> %s %s 发现."
+MsgStr[0] "<b>结果:</b> 1 %s 发现."
+MsgStr[1] "<b>结果:</b> %s %s 发现."
+
+# For QPaginator controls
+MsgId "Previous"
+MsgStr "上一页"
+
+MsgId "Next"
+MsgStr "下一页"
+
+# For the List FormDraft Include template
+MsgId "List All"
+MsgStr "显示所有"
+
+MsgId "Create a New"
+MsgStr "创建一个新的"
+
+MsgId "Inventory Code"
+MsgStr "SKU"
+
+MsgId "Model"
+MsgStr "标题"
+
+MsgId "Category"
+MsgStr "分类"
+
+MsgId "Manufacturer"
+MsgStr "供应商"
+
+MsgId "Location"
+MsgStr "仓库"
+
+MsgId "Quantity"
+MsgStr "库存"
+
+#Inventory Search
+MsgId "Inventory Search"
+MsgStr "库存查询"
+
+MsgId "Search"
+MsgStr "查询"
+
+MsgId "Clear"
+MsgStr "清除"
+
+MsgId "Advanced Search"
+MsgStr "高级查询"
+
+MsgId "Hide Advanced"
+MsgStr "隐藏高级查询"
+
+MsgId "Date Created"
+MsgStr "创建日期"
+
+MsgId "Date Modified"
+MsgStr "修改日期"
+
+MsgId "- Select One -"
+MsgStr "请选择"
+
+MsgId "Save"
+MsgStr "保存"
+
+MsgId "Edit"
+MsgStr "编辑"		
+
+MsgId "Cancel"
+MsgStr "取消"
+
+MsgId "Delete"
+MsgStr "删除"
+
+MsgId "Short Description"
+MsgStr "标题"
+
+MsgId "Long Description"
+MsgStr "描述"
+
+MsgId "Create Inventory"
+MsgStr "创建SKU"		
+
+#
+MsgId "Quantity by Location"
+MsgStr "仓库库存"
+
+#Transactions
+MsgId "Transactions"
+MsgStr "出入库记录"
+
+MsgId "Transaction Type"
+MsgStr "类型"
+
+MsgId "From"
+MsgStr "从"
+
+MsgId "To"
+MsgStr "到"
+
+MsgId "User"
+MsgStr "操作人员"
+
+MsgId "Date"
+MsgStr "日期"
+
+#Contacts
+MsgId "Company Name"
+MsgStr "公司名"
+
+MsgId "City"
+MsgStr "城市"
+
+MsgId "State/Province"
+MsgStr "州/省"
+
+MsgId "Country"
+MsgStr "国家"
+
+MsgId "- ALL -"
+MsgStr "- 所有 -"
+
+MsgId "Website"
+MsgStr "网站"
+
+MsgId "Email"
+MsgStr "电子邮箱"
+
+MsgId "Telephone"
+MsgStr "电话"
+
+MsgId "Fax"
+MsgStr "传真"
+
+MsgId "Description"
+MsgStr "描述"
+
+MsgId "Primary Address"
+MsgStr "地址"
+
+MsgId "Address Name"
+MsgStr "地址名"
+
+MsgId "Address Line 1"
+MsgStr "地址行1"
+
+MsgId "Address Line 2"
+MsgStr "地址行2"
+
+MsgId "Postal Code"
+MsgStr "邮政编码"
+

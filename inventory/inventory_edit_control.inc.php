@@ -20,11 +20,11 @@
  */
 	
 	// Build array of all fields to display
-	$arrInventoryFields[] = array('name' => 'Short Description:',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
-	$arrInventoryFields[] = array('name' => 'Category:', 'value' => $this->lblCategory->Render(false) . $this->lstCategory->RenderWithError(false));
-	$arrInventoryFields[] = array('name' => 'Manufacturer:', 'value' => $this->lblManufacturer->Render(false) . $this->lstManufacturer->RenderWithError(false));
-	$arrInventoryFields[] = array('name' => 'Inventory Code:', 'value' => $this->lblInventoryModelCode->Render(false) . $this->txtInventoryModelCode->RenderWithError(false));
-	$arrInventoryFields[] = array('name' => 'Long Description:', 'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => QApplication::Translate('Short Description').':',  'value' => $this->lblShortDescription->Render(false) . $this->txtShortDescription->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => QApplication::Translate('Category').':', 'value' => $this->lblCategory->Render(false) . $this->lstCategory->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => QApplication::Translate('Manufacturer').':', 'value' => $this->lblManufacturer->Render(false) . $this->lstManufacturer->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => QApplication::Translate('Inventory Code').':', 'value' => $this->lblInventoryModelCode->Render(false) . $this->txtInventoryModelCode->RenderWithError(false));
+	$arrInventoryFields[] = array('name' => QApplication::Translate('Long Description').':', 'value' => $this->pnlLongDescription->Render(false) . $this->txtLongDescription->RenderWithError(false));
 	
 	// Custom Fields
 	if ($this->arrCustomFields) {
@@ -33,7 +33,7 @@
 				//Display Custom Field in Edit Mode if the role has "View" access 
 				//	if(($field['blnView'])){
 					if(!$this->blnEditMode || $field['blnView']){
-						$arrInventoryFields[] = array('name' => $field['lbl']->Name.':', 'value' => $field['lbl']->Render(false).$field['input']->RenderWithError(false));
+						$arrInventoryFields[] = array('name' => QApplication::Translate($field['lbl']->Name).':', 'value' => $field['lbl']->Render(false).$field['input']->RenderWithError(false));
 					}
 				//	}				
 				//}// Display Custom Field in Create Mode if the role has "Edit" access or is it required
@@ -45,9 +45,9 @@
 	
 	// Show quantity and metadata if this is not a new inventory model
 	if ($this->blnEditMode) {
-		$arrInventoryFields[] = array('name' => 'Quantity:', 'value' => $this->lblTotalQuantity->Render(false));
-		$arrInventoryFields[] = array('name' => 'Date Created:', 'value' => $this->lblCreationDate->Render(false));
-		$arrInventoryFields[] = array('name' => 'Date Modified:', 'value' => $this->lblModifiedDate->Render(false));			
+		$arrInventoryFields[] = array('name' => QApplication::Translate('Quantity').':', 'value' => $this->lblTotalQuantity->Render(false));
+		$arrInventoryFields[] = array('name' => QApplication::Translate('Date Created').':', 'value' => $this->lblCreationDate->Render(false));
+		$arrInventoryFields[] = array('name' => QApplication::Translate('Date Modified').':', 'value' => $this->lblModifiedDate->Render(false));			
 	}
 
 ?>
@@ -256,7 +256,7 @@ if(!empty($_GET['intInventoryModelId'])){
 		return false;
 	}
 </script>
-
+<!-- 
 <br><br>
 <div id="Suppliers" style="text-align: left; border: dotted; height: 860px; position: relative;">
 	<h2>Suppliers</h2>
@@ -266,7 +266,7 @@ if(!empty($_GET['intInventoryModelId'])){
 	<button style="position: absolute; top: 10px; left: 100px;" onclick="return updateSuppliers();">Update Suppliers</button>
 	</div>
 </div>
-
+ -->
 <?php
 }
 mysql_query("SET NAMES 'UTF8'");
@@ -314,9 +314,9 @@ $row = mysql_fetch_assoc($result);
 <br><br>
 <div id="description-tabs" style="text-align: left; border: dotted;">
 	<ul>
-	    <li><a href="#fragment-1"><span>English</span></a></li>
-	    <li><a href="#fragment-2"><span>French</span></a></li>
-	    <li><a href="#fragment-3"><span>Germany</span></a></li>
+	    <li><a href="#fragment-1"><span><?=QApplication::Translate('English')?></span></a></li>
+	    <li><a href="#fragment-2"><span><?=QApplication::Translate('French')?></span></a></li>
+	    <li><a href="#fragment-3"><span><?=QApplication::Translate('Germany')?></span></a></li>
 	</ul>
 	<div id="fragment-1">
 		<textarea id="english" rows="40" cols="120"><?=html_entity_decode($row['english'], ENT_QUOTES)?></textarea>
@@ -421,11 +421,11 @@ $row = mysql_fetch_assoc($result);
 if(!empty($_GET['intInventoryModelId'])){
 ?>
 <div id="combo-panel" style="border: dotted;">
-	<h2>Combo</h2>
+	<h2><?=QApplication::Translate('Combo')?></h2>
 	<div id="add-combo-panel">
 		<form >
 			SKU: <input type="text" id="attachment"/>
-			Quantity: <input type="text" id="quantity"/>
+			<?=QApplication::Translate('Quantity')?>: <input type="text" id="quantity"/>
 			<input id="add-combo" type="button" value="Add"/>
 		</form>
 	</div>
@@ -451,13 +451,13 @@ if(!empty($_GET['intInventoryModelId'])){
 				SKU
 			</th>
 			<th>
-				Quantity
+				<?=QApplication::Translate('Quantity')?>
 			</th>
 			<th>
-				Stock
+				<?=QApplication::Translate('Stock')?>
 			</th>
 			<th>
-				Operate
+				<?=QApplication::Translate('Operate')?>
 			</th>
 		</tr>
 	<?php
@@ -495,14 +495,14 @@ if(!empty($_GET['intInventoryModelId'])){
 </div>
 <br><br>
 <div id="complaints-panel" style="border: dotted;">
-	<h2>Complaints</h2>
+	<h2><?=QApplication::Translate('Complaints')?></h2>
 	<table border=1>
 		<tr>
 			<th>
-				Content
+				<?=QApplication::Translate('Content')?>
 			</th>
 			<th>
-				Time
+				<?=QApplication::Translate('Time')?>
 			</th>
 		</tr>
 	<?php
@@ -519,7 +519,7 @@ if(!empty($_GET['intInventoryModelId'])){
 </div>
 <br><br>
 <div id="purchase-panel" style="border: dotted;">
-	<h2>Purchase In The Way</h2>
+	<h2><?=QApplication::Translate('Purchase In The Way')?></h2>
 	<div id="add-purchase-panel">
 		<form >
 			Quantity: <input type="text" id="purchase-quantity"/>
@@ -623,10 +623,10 @@ $this->pnlAttachments->Render();
 			//$this->btnReceive->Render();
 			echo '<br class="item_divider />';
 			echo '<br class="item_divider />';
-			echo('<div class="title">Quantity by Location</div>');
+			echo('<div class="title">'.QApplication::Translate('Quantity by Location').'</div>');
 			$this->dtgInventoryQuantities->RenderWithError(); 
 			echo '<br class="item_divider" />';
-			echo '<div class="title">Transactions</div>';
+			echo '<div class="title">'.QApplication::Translate('Transactions').'</div>';
 			$this->dtgInventoryTransaction->RenderWithError();
 		}
 ?>

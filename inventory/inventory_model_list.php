@@ -103,11 +103,11 @@
       $this->dtgInventoryModel->ItemsPerPage = 20;
           
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('<img src=../images/icons/attachment_gray.gif border=0 title=Attachments alt=Attachments>', '<?= Attachment::toStringIcon($_ITEM->GetVirtualAttribute(\'attachment_count\')); ?>', 'SortByCommand="__attachment_count ASC"', 'ReverseSortByCommand="__attachment_count DESC"', 'CssClass="dtg_column"', 'HtmlEntities="false"'));
-      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('Inventory Code', '<?= $_ITEM->__toStringWithLink("bluelink"); ?>', 'SortByCommand="inventory_model_code ASC"', 'ReverseSortByCommand="inventory_model_code DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
-      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('Model', '<?= $_ITEM->ShortDescription ?>', 'Width=200', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"'));
-      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('Category', '<?= $_ITEM->Category->__toString(); ?>', 'SortByCommand="inventory_model__category_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__category_id__short_description DESC"', 'CssClass="dtg_column"'));
-      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('Manufacturer', '<?= $_ITEM->Manufacturer->__toString(); ?>', 'SortByCommand="inventory_model__manufacturer_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__manufacturer_id__short_description DESC"', 'CssClass="dtg_column"'));
-      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('Quantity', '<?= $_ITEM->__toStringQuantity(); ?>', 'SortByCommand="inventory_model_quantity ASC"', 'ReverseSortByCommand="inventory_model_quantity DESC"', 'CssClass="dtg_column"'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Inventory Code'), '<?= $_ITEM->__toStringWithLink("bluelink"); ?>', 'SortByCommand="inventory_model_code ASC"', 'ReverseSortByCommand="inventory_model_code DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Model'), '<?= $_ITEM->ShortDescription ?>', 'Width=200', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Category'), '<?= $_ITEM->Category->__toString(); ?>', 'SortByCommand="inventory_model__category_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__category_id__short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Manufacturer'), '<?= $_ITEM->Manufacturer->__toString(); ?>', 'SortByCommand="inventory_model__manufacturer_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__manufacturer_id__short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Quantity'), '<?= $_ITEM->__toStringQuantity(); ?>', 'SortByCommand="inventory_model_quantity ASC"', 'ReverseSortByCommand="inventory_model_quantity DESC"', 'CssClass="dtg_column"'));
       
       // Add the custom field columns with Display set to false. These can be shown by using the column toggle menu.
       $objCustomFieldArray = CustomField::LoadObjCustomFieldArray(2, false);
@@ -115,7 +115,7 @@
       	foreach ($objCustomFieldArray as $objCustomField) {
       		//Only add the custom field column if the role has authorization to view it.
       		if($objCustomField->objRoleAuthView && $objCustomField->objRoleAuthView->AuthorizedFlag){
-      			$this->dtgInventoryModel->AddColumn(new QDataGridColumnExt($objCustomField->ShortDescription, '<?= $_ITEM->GetVirtualAttribute(\''.$objCustomField->CustomFieldId.'\') ?>', 'SortByCommand="__'.$objCustomField->CustomFieldId.' ASC"', 'ReverseSortByCommand="__'.$objCustomField->CustomFieldId.' DESC"','HtmlEntities="false"', 'CssClass="dtg_column"', 'Display="false"'));
+      			$this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate($objCustomField->ShortDescription), '<?= $_ITEM->GetVirtualAttribute(\''.$objCustomField->CustomFieldId.'\') ?>', 'SortByCommand="__'.$objCustomField->CustomFieldId.' ASC"', 'ReverseSortByCommand="__'.$objCustomField->CustomFieldId.' DESC"','HtmlEntities="false"', 'CssClass="dtg_column"', 'Display="false"'));
       		}
       	}
       }
@@ -208,7 +208,7 @@
   	
   	protected function lstLocation_Create() {
   		$this->lstLocation = new QListBox($this);
-  		$this->lstLocation->Name = 'Location';
+  		$this->lstLocation->Name = QApplication::Translate('Location');
   		$this->lstLocation->AddItem('- ALL -', null);
   		foreach (Location::LoadAllLocations(false, false, 'short_description') as $objLocation) {
   			$this->lstLocation->AddItem($objLocation->ShortDescription, $objLocation->LocationId);
@@ -219,7 +219,7 @@
 
 	  protected function lstCategory_Create() {
 	  	$this->lstCategory = new QListBox($this);
-			$this->lstCategory->Name = 'Category';
+			$this->lstCategory->Name = QApplication::Translate('Category');
 			$this->lstCategory->AddItem('- ALL -', null);
 			foreach (Category::LoadAllWithFlags(false, true, 'short_description') as $objCategory) {
 				$this->lstCategory->AddItem($objCategory->ShortDescription, $objCategory->CategoryId);
@@ -228,7 +228,7 @@
 
 	  protected function lstManufacturer_Create() {
       $this->lstManufacturer = new QListBox($this);
-			$this->lstManufacturer->Name = 'Manufacturer';
+			$this->lstManufacturer->Name = QApplication::Translate('Manufacturer');
 			$this->lstManufacturer->AddItem('- ALL -', null);
 			foreach (Manufacturer::LoadAll(QQ::Clause(QQ::OrderBy(QQN::Manufacturer()->ShortDescription))) as $objManufacturer) {
 				$this->lstManufacturer->AddItem($objManufacturer->ShortDescription, $objManufacturer->ManufacturerId);
@@ -237,14 +237,14 @@
 
 	  protected function txtShortDescription_Create() {
 	    $this->txtShortDescription = new QTextBox($this);
-			$this->txtShortDescription->Name = 'Model';
+			$this->txtShortDescription->Name = QApplication::Translate('Model');
       $this->txtShortDescription->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtShortDescription->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
 	  
 	  protected function txtInventoryModelCode_Create() {
 	  	$this->txtInventoryModelCode = new QTextBox($this);
-	  	$this->txtInventoryModelCode->Name = 'Inventory Code';
+	  	$this->txtInventoryModelCode->Name = QApplication::Translate('Inventory Code');
 	  	$this->txtInventoryModelCode->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
 	  	$this->txtInventoryModelCode->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -256,7 +256,7 @@
 	  protected function btnSearch_Create() {
 			$this->btnSearch = new QButton($this);
 			$this->btnSearch->Name = 'search';
-			$this->btnSearch->Text = 'Search';
+			$this->btnSearch->Text = QApplication::Translate('Search');
 			$this->btnSearch->AddAction(new QClickEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -265,7 +265,7 @@
 	  protected function btnClear_Create() {
 	  	$this->btnClear = new QButton($this);
 			$this->btnClear->Name = 'clear';
-			$this->btnClear->Text = 'Clear';
+			$this->btnClear->Text = QApplication::Translate('Clear');
 			$this->btnClear->AddAction(new QClickEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -274,7 +274,7 @@
 	  protected function lblAdvanced_Create() {
 	  	$this->lblAdvanced = new QLabel($this);
 	  	$this->lblAdvanced->Name = 'Advanced';
-	  	$this->lblAdvanced->Text = 'Advanced Search';
+	  	$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QToggleDisplayAction($this->ctlAdvanced));
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QAjaxAction('lblAdvanced_Click'));
 	  	$this->lblAdvanced->SetCustomStyle('text-decoration', 'underline');
@@ -318,14 +318,14 @@
 	  	if ($this->blnAdvanced) {
 	  		
 	  		$this->blnAdvanced = false;
-	  		$this->lblAdvanced->Text = 'Advanced Search';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  		
 	  		$this->ctlAdvanced->ClearControls();
 	  		
 	  	}
 	  	else {
 	  		$this->blnAdvanced = true;
-	  		$this->lblAdvanced->Text = 'Hide Advanced';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Hide Advanced');
 	  	}
 	  }
 

@@ -369,7 +369,7 @@
 	 				// Create text inputs
 	 				if (CustomFieldQtype::ToString($objCustomFieldArray[$i]->CustomFieldQtypeId) == 'text' || CustomFieldQtype::ToString($objCustomFieldArray[$i]->CustomFieldQtypeId) == 'textarea') {
 	 					$arrCustomFields[$i]['input'] = new QTextBox($objForm);
-	 					$arrCustomFields[$i]['input']->Name = $objCustomFieldArray[$i]->ShortDescription;
+	 					$arrCustomFields[$i]['input']->Name = QApplication::Translate($objCustomFieldArray[$i]->ShortDescription);
 	 					$arrCustomFields[$i]['input']->Required = false;
 	 					if (CustomFieldQtype::ToString($objCustomFieldArray[$i]->CustomFieldQtypeId) == 'textarea' && !$blnSearch) {
 	 						$arrCustomFields[$i]['input']->TextMode = QTextMode::MultiLine;
@@ -401,14 +401,14 @@
 	 				elseif (CustomFieldQtype::ToString($objCustomFieldArray[$i]->CustomFieldQtypeId) == 'select') {
 	 					
 						$arrCustomFields[$i]['input'] = new QListBox($objForm);
-						$arrCustomFields[$i]['input']->Name = $objCustomFieldArray[$i]->ShortDescription;
+						$arrCustomFields[$i]['input']->Name = QApplication::Translate($objCustomFieldArray[$i]->ShortDescription);
 						$arrCustomFields[$i]['input']->Required = false;
 						
 						$objCustomFieldValueArray = CustomFieldValue::LoadArrayByCustomFieldId($objCustomFieldArray[$i]->CustomFieldId, QQ::Clause(QQ::OrderBy(QQN::CustomFieldValue()->ShortDescription)));
 						if ($objCustomFieldValueArray) {
 						
 							// The - Select One - item cannot be removed without also updating CustomField::UpdateControls()
-							$arrCustomFields[$i]['input']->AddItem('- Select One -', null);
+							$arrCustomFields[$i]['input']->AddItem(QApplication::Translate('- Select One -'), null);
 							foreach ($objCustomFieldValueArray as $objCustomFieldValue) {
 								$objListItem = new QListItem($objCustomFieldValue->__toString(), $objCustomFieldValue->CustomFieldValueId);
 								if ($blnEditMode && ($objCustomFieldArray[$i]->CustomFieldSelection) && ($objCustomFieldArray[$i]->CustomFieldSelection->CustomFieldValueId == $objCustomFieldValue->CustomFieldValueId)) {

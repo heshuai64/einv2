@@ -139,7 +139,7 @@
 		// Setup the Short Description (Company Name) Search Input
 	  protected function txtShortDescription_Create() {
 	    $this->txtShortDescription = new QTextBox($this);
-			$this->txtShortDescription->Name = 'Company Name';
+			$this->txtShortDescription->Name = QApplication::Translate('Company Name');
       $this->txtShortDescription->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtShortDescription->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -147,7 +147,7 @@
 	  // Setup the City Search Input
 	  protected function txtCity_Create() {
 	    $this->txtCity = new QTextBox($this);
-			$this->txtCity->Name = 'City';
+			$this->txtCity->Name =  QApplication::Translate('City');
       $this->txtCity->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
       $this->txtCity->AddAction(new QEnterKeyEvent(), new QTerminateAction());
 	  }
@@ -155,8 +155,8 @@
 	  // Setup the State/Province Search Input
 	  protected function lstStateProvince_Create() {
       $this->lstStateProvince = new QListBox($this);
-			$this->lstStateProvince->Name = 'State/Province';
-			$this->lstStateProvince->AddItem('- ALL -', null);
+			$this->lstStateProvince->Name =  QApplication::Translate('State/Province');
+			$this->lstStateProvince->AddItem(QApplication::Translate('- ALL -'), null);
 			foreach (StateProvince::LoadAll() as $objStateProvince) {
 				$this->lstStateProvince->AddItem($objStateProvince->ShortDescription, $objStateProvince->StateProvinceId);
 			}
@@ -165,8 +165,8 @@
 	  // Setup the Country Search Input
 	  protected function lstCountry_Create() {
       $this->lstCountry = new QListBox($this);
-			$this->lstCountry->Name = 'Country';
-			$this->lstCountry->AddItem('- ALL -', null);
+			$this->lstCountry->Name =  QApplication::Translate('Country');
+			$this->lstCountry->AddItem(QApplication::Translate('- ALL -'), null);
 			foreach (Country::LoadAll() as $objCountry) {
 				$this->lstCountry->AddItem($objCountry->ShortDescription, $objCountry->CountryId);
 			}
@@ -183,7 +183,7 @@
 	  protected function btnSearch_Create() {
 			$this->btnSearch = new QButton($this);
 			$this->btnSearch->Name = 'search';
-			$this->btnSearch->Text = 'Search';
+			$this->btnSearch->Text = QApplication::Translate('Search');
 			$this->btnSearch->AddAction(new QClickEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QServerAction('btnSearch_Click'));
 			$this->btnSearch->AddAction(new QEnterKeyEvent(), new QTerminateAction());
@@ -193,7 +193,7 @@
 	  protected function btnClear_Create() {
 	  	$this->btnClear = new QButton($this);
 			$this->btnClear->Name = 'clear';
-			$this->btnClear->Text = 'Clear';
+			$this->btnClear->Text = QApplication::Translate('Clear');
 			$this->btnClear->AddAction(new QClickEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QServerAction('btnClear_Click'));
 			$this->btnClear->AddAction(new QEnterKeyEvent(), new QTerminateAction());			
@@ -203,7 +203,7 @@
 	  protected function lblAdvanced_Create() {
 	  	$this->lblAdvanced = new QLabel($this);
 	  	$this->lblAdvanced->Name = 'Advanced';
-	  	$this->lblAdvanced->Text = 'Advanced Search';
+	  	$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QToggleDisplayAction($this->ctlAdvanced));
 	  	$this->lblAdvanced->AddAction(new QClickEvent(), new QAjaxAction('lblAdvanced_Click'));
 	  	// Make it appear like a link even though it is actually a control
@@ -240,10 +240,10 @@
       $this->dtgCompany->ItemsPerPage = 20;
           
       $this->dtgCompany->AddColumn(new QDataGridColumnExt('<img src=../images/icons/attachment_gray.gif border=0 title=Attachments alt=Attachments>', '<?= Attachment::toStringIcon($_ITEM->GetVirtualAttribute(\'attachment_count\')); ?>', 'SortByCommand="__attachment_count ASC"', 'ReverseSortByCommand="__attachment_count DESC"', 'CssClass="dtg_column"', 'HtmlEntities="false"'));
-      $this->dtgCompany->AddColumn(new QDataGridColumnExt('Company Name', '<?= $_ITEM->__toStringWithLink("bluelink") ?>', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
-      $this->dtgCompany->AddColumn(new QDataGridColumnExt('City', '<?= $_ITEM->__toStringCity() ?>', 'Width=200', 'SortByCommand="company__address_id__city ASC"', 'ReverseSortByCommand="company__address_id__city DESC"', 'CssClass="dtg_column"'));
-      $this->dtgCompany->AddColumn(new QDataGridColumnExt('State/Province', '<?= $_ITEM->__toStringStateProvince() ?>', 'SortByCommand="company__address_id__state_province_id__short_description ASC"', 'ReverseSortByCommand="company__address_id__state_province_id__short_description DESC"', 'CssClass="dtg_column"'));
-      $this->dtgCompany->AddColumn(new QDataGridColumnExt('Country', '<?= $_ITEM->__toStringCountry() ?>', 'SortByCommand="company__address_id__country_id__short_description ASC"', 'ReverseSortByCommand="company__address_id__country_id__short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('Company Name'), '<?= $_ITEM->__toStringWithLink("bluelink") ?>', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
+      $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('City'), '<?= $_ITEM->__toStringCity() ?>', 'Width=200', 'SortByCommand="company__address_id__city ASC"', 'ReverseSortByCommand="company__address_id__city DESC"', 'CssClass="dtg_column"'));
+      $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('State/Province'), '<?= $_ITEM->__toStringStateProvince() ?>', 'SortByCommand="company__address_id__state_province_id__short_description ASC"', 'ReverseSortByCommand="company__address_id__state_province_id__short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('Country'), '<?= $_ITEM->__toStringCountry() ?>', 'SortByCommand="company__address_id__country_id__short_description ASC"', 'ReverseSortByCommand="company__address_id__country_id__short_description DESC"', 'CssClass="dtg_column"'));
       
       // Add the custom field columns with Display set to false. These can be shown by using the column toggle menu.
       $objCustomFieldArray = CustomField::LoadObjCustomFieldArray(7, false);
@@ -309,13 +309,13 @@
 	  protected function lblAdvanced_Click() {
 	  	if ($this->blnAdvanced) {
 	  		$this->blnAdvanced = false;
-	  		$this->lblAdvanced->Text = 'Advanced Search';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Advanced Search');
 	  		
 	  		$this->ctlAdvanced->ClearControls();
 	  	}
 	  	else {
 	  		$this->blnAdvanced = true;
-	  		$this->lblAdvanced->Text = 'Hide Advanced';
+	  		$this->lblAdvanced->Text = QApplication::Translate('Hide Advanced');
 	  	}
 	  }
 	  
