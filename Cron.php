@@ -1,42 +1,10 @@
 <?php
-class Cron{
-    const DATABASE_HOST = 'localhost';
-    const DATABASE_USER = 'root';
-    const LOG_PATH = '/export/inventory/log';
-    const PO_PATH = '/export/inventory/PO';
-    const EXCEL_PATH = '/export/inventory/excel';
-    
-    //const DATABASE_NAME = 'tracmor';
-    const DATABASE_NAME = 'inventory';
-    const DATABASE_PASSWORD = '5333533';
-    const ACTIVE_MQ = "tcp://192.168.1.168:61613";
-    private static $database_connect;
-    private $log = true;
-    
-    public function __construct(){
-        Cron::$database_connect = mysql_connect(self::DATABASE_HOST, self::DATABASE_USER, self::DATABASE_PASSWORD);
+include("base.php");
 
-        if (!Cron::$database_connect) {
-            echo "Unable to connect to DB: " . mysql_error(Cron::$database_connect);
-            exit;
-        }
-        
-        mysql_query("SET NAMES 'UTF8'", Cron::$database_connect);
-        
-        if (!mysql_select_db(self::DATABASE_NAME, Cron::$database_connect)) {
-            echo "Unable to select mydbname: " . mysql_error(Cron::$database_connect);
-            exit;
-        }
-    }
-    
-    private function log($file_name, $data){
-	if($this->log){
-	    //echo $file_name.": ".$data."\n";
-	    if(!file_exists(self::LOG_PATH."/".$file_name)){
-		mkdir(self::LOG_PATH."/".$file_name, 0777);
-	    }
-	    file_put_contents(self::LOG_PATH."/".$file_name."/".date("Ymd").".html", $data, FILE_APPEND);
-	}
+class Cron extends Base{
+    public function __construct(){
+	parent::__construct();
+        mysql_query("SET NAMES 'UTF8'", $this->conn);
     }
     
     public function calculateWeekFlow(){
@@ -54,7 +22,7 @@ class Cron{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -62,7 +30,7 @@ class Cron{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Cron::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	//
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
@@ -72,7 +40,7 @@ class Cron{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -80,7 +48,7 @@ class Cron{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Cron::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
 	//
@@ -91,7 +59,7 @@ class Cron{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -99,7 +67,7 @@ class Cron{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Cron::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
 	//
@@ -110,7 +78,7 @@ class Cron{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -118,7 +86,7 @@ class Cron{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Cron::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
         //print_r($array);
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  End  +++++++++++++++++++++++++++++++</font><br>");
@@ -127,46 +95,46 @@ class Cron{
     public function generatePurchaseOrder(){
 	//get stock day
         $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $stock_day_field_id = $row['custom_field_id'];
 	
 	//get lower limit
 	$sql = "select custom_field_id from custom_field where short_description = 'MOQ'";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $moq_field_id = $row['custom_field_id'];
 	
 	$manufacture = array();
         $sql_4 = "select manufacturer_id,short_description from manufacturer";
-        $result_4 = mysql_query($sql_4, Cron::$database_connect);
+        $result_4 = mysql_query($sql_4, $this->conn);
         while($row_4 = mysql_fetch_assoc($result_4)){
             $manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
         }
 	
 	$sql_1 = "select inventory_model_id,manufacturer_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model";
 	$data = "SKU,英文名称,最低起订数,采购在途,建议采购数,(目前库存量-安全库存量)差值,目前库存量,最低（安全）库存量,备货天数,前三天销售数量,上周销售数量,上上周销售数量,上上上周销售数量"."\n";
-	$result_1 = mysql_query($sql_1, Cron::$database_connect);
+	$result_1 = mysql_query($sql_1, $this->conn);
         while($row_1 = mysql_fetch_assoc($result_1)){
             //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
             //$array[$i]['inventory_model_code'] = $row_1['inventory_model_code'];
             //$array[$i]['short_description'] = $row_1['short_description'];
             //$array[$i]['week_flow'] = $row_1['week_flow'];
             $sql_5 = "select sum(quantity) as quantity from sku_purchase where sku = '".$row_1['inventory_model_code']."' and status = 0";
-            $result_5 = mysql_query($sql_5, Cron::$database_connect);
+            $result_5 = mysql_query($sql_5, $this->conn);
             $row_5 = mysql_fetch_assoc($result_5);
             
             $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
             //echo $sql_2;
             //echo "<br>";
-            $result_2 = mysql_query($sql_2, Cron::$database_connect);
+            $result_2 = mysql_query($sql_2, $this->conn);
             $row_2 = mysql_fetch_assoc($result_2);
             //$array[$i]['quantity'] = $row_2['quantity'];
 	    /*
 	    $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Cron::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             $row_3 = mysql_fetch_assoc($result_3);
             */
 	    $row_3['short_description'] = 3;
@@ -175,7 +143,7 @@ class Cron{
 	    $sql_4 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$moq_field_id."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_4 = mysql_query($sql_4, Cron::$database_connect);
+            $result_4 = mysql_query($sql_4, $this->conn);
             $row_4 = mysql_fetch_assoc($result_4);
             */
 	    $row_4['short_description'] = 0;
@@ -204,15 +172,16 @@ class Cron{
 	    //}
 	}
 	
-	file_put_contents(Cron::PO_PATH."/".date("Y-m-d").".csv", $data);//FILE_APPEND
+	file_put_contents($this->conf['path']['po']."/".date("Y-m-d").".csv", $data);//FILE_APPEND
     }
     
     public function generatePurchaseOrderExcel(){
         require_once '/export/inventory/class/PHPExcel.php';
         require_once '/export/inventory/class/PHPExcel/IOFactory.php';
         $php_excel = new PHPExcel();
+        $today = date("Y-m-d");
         
-        mysql_query("SET NAMES 'latin1'", Cron::$database_connect);
+        mysql_query("SET NAMES 'latin1'", $this->conn);
         
         $php_excel->setActiveSheetIndex(0);
         $php_excel->getActiveSheet()->setCellValueByColumnAndRow(0, 1, 'SKU');
@@ -232,25 +201,25 @@ class Cron{
         
         //get stock day
         $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $stock_day_field_id = $row['custom_field_id'];
 	
 	//get lower limit
 	$sql = "select custom_field_id from custom_field where short_description = 'MOQ'";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $moq_field_id = $row['custom_field_id'];
 	
 	$manufacture = array();
         $sql_4 = "select manufacturer_id,short_description from manufacturer";
-        $result_4 = mysql_query($sql_4, Cron::$database_connect);
+        $result_4 = mysql_query($sql_4, $this->conn);
         while($row_4 = mysql_fetch_assoc($result_4)){
             $manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
         }
 	
 	$sql_1 = "select inventory_model_id,manufacturer_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model order by inventory_model_code";
-	$result_1 = mysql_query($sql_1, Cron::$database_connect);
+	$result_1 = mysql_query($sql_1, $this->conn);
         $i = 2;
         while($row_1 = mysql_fetch_assoc($result_1)){
             //get status field
@@ -264,12 +233,12 @@ class Cron{
             on cfs.custom_field_value_id=cfv.custom_field_value_id 
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$row_1['inventory_model_id']."' and cfv.custom_field_id = '".$status_field_row['custom_field_id']."'";
             //echo $status_value_sql."\n";
-            $status_value_result = mysql_query($status_value_sql, Cron::$database_connect);
+            $status_value_result = mysql_query($status_value_sql, $this->conn);
             $status_value_row = mysql_fetch_assoc($status_value_result);
             
             $status = $status_value_row['short_description'];
             if($status == 'new' || $status == 'waiting for approve' || $status == 'under review' || $status == 'inactive'){
-                echo $row_1['inventory_model_code']."\n";
+                //echo $row_1['inventory_model_code']."\n";
                 continue;
             }
             //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
@@ -277,20 +246,20 @@ class Cron{
             //$array[$i]['short_description'] = $row_1['short_description'];
             //$array[$i]['week_flow'] = $row_1['week_flow'];
             $sql_5 = "select sum(quantity) as quantity from sku_purchase where sku = '".$row_1['inventory_model_code']."' and status = 0";
-            $result_5 = mysql_query($sql_5, Cron::$database_connect);
+            $result_5 = mysql_query($sql_5, $this->conn);
             $row_5 = mysql_fetch_assoc($result_5);
             
             $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
             //echo $sql_2;
             //echo "<br>";
-            $result_2 = mysql_query($sql_2, Cron::$database_connect);
+            $result_2 = mysql_query($sql_2, $this->conn);
             $row_2 = mysql_fetch_assoc($result_2);
             //$array[$i]['quantity'] = $row_2['quantity'];
 	    
 	    $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Cron::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             $row_3 = mysql_fetch_assoc($result_3);
             if(empty($row_3['short_description']))
                 $row_3['short_description'] = 3;
@@ -299,7 +268,7 @@ class Cron{
 	    $sql_4 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$moq_field_id."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_4 = mysql_query($sql_4, Cron::$database_connect);
+            $result_4 = mysql_query($sql_4, $this->conn);
             $row_4 = mysql_fetch_assoc($result_4);
             if(empty($row_4['short_description']))
                 $row_4['short_description'] = 0;
@@ -335,12 +304,200 @@ class Cron{
                     $php_excel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $row_1['week_flow_1']);
                     $php_excel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $row_1['week_flow_2']);
                     $php_excel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $row_1['week_flow_3']);
+                    
+		    /*
+                    mysql_query("SET NAMES 'UTF8'", $this->conn);
+                    $sql_6 = "insert into purchase_planned (date,sku,title,min_purchase_num,purchase_in_the_way,
+                    suggest_purchase_num,stock,safe_stock,stock_days,
+                    three_day_flow,week_flow_1,week_flow_2,week_flow_3) values 
+                    ('".$today."','".$row_1['inventory_model_code']."','".$row_1['long_description']."','".$row_4['short_description']."','".$row_5['quantity']."',
+                    '".$purchase."','".$row_2['quantity']."','".$safe_stock."','".$row_3['short_description']."',
+                    '".$row_1['three_day_flow']."','".$row_1['week_flow_1']."','".$row_1['week_flow_2']."','".$row_1['week_flow_3']."')";
+                    echo $sql_6."\n";
+                    $result_6 = mysql_query($sql_6, $this->conn);
+		    */
                     $i++;
 		}
 	    //}
 	}
         $writer = PHPExcel_IOFactory::createWriter($php_excel, 'Excel5');
-	$writer->save(Cron::PO_PATH."/".date("Y-m-d").".xls");
+	$writer->save($this->conf['path']['po']."/".date("Y-m-d").".xls");
+    }
+    
+    public function generatePurchasePlanned(){
+	mysql_query("SET NAMES 'latin1'", $this->conn);
+	$date = date("Y-m-d");
+	
+	//get stock day
+        $sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['stockDays']."'";
+        $result = mysql_query($sql, $this->conn);
+        $row = mysql_fetch_assoc($result);
+        $stock_day_field_id = $row['custom_field_id'];
+	
+	//get min purchase qty
+	$sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['MOQ']."'";
+        $result = mysql_query($sql, $this->conn);
+        $row = mysql_fetch_assoc($result);
+        $moq_field_id = $row['custom_field_id'];
+	
+	//get status field
+	$sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['skuStatus']."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+	$status_field_id =  $row['custom_field_id'];   
+	
+	//get virtual stock field
+        $sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['virtualStock']."'";
+        $result = mysql_query($sql, $this->conn);
+        $row = mysql_fetch_assoc($result);
+        $virtual_stock_field_id = $row['custom_field_id'];
+	
+	$sql_1 = "select inventory_model_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model order by inventory_model_code";
+	$result_1 = mysql_query($sql_1, $this->conn);
+        while($row_1 = mysql_fetch_assoc($result_1)){
+            //get status value
+            $status_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+            on cfs.custom_field_value_id=cfv.custom_field_value_id 
+            where cfs.entity_qtype_id='2' and cfs.entity_id='".$row_1['inventory_model_id']."' and cfv.custom_field_id = '".$status_field_id."'";
+            //echo $status_value_sql."\n";
+            $status_value_result = mysql_query($status_value_sql, $this->conn);
+            $status_value_row = mysql_fetch_assoc($status_value_result);
+            $status = $status_value_row['short_description'];
+            if($status == 'new' || $status == 'waiting for approve' || $status == 'under review' || $status == 'inactive'){
+                //echo $row_1['inventory_model_code']."\n";
+                continue;
+            }
+	    
+	    //get stock day
+	    $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	    on cfs.custom_field_value_id = cfv.custom_field_value_id 
+	    where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_3 = mysql_query($sql_3, $this->conn);
+            $row_3 = mysql_fetch_assoc($result_3);
+            if(!empty($row_3['short_description'])){
+		$stock_day = $row_3['short_description'];
+	    }else{
+		$stock_day = 3;
+	    }
+	    
+	    //get moq
+	    $sql_4 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	    on cfs.custom_field_value_id = cfv.custom_field_value_id 
+	    where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$moq_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_4 = mysql_query($sql_4, $this->conn);
+            $row_4 = mysql_fetch_assoc($result_4);
+            if(!empty($row_4['short_description'])){
+                $min_purchase_quantity = $row_4['short_description'];
+	    }else{
+		$min_purchase_quantity = 50;
+	    }
+	    
+	    if($min_purchase_quantity % 10 < 5){
+		$min_purchase_quantity = floor($min_purchase_quantity / 10) * 10 + 5;
+	    }elseif($min_purchase_quantity % 10 > 5){
+		$min_purchase_quantity = floor($min_purchase_quantity / 10) * 10 + 10;
+	    }
+	    //get virtual stock
+	    $sql_5 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
+	    on cfs.custom_field_value_id = cfv.custom_field_value_id 
+	    where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$virtual_stock_field_id."'";
+            //echo $sql_3;
+            //echo "<br>";
+            $result_5 = mysql_query($sql_5, $this->conn);
+            $row_5 = mysql_fetch_assoc($result_5);
+	    $virtual_stock = $row_5['short_description'];
+	    
+	    //get stock qty
+	    $sql_6 = "select quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."' and location_id = '".$this->conf['location']['warehouse']."'";
+	    $result_6 = mysql_query($sql_6, $this->conn);
+	    $row_6 = mysql_fetch_assoc($result_6);
+	    $stock = $row_6['quantity'];
+	    
+	    //get purchase in transit
+	    $sql_8 = "select sum(sku_purchase_qty) as purchase_in_transit from purchase_orders where purchase_status = '6' and sku = '".$row_1 ['inventory_model_code']."' group by sku";
+	    $result_8 = mysql_query($sql_8, $this->conn);
+            $row_8 = mysql_fetch_assoc($result_8);
+	    $purchase_in_transit = $row_8['purchase_in_transit'];
+	    
+	    $buffer_day = 2;
+	    $rate = 1;
+	    $flow = ($row_1['week_flow_1'] + $row_1['week_flow_2']) / 12;
+	    $suggest_purchase_num = $flow * ($stock_day + $buffer_day) * $rate - $virtual_stock - $purchase_in_transit;
+	    if($suggest_purchase_num > $stock){
+		$sql_7 = "insert into purchase_planned (date,sku,sku_status,title,min_purchase_num,
+		purchase_in_the_way,suggest_purchase_num,stock,virtual_stock,stock_days,three_day_flow,
+		week_flow_1,week_flow_2,week_flow_3,
+		purchase_status,purchase_type) values 
+		('".$date."','".$row_1 ['inventory_model_code']."','".$status."','".$row_1['long_description']."','".$min_purchase_quantity."',
+		'".$purchase_in_transit."','".$suggest_purchase_num."','".$stock."','".$virtual_stock."','".$stock_day."','".$row_1 ['three_day_flow']."',
+		'".$row_1 ['week_flow_1']."','".$row_1 ['week_flow_2']."','".$row_1 ['week_flow_3']."',
+		'0','0')";
+		$result_7 = mysql_query($sql_7, $this->conn);
+	    }
+	}
+    }
+    
+    //ALTER TABLE `purchase_planned` CHANGE `safe_stock` `virtual_stock` INT( 11 ) NOT NULL;
+    //ALTER TABLE `purchase_planned` ADD `type` INT( 1 ) NOT NULL DEFAULT '0';
+    public function calculateVirtualStock(){
+	$this->log("calculateVirtualStock", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
+	//get virtual stock field
+        $sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['virtualStock']."'";
+        $result = mysql_query($sql, $this->conn);
+        $row = mysql_fetch_assoc($result);
+        $field_id = $row['custom_field_id'];
+	
+	$service_result = $this->get($this->conf['service']['ebayBO'], 'getReadyShipShipmentSku');
+	$service_result = json_decode($service_result);
+	//$this->log("calculateVirtualStock", print_r($service_result, true));
+	for($i = 0; $i < count($service_result); $i++){
+	    $sku = $service_result[$i]->skuId;
+	    $qty = $service_result[$i]->quantity;
+	    $this->log("calculateVirtualStock", $sku.":".$qty."<br>");
+	    //print_r($result[$i]);
+	    //continue;
+	    $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+            $row = mysql_fetch_assoc($result);
+	    $inventory_model_id = $row['inventory_model_id'];
+	    
+	    $sql_1 = "select count(*) as num from custom_field_selection as cfs left join custom_field_value as cfv 
+            on cfs.custom_field_value_id=cfv.custom_field_value_id 
+            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$field_id."'";
+	    $result_1 = mysql_query($sql_1, $this->conn);
+            $row_1 = mysql_fetch_assoc($result_1);
+	    
+	    //get stock qty
+	    $sql_3 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$inventory_model_id."' and location_id = '".$this->conf['location']['warehouse']."'";
+	    $result_3 = mysql_query($sql_3, $this->conn);
+	    $row_3 = mysql_fetch_assoc($result_3);
+	    $stock = $row_3['quantity'];
+		
+	    if($row_1['num'] == 0){
+		$sql_2 = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values  
+		(".$field_id.",'".($stock - $qty)."',1,now())";
+		$result_2 = mysql_query($sql_2, $this->conn);
+		$custom_field_value_id = mysql_insert_id($this->conn);
+		$this->log("calculateVirtualStock", $sql_2."<br>");
+		
+		$sql_4 = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values 
+		(".$custom_field_value_id.",2,".$inventory_model_id.")";
+		$result_4 = mysql_query($sql_4, $this->conn);
+		$this->log("calculateVirtualStock", $sql_4."<br><br>");
+	    }else{
+		//cfv.short_description - ".$qty." 
+		$sql_2 = "update custom_field_selection as cfs left join custom_field_value as cfv 
+		on cfs.custom_field_value_id=cfv.custom_field_value_id set cfv.short_description = '".($stock - $qty)."' 
+		where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$field_id."'";
+		$result_2 = mysql_query($sql_2, $this->conn);
+		$this->log("calculateVirtualStock", $sql_2."<br><br>");
+	    }
+	}
+	$this->log("calculateVirtualStock", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  End  +++++++++++++++++++++++++++++++</font><br>");
     }
     
     public function generateComplaints(){
@@ -348,7 +505,7 @@ class Cron{
         require_once '/export/inventory/class/PHPExcel/IOFactory.php';
         $php_excel = new PHPExcel();
         
-        mysql_query("SET NAMES 'latin1'", Cron::$database_connect);
+        mysql_query("SET NAMES 'latin1'", $this->conn);
         
         $php_excel->setActiveSheetIndex(0);
         $php_excel->getActiveSheet()->setCellValueByColumnAndRow(0, 1, 'No');
@@ -359,7 +516,7 @@ class Cron{
         $php_excel->getActiveSheet()->setCellValueByColumnAndRow(5, 1, '坏品率');
         
         $sql = "select custom_field_id from custom_field where short_description = 'Stock Days'";
-        $result = mysql_query($sql, Cron::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
     }
     
@@ -368,7 +525,7 @@ class Cron{
     }
     
     public function __destruct(){
-        mysql_close(Cron::$database_connect);
+        mysql_close($this->conn);
     }
 }
 
