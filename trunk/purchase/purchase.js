@@ -288,11 +288,27 @@ Ext.onReady(function(){
         return lang.Purchase_Orders_Type_Array[v];
     }
     
+    function renderPurchaseOrdersOldPurchasePrice(v, p, r){
+        if(r.data.sku_old_price == 0){
+            return r.data.sku_price;
+        }else{
+            return v;
+        }
+    }
+    
     function renderPurchaseOrdersPurchasePrice(v, p, r){
         if(r.data.sku_old_price == 0 || r.data.sku_old_price == r.data.sku_price){
             return v;
         }else{
             return '<font color="red">'+v+'</font>';
+        }
+    }
+    
+    function renderPurchaseOrdersOldPurchaseQty(v, p, r){
+        if(r.data.sku_old_purchase_qty == 0){
+            return r.data.sku_purchase_qty;
+        }else{
+            return v;
         }
     }
     
@@ -413,11 +429,25 @@ Ext.onReady(function(){
             align: 'center',
             sortable: true
         },{
+            header: lang.Sku_Old_Price,
+            dataIndex: 'sku_old_price',
+            width: 65,
+            align: 'center',
+            renderer: renderPurchaseOrdersOldPurchasePrice,
+            sortable: true
+        },{
             header: lang.Sku_Price,
             dataIndex: 'sku_price',
             width: 60,
             align: 'center',
             renderer: renderPurchaseOrdersPurchasePrice,
+            sortable: true
+        },{
+            header: lang.Sku_Old_Purchase_Qty,
+            dataIndex: 'sku_old_purchase_qty',
+            width: 85,
+            align: 'center',
+            renderer: renderPurchaseOrdersOldPurchaseQty,
             sortable: true
         },{
             header: lang.Sku_Purchase_Qty,
@@ -790,6 +820,7 @@ Ext.onReady(function(){
                 text: lang.Edit_Purchase_Orders,
                 handler: function(){
                     var selections = purchaseOrdersGrid.selModel.getSelections();
+                    var purchase_orders_id = selections[0].data.id;
                     
                     var purchaseOrdersForm = new Ext.FormPanel({
                         autoScroll:true,
@@ -810,11 +841,17 @@ Ext.onReady(function(){
                                   },{
                                     xtype:"numberfield",
                                     fieldLabel: lang.Sku_Price,
-                                    name:"sku_price"
+                                    name:"sku_price",
+                                    listeners: {
+                                        change: function(){
+                                            purchaseOrdersForm.getForm().items.items[2].allowBlank = false;
+                                        }
+                                    }
                                   },{
                                     xtype:"textarea",
                                     fieldLabel: lang.Sku_Price_Remark,
                                     name:"sku_price_remark",
+                                    //allowBlank: false,
                                     width: 200, 
                                     height: 100
                                   }]
@@ -830,19 +867,28 @@ Ext.onReady(function(){
                                   },{
                                     xtype:"numberfield",
                                     fieldLabel: lang.Sku_Purchase_Qty,
-                                    name:"sku_purchase_qty"
+                                    name:"sku_purchase_qty",
+                                    listeners: {
+                                        change: function(){
+                                            purchaseOrdersForm.getForm().items.items[5].allowBlank = false;
+                                        }
+                                    }
                                   },{
                                     xtype:"textarea",
                                     fieldLabel: lang.Sku_Purchase_Qty_Remark,
                                     name:"sku_purchase_qty_remark",
+                                    //allowBlank: false,
                                     width: 200, 
                                     height: 100
                                   }]
                             }]
+                        },{
+                            xtype:"hidden",
+                            name:"id",
+                            value: purchase_orders_id
                         }]
                     })
                     
-                    var purchase_orders_id = selections[0].data.id;
                     purchaseOrdersForm.getForm().load({url:'purchase.php?action=getPurchaseOrdersById', 
                             method:'GET', 
                             params: {id: purchase_orders_id}, 
@@ -861,6 +907,19 @@ Ext.onReady(function(){
                         buttons: [{
                             text: lang.Update,
                             handler: function(){
+                                purchaseOrdersForm.getForm().submit({
+                                    url: "purchase.php?action=updatePurchaseOrders",
+                                    success: function(f, a){
+                                        var response = Ext.decode(a.response.responseText);
+                                        if(response.success){
+                                            purchaseOrdersWindow.close();
+                                            purchaseOrdersStore.reload();
+                                        }
+                                    },
+                                    waitMsg: lang.Waitting
+                                });
+                                
+                                /*
                                 Ext.Ajax.request({
                                     waitMsg: 'Please wait...',
                                     url: 'purchase.php?action=updatePurchaseOrders',
@@ -888,6 +947,7 @@ Ext.onReady(function(){
                                         Ext.MessageBox.alert('error', 'could not connect to the database. retry later');
                                     }
                                 });
+                                */
                             }
                         },{
                             text: lang.Close,
@@ -1247,7 +1307,7 @@ Ext.onReady(function(){
                                 'id',
                                 'name'
                             ],
-                            data: [['2', lang.Purchase_Planned_Type_Enum.all], ['1', lang.Purchase_Planned_Type_Enum.normal], ['0', lang.Purchase_Planned_Type_Enum.manual]]
+                            data: [['3', lang.Purchase_Planned_Type_Enum.all], ['2', lang.Purchase_Planned_Type_Enum.manual], ['1', lang.Purchase_Planned_Type_Enum.normal]]
                         }),
                         valueField: 'id',
                         displayField: 'name',
@@ -1324,7 +1384,7 @@ Ext.onReady(function(){
     var purchasePlannedPanel = new Ext.Panel({
         id: 'purchase-planned',
         autoScroll: true,
-        width: 940,
+        width: 1024,
         //hidden: true,
         items: purchasePlannedGrid,
         renderTo: 'purchase-planned-panel'
@@ -1333,7 +1393,7 @@ Ext.onReady(function(){
     var purchaseOrdersPanel = new Ext.Panel({
         id: 'purchase-orders',
         autoScroll: true,
-        width: 1650,
+        width: 1820,
         hidden: true,
         items: purchaseOrdersGrid,
         renderTo: 'purchase-orders-panel'

@@ -1,75 +1,26 @@
 <?php
-class Service{
-    const LOG_PATH = '/export/inventory/log';
-    const PO_PATH = '/export/inventory/PO';
-    private static $active_mq;
-    private static $database_connect;
-    private $log = true;
+include("base.php");
+
+class Service extends Base{
     private static $q_action = array('stockAttention', 'getSkuStatusGrid');
     private static $field_array;
     
     public function __construct(){
-	$config = parse_ini_file('config.ini', true);
-	
-	Service::$active_mq = $config['service']['activeMq'];
-	
-	Service::$field_array = $config['fieldArray'];
+	parent::__construct();
+	Service::$field_array = $this->conf['fieldArray'];
 	//print_r(Service::$field_array);
-        Service::$database_connect = mysql_connect($config['database']['host'], $config['database']['user'], $config['database']['password']);
-
-        if (!Service::$database_connect) {
-            echo "Unable to connect to DB: " . mysql_error(Service::$database_connect);
-            exit;
-        }
         
         if(!empty($_GET['action']) && !in_array($_GET['action'], Service::$q_action)){
-            mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+            mysql_query("SET NAMES 'UTF8'", $this->conn);
         }elseif(empty($_GET['action'])){
-            mysql_query("SET NAMES 'UTF8'", Service::$database_connect);
+            mysql_query("SET NAMES 'UTF8'", $this->conn);
         }
-        
-        if (!mysql_select_db($config['database']['name'], Service::$database_connect)) {
-            echo "Unable to select mydbname: " . mysql_error(Service::$database_connect);
-            exit;
-        }
-    }
-    
-    private function log($file_name, $data){
-	if($this->log){
-	    //echo $file_name.": ".$data."\n";
-	    if(!file_exists(self::LOG_PATH."/".$file_name)){
-		mkdir(self::LOG_PATH."/".$file_name, 0777);
-	    }
-	    file_put_contents(self::LOG_PATH."/".$file_name."/".date("Ymd").".html", $data, FILE_APPEND);
-	}
-    }
-    
-    private function sendMessageToAM($destination, $message){
-        require_once 'Stomp.php';
-        require_once 'Stomp/Message/Map.php';
-        
-        $con = new Stomp(Service::$active_mq);
-        $conn->sync = false;
-        $con->connect();
-        
-        $header = array();
-        $header['transformation'] = 'jms-map-json';
-        $mapMessage = new StompMessageMap($message, $header);
-        $result = $con->send($destination, $mapMessage, array('persistent'=>'true'));
-        $con->disconnect();
-        if(!$result){
-            $this->log("sendMessageToAM", "send message to activemq failure,
-                       destination: $destination,
-                       mapMessage: ".print_r($mapMessage, true)."
-                       <br>");
-        }
-        return $result;
     }
     
     private function checkSkuCombo($inventory_model){
 	$sql = "select count(*) as num from combo where sku = '".$inventory_model."'";
 	//$this->log("skuTakeOut", $sql."<br>");
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
 	return $row['num'];
     }
@@ -77,26 +28,27 @@ class Service{
     private function skuComboTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method=''){
 	$sql = "select attachment,quantity from combo where sku = '".$inventory_model."'";
 	$this->log("skuTakeOut", $sql."<br>");
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
         while($row = mysql_fetch_assoc($result)){
 	    $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['attachment']."'";
 	    $this->log("skuTakeOut", $sql_1."<br>");
-	    $result_1 = mysql_query($sql_1, Service::$database_connect);
+	    $result_1 = mysql_query($sql_1, $this->conn);
 	    $row_1 = mysql_fetch_assoc($result_1);
 	    
 	    $this->skuTakeOut($row['attachment'],$row_1['inventory_model_id'],$row['quantity'] * $quantity,$shipment_id,$shipment_method);
 	}
     }
     
+    /*
     private function getSkuStock($sku){
 	$sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
 	$inventory_model_id = $row['inventory_model_id'];
 	
 	$sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
 	$this->log("inventoryTakeOut", $sql."<br>");
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
 	return $row['quantity'];
     }
@@ -104,24 +56,24 @@ class Service{
     private function getStock($inventory_model_id){
 	$sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
 	$this->log("inventoryTakeOut", $sql."<br>");
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
 	return $row['quantity'];
     }
-    
+    */
     private function checkSkuStock($sku, $quantity){
 	if($this->checkSkuCombo($sku)){
 	    $this->log("inventoryTakeOut", "<font color='yellow'>" . $sku." is combo!</font>");
 	    $sql = "select attachment,quantity from combo where sku = '".$sku."'";
-	    $result = mysql_query($sql, Service::$database_connect);
+	    $result = mysql_query($sql, $this->conn);
 	    while($row = mysql_fetch_assoc($result)){
-		if($this->getSkuStock($row['attachment']) < $quantity * $row['quantity']){
+		if($this->getStock("", $row['attachment']) < $quantity * $row['quantity']){
 		    return false;
 		}
 	    }
 	    return true;
 	}else{
-	    if($this->getSkuStock($sku) >= $quantity){
+	    if($this->getStock("", $sku) >= $quantity){
 		return true;
 	    }else{
 		return false;
@@ -158,7 +110,7 @@ class Service{
         $this->log("skuTakeOut", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $source_location_id = $row['location_id'];
         $inventory_location_id = $row['inventory_location_id'];
@@ -169,8 +121,8 @@ class Service{
             $this->log("skuTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
-            $transaction_id = mysql_insert_id(Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
+            $transaction_id = mysql_insert_id($this->conn);
             
             //-------------------------------------------   Weight   -----------------------------------------------
             //get weight field id
@@ -179,7 +131,7 @@ class Service{
             $this->log("skuTakeOut", $weight_field_sql."<br>");
             //echo $weight_field_sql;
             //echo "<br>";
-            $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+            $weight_field_result = mysql_query($weight_field_sql, $this->conn);
             $weight_field_row = mysql_fetch_assoc($weight_field_result);
             
             
@@ -190,7 +142,7 @@ class Service{
             $this->log("skuTakeOut", $weight_value_sql."<br>");
             //echo $weight_value_sql;
             //echo "<br>";
-            $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+            $weight_value_result = mysql_query($weight_value_sql, $this->conn);
             $weight_value_row = mysql_fetch_assoc($weight_value_result);
             $weight = (float)$weight_value_row['short_description'];
             //echo "<font color='red'><br>Weight End<br></font>";
@@ -203,7 +155,7 @@ class Service{
             $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
             echo $envelope_field_sql;
             echo "<br>";
-            $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+            $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
             $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
             
             
@@ -213,7 +165,7 @@ class Service{
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
             echo $envelope_value_sql;
             echo "<br>";
-            $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+            $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
             $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
             $envelope = $envelope_value_row['short_description'];
             
@@ -221,7 +173,7 @@ class Service{
             $envelope_model_sql = "select inventory_model_id from inventory_model where short_description ='Envelope-".$envelope."'";
             echo $envelope_model_sql;
             echo "<br>";
-            $envelope_model_result = mysql_query($envelope_model_sql, Service::$database_connect);
+            $envelope_model_result = mysql_query($envelope_model_sql, $this->conn);
             $envelope_model_row = mysql_fetch_assoc($envelope_model_result);
             $envelope_model_id = $envelope_model_row['inventory_model_id'];
             
@@ -229,7 +181,7 @@ class Service{
             $envelope_location_sql = "select location_id from inventory_location where inventory_model_id = '".$envelope_model_id."'";// and quantity > ".$quantity."";
             echo $envelope_location_sql;
             echo "<br>";
-            $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+            $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
             $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
             $envelope_location_id = $envelope_location_row['location_id'];
             
@@ -238,21 +190,21 @@ class Service{
                 $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$inventory_model."','".$created_by."','".date("Y-m-d H:i:s")."')";
                 echo $sql;
                 echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
-                $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
+                $envelope_transaction_id = mysql_insert_id($this->conn);
                 
                 //envelope stock out
                 $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                 values ('".$envelope_model_id."','".$envelope_transaction_id."','".$quantity."','".$envelope_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                 echo $envelope_stock_out_sql;
                 echo "<br>";
-                $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                 if($envelope_stock_out_result){
                     //envelope update stock quantity
                     $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$envelope_model_id."' and location_id = '".$envelope_location_id."'";
                     echo $envelope_update_stock_sql;
                     echo "<br>";
-                    $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                    $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                 }
             }else{
                 echo "Envelope Not In Location!<br>";
@@ -282,18 +234,18 @@ class Service{
             $this->log("skuTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             if($result){
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
                 $this->log("skuTakeOut", $sql."<br>");
                 //echo $sql;
                 //echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
                 
                 $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
                 //$this->log("skuTakeOut", $sql."<br>");
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
                 $this->log("skuTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 echo $inventory_model." 出库成功(success).<br>";
                 flush();
@@ -342,7 +294,7 @@ class Service{
                 $this->log("inventoryTakeOut", $sql."<br>");
                 //echo $sql;
                 //echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
                 $row = mysql_fetch_assoc($result);
                 $inventory_model_id = $row['inventory_model_id'];
                 $inventory_model_id_array[$i] = $inventory_model_id;
@@ -351,7 +303,7 @@ class Service{
 		//get sku location
                 $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
                 $this->log("inventoryTakeOut", $sql."<br>");
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
                 $row = mysql_fetch_assoc($result);
                 $location_quantity = $row['quantity'];
 		
@@ -421,7 +373,7 @@ class Service{
             $this->log("inventoryTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $inventory_model_id = $row['inventory_model_id'];
 	    
@@ -429,7 +381,7 @@ class Service{
             //get sku location
             $sql = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             $this->log("inventoryTakeOut", $sql."<br>");
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $location_quantity = $row['quantity'];
 	    
@@ -486,7 +438,7 @@ class Service{
         $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$s_envelope_model_id."'";
         //echo $envelope_location_sql;
         //echo "<br>";
-        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
         $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
         $s_location_id = $envelope_location_row['location_id'];
         $s_inventory_location_id = $envelope_location_row['inventory_location_id'];
@@ -495,7 +447,7 @@ class Service{
         $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$m_envelope_model_id."'";
         //echo $envelope_location_sql;
         //echo "<br>";
-        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
         $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
         $m_location_id = $envelope_location_row['location_id'];
         $m_inventory_location_id = $envelope_location_row['inventory_location_id'];
@@ -504,7 +456,7 @@ class Service{
         $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$l_envelope_model_id."'";
         //echo $envelope_location_sql;
         //echo "<br>";
-        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
         $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
         $l_location_id = $envelope_location_row['location_id'];
         $l_inventory_location_id = $envelope_location_row['inventory_location_id'];
@@ -513,7 +465,7 @@ class Service{
         $envelope_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$xl_envelope_model_id."'";
         //echo $envelope_location_sql;
         //echo "<br>";
-        $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+        $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
         $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
         $xl_location_id = $envelope_location_row['location_id'];
         $xl_inventory_location_id = $envelope_location_row['inventory_location_id'];
@@ -522,7 +474,7 @@ class Service{
         $paper_tube_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$s_paper_tube_modle_id."'";
         //echo $paper_tube_location_sql;
         //echo "<br>";
-        $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+        $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
         $paper_tube_location_row = mysql_fetch_assoc($envelope_location_result);
         $s_p_location_id = $paper_tube_location_row['location_id'];
         $s_p_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -531,7 +483,7 @@ class Service{
         $paper_tube_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$m_paper_tube_modle_id."'";
         //echo $paper_tube_location_sql;
         //echo "<br>";
-        $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+        $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
         $paper_tube_location_row = mysql_fetch_assoc($envelope_location_result);
         $m_p_location_id = $paper_tube_location_row['location_id'];
         $m_p_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -540,7 +492,7 @@ class Service{
         $paper_tube_location_sql = "select location_id,inventory_location_id from inventory_location where inventory_model_id = '".$l_paper_tube_modle_id."'";
         //echo $paper_tube_location_sql;
         //echo "<br>";
-        $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+        $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
         $paper_tube_location_row = mysql_fetch_assoc($envelope_location_result);
         $l_p_location_id = $paper_tube_location_row['location_id'];
         $l_p_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -548,7 +500,7 @@ class Service{
 //-------------------------------------------   Constant  End -------------------------------------------
         
         $sql = "select shipment_id from inventory_transaction where inventory_transaction_id = 90";//envelope_status = 0 and shipment_id !=''";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
         while($row = mysql_fetch_assoc($result)){
             //$sql_1 = "select inventory_transaction_id,inventory_location_id,quantity from inventory_transaction where shipment_id = '".$row['shipment_id']."'";
@@ -556,7 +508,7 @@ class Service{
             $sql_1 = "select inventory_transaction_id,inventory_location_id,quantity from inventory_transaction where inventory_transaction_id = 89 or inventory_transaction_id = 90";
             echo $sql_1;
             echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
             $num_rows_1 = mysql_num_rows($result_1);
             
             if($num_rows_1 > 1){
@@ -578,7 +530,7 @@ class Service{
                     $category_sql = "select category_id from inventory_model where inventory_model_id = '".$row_1['inventory_location_id']."'";
                     echo $category_sql;
                     echo "<br>";
-                    $category_result = mysql_query($category_sql, Service::$database_connect);
+                    $category_result = mysql_query($category_sql, $this->conn);
                     $category_row = mysql_fetch_assoc($category_result);
                     $category_id = $category_row['category_id'];
                     echo "category_id: ".$category_id."<br>";
@@ -588,7 +540,7 @@ class Service{
                         $paper_tube_field_sql = "select custom_field_id from custom_field where short_description = '".$paper_tube_field_value."'";
                         echo $paper_tube_field_sql;
                         echo "<br>";
-                        $paper_tube_field_result = mysql_query($paper_tube_field_sql, Service::$database_connect);
+                        $paper_tube_field_result = mysql_query($paper_tube_field_sql, $this->conn);
                         $paper_tube_field_row = mysql_fetch_assoc($paper_tube_field_result);
                         
                         
@@ -598,7 +550,7 @@ class Service{
                         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$paper_tube_field_row['custom_field_id']."'";
                         echo $paper_tube_value_sql;
                         echo "<br>";
-                        $paper_tube_value_result = mysql_query($paper_tube_value_sql, Service::$database_connect);
+                        $paper_tube_value_result = mysql_query($paper_tube_value_sql, $this->conn);
                         $paper_tube_value_row = mysql_fetch_assoc($paper_tube_value_result);
                         $paper_tube = $paper_tube_value_row['short_description'];
                         
@@ -606,7 +558,7 @@ class Service{
                         $paper_tube_model_sql = "select inventory_model_id from inventory_model where short_description ='".$paper_tube_prefix.$paper_tube."'";
                         echo $paper_tube_model_sql;
                         echo "<br>";
-                        $paper_tube_model_result = mysql_query($paper_tube_model_sql, Service::$database_connect);
+                        $paper_tube_model_result = mysql_query($paper_tube_model_sql, $this->conn);
                         $paper_tube_model_row = mysql_fetch_assoc($paper_tube_model_result);
                         $paper_tube_model_id = $paper_tube_model_row['inventory_model_id'];
                         
@@ -631,7 +583,7 @@ class Service{
                         $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".$envelope_field_value."'";
                         echo $envelope_field_sql;
                         echo "<br>";
-                        $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+                        $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
                         $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
                         
                         
@@ -641,7 +593,7 @@ class Service{
                         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
                         echo $envelope_value_sql;
                         echo "<br>";
-                        $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+                        $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
                         $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
                         $envelope = $envelope_value_row['short_description'];
                         
@@ -649,7 +601,7 @@ class Service{
                         $envelope_model_sql = "select inventory_model_id from inventory_model where short_description ='".$envelope_prefix.$envelope."'";
                         echo $envelope_model_sql;
                         echo "<br>";
-                        $envelope_model_result = mysql_query($envelope_model_sql, Service::$database_connect);
+                        $envelope_model_result = mysql_query($envelope_model_sql, $this->conn);
                         $envelope_model_row = mysql_fetch_assoc($envelope_model_result);
                         $envelope_model_id = $envelope_model_row['inventory_model_id'];
                     
@@ -706,7 +658,7 @@ class Service{
                     $paper_tube_location_sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$s_paper_tube_modle_id."'";// and quantity > ".$quantity."";
                     echo $paper_tube_location_sql;
                     echo "<br>";
-                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
                     $paper_tube_location_row = mysql_fetch_assoc($paper_tube_location_result);
                     $paper_tube_location_id = $paper_tube_location_row['location_id'];
                     $paper_tube_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -716,20 +668,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $paper_tube_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $paper_tube_transaction_id = mysql_insert_id($this->conn);
                         
                         $paper_tube_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$paper_tube_inventory_location_id."','".$paper_tube_transaction_id."','".$s_paper_count."','".$paper_tube_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $paper_tube_stock_out_sql;
                         echo "<br>";
-                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, Service::$database_connect);
+                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, $this->conn);
                         if($paper_tube_stock_out_result){
                             //paper tube update stock quantity
                             $paper_tube_update_stock_sql = "update inventory_location set quantity = quantity - ".$s_paper_count." where inventory_model_id = '".$s_paper_tube_modle_id."' and location_id = '".$paper_tube_location_id."'";
                             echo $paper_tube_update_stock_sql;
                             echo "<br>";
-                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, Service::$database_connect);
+                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, $this->conn);
                         }
                     }
                     echo "<font color='red'>S In Many Paper Tube End<br></font>";
@@ -739,7 +691,7 @@ class Service{
                     $paper_tube_location_sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$m_paper_tube_modle_id."'";// and quantity > ".$quantity."";
                     echo $paper_tube_location_sql;
                     echo "<br>";
-                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
                     $paper_tube_location_row = mysql_fetch_assoc($paper_tube_location_result);
                     $paper_tube_location_id = $paper_tube_location_row['location_id'];
                     $paper_tube_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -749,20 +701,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $paper_tube_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $paper_tube_transaction_id = mysql_insert_id($this->conn);
                         
                         $paper_tube_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$paper_tube_inventory_location_id."','".$paper_tube_transaction_id."','".$m_paper_count."','".$paper_tube_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $paper_tube_stock_out_sql;
                         echo "<br>";
-                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, Service::$database_connect);
+                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, $this->conn);
                         if($paper_tube_stock_out_result){
                             //paper tube update stock quantity
                             $paper_tube_update_stock_sql = "update inventory_location set quantity = quantity - ".$m_paper_count." where inventory_model_id = '".$m_paper_tube_modle_id."' and location_id = '".$paper_tube_location_id."'";
                             echo $paper_tube_update_stock_sql;
                             echo "<br>";
-                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, Service::$database_connect);
+                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, $this->conn);
                         }
                     }
                     echo "<font color='red'>M In Many Paper Tube End<br></font>";
@@ -772,7 +724,7 @@ class Service{
                     $paper_tube_location_sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$l_paper_tube_modle_id."'";// and quantity > ".$quantity."";
                     echo $paper_tube_location_sql;
                     echo "<br>";
-                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+                    $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
                     $paper_tube_location_row = mysql_fetch_assoc($paper_tube_location_result);
                     $paper_tube_location_id = $paper_tube_location_row['location_id'];
                     $paper_tube_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -782,20 +734,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $paper_tube_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $paper_tube_transaction_id = mysql_insert_id($this->conn);
                         
                         $paper_tube_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$paper_tube_inventory_location_id."','".$paper_tube_transaction_id."','".$l_paper_count."','".$paper_tube_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $paper_tube_stock_out_sql;
                         echo "<br>";
-                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, Service::$database_connect);
+                        $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, $this->conn);
                         if($paper_tube_stock_out_result){
                             //paper tube update stock quantity
                             $paper_tube_update_stock_sql = "update inventory_location set quantity = quantity - ".$l_paper_count." where inventory_model_id = '".$l_paper_tube_modle_id."' and location_id = '".$paper_tube_location_id."'";
                             echo $paper_tube_update_stock_sql;
                             echo "<br>";
-                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, Service::$database_connect);
+                            $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, $this->conn);
                         }
                     }
                     echo "<font color='red'>L In Many Paper Tube End<br></font>";
@@ -810,20 +762,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $envelope_transaction_id = mysql_insert_id($this->conn);
                         
                         $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$s_inventory_location_id."','".$envelope_transaction_id."',1,'".$s_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $envelope_stock_out_sql;
                         echo "<br>";
-                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                         if($envelope_stock_out_result){
                             //M envelope update stock quantity
                             $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$s_envelope_model_id."' and location_id = '".$s_location_id."'";
                             echo $envelope_update_stock_sql;
                             echo "<br>";
-                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                         }
                     }elseif($s_envelope_count > 1 && $s_envelope_count < 5){
                         echo "<font color='red'>2-4 S = 1L</font><br>";
@@ -831,20 +783,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $envelope_transaction_id = mysql_insert_id($this->conn);
                         
                         $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$l_inventory_location_id."','".$envelope_transaction_id."',1,'".$l_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $envelope_stock_out_sql;
                         echo "<br>";
-                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                         if($envelope_stock_out_result){
                             //M envelope update stock quantity
                             $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$l_envelope_model_id."' and location_id = '".$l_location_id."'";
                             echo $envelope_update_stock_sql;
                             echo "<br>";
-                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                         }
                     }elseif($s_envelope_count == 5){
                         echo "<font color='red'>5S = 1XL</font><br>";
@@ -852,20 +804,20 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $envelope_transaction_id = mysql_insert_id($this->conn);
                         
                         $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$xl_inventory_location_id."','".$envelope_transaction_id."',1,'".$xl_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $envelope_stock_out_sql;
                         echo "<br>";
-                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                         if($envelope_stock_out_result){
                             //M envelope update stock quantity
                             $envelope_update_stock_sql = "update inventory_location set quantity = quantity - 1 where inventory_model_id = '".$xl_envelope_model_id."' and location_id = '".$xl_location_id."'";
                             echo $envelope_update_stock_sql;
                             echo "<br>";
-                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                         }
                     }else{
                         //over XL
@@ -876,60 +828,60 @@ class Service{
                     $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $sql;
                     echo "<br>";
-                    $result = mysql_query($sql, Service::$database_connect);
-                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    $result = mysql_query($sql, $this->conn);
+                    $envelope_transaction_id = mysql_insert_id($this->conn);
                     
                     $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                     values ('".$m_inventory_location_id."','".$envelope_transaction_id."','".$m_envelope_count."','".$m_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $envelope_stock_out_sql;
                     echo "<br>";
-                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                     if($envelope_stock_out_result){
                         //M envelope update stock quantity
                         $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$m_envelope_count." where inventory_model_id = '".$m_envelope_model_id."' and location_id = '".$m_location_id."'";
                         echo $envelope_update_stock_sql;
                         echo "<br>";
-                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                     }
                 }elseif($l_envelope_count > 0){
                     //L envelope add stock out transaction
                     $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $sql;
                     echo "<br>";
-                    $result = mysql_query($sql, Service::$database_connect);
-                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    $result = mysql_query($sql, $this->conn);
+                    $envelope_transaction_id = mysql_insert_id($this->conn);
                     
                     $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                     values ('".$l_inventory_location_id."','".$envelope_transaction_id."','".$l_envelope_count."','".$l_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $envelope_stock_out_sql;
                     echo "<br>";
-                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                     if($envelope_stock_out_result){
                         //M envelope update stock quantity
                         $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$l_envelope_count." where inventory_model_id = '".$l_envelope_model_id."' and location_id = '".$l_location_id."'";
                         echo $envelope_update_stock_sql;
                         echo "<br>";
-                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                     }
                 }elseif($xl_envelope_count > 0){
                     //XL envelope add stock out transaction
                     $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $sql;
                     echo "<br>";
-                    $result = mysql_query($sql, Service::$database_connect);
-                    $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                    $result = mysql_query($sql, $this->conn);
+                    $envelope_transaction_id = mysql_insert_id($this->conn);
                     
                     $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                     values ('".$xl_inventory_location_id."','".$envelope_transaction_id."','".$xl_envelope_count."','".$xl_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                     echo $envelope_stock_out_sql;
                     echo "<br>";
-                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                    $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                     if($envelope_stock_out_result){
                         //M envelope update stock quantity
                         $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$xl_envelope_count." where inventory_model_id = '".$xl_envelope_model_id."' and location_id = '".$xl_location_id."'";
                         echo $envelope_update_stock_sql;
                         echo "<br>";
-                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                        $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                     }
                 }
                 echo "<font color='red'>Many Envelope End<br><br></font>";
@@ -939,14 +891,14 @@ class Service{
                     $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$envelope_inventory_transaction_id."'";
                     echo $envelope_status_sql;
                     echo "<br>";
-                    $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                    $envelope_status_result = mysql_query($envelope_status_sql, $this->conn);
                 }
                 
                 foreach($paper_tube_inventory_transacton_id_array as $paper_tube_inventory_transacton_id){
                     $paper_tube_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$paper_tube_inventory_transacton_id."'";
                     echo $paper_tube_status_sql;
                     echo "<br>";
-                    $paper_tube_status_result = mysql_query($paper_tube_status_sql, Service::$database_connect);
+                    $paper_tube_status_result = mysql_query($paper_tube_status_sql, $this->conn);
                 }
                 //---------------------------- Update Inventory Transaction End --------------------------
                 
@@ -958,7 +910,7 @@ class Service{
                     $category_sql = "select category_id from inventory_model where inventory_model_id = '".$row_1['inventory_location_id']."'";
                     echo $category_sql;
                     echo "<br>";
-                    $category_result = mysql_query($category_sql, Service::$database_connect);
+                    $category_result = mysql_query($category_sql, $this->conn);
                     $category_row = mysql_fetch_assoc($category_result);
                     $category_id = $category_row['category_id'];
                         
@@ -972,7 +924,7 @@ class Service{
                         $paper_tube_field_sql = "select custom_field_id from custom_field where short_description = '".$paper_tube_field_value."'";
                         echo $paper_tube_field_sql;
                         echo "<br>";
-                        $paper_tube_field_result = mysql_query($paper_tube_field_sql, Service::$database_connect);
+                        $paper_tube_field_result = mysql_query($paper_tube_field_sql, $this->conn);
                         $paper_tube_field_row = mysql_fetch_assoc($paper_tube_field_result);
                         
                         //get paper tube value
@@ -981,7 +933,7 @@ class Service{
                         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$paper_tube_field_row['custom_field_id']."'";
                         echo $paper_tube_value_sql;
                         echo "<br>";
-                        $paper_tube_value_result = mysql_query($paper_tube_value_sql, Service::$database_connect);
+                        $paper_tube_value_result = mysql_query($paper_tube_value_sql, $this->conn);
                         $paper_tube_value_row = mysql_fetch_assoc($paper_tube_value_result);
                         $paper_tube = $paper_tube_value_row['short_description'];
                         echo "<font color='red'>".$paper_tube."</font><br>";
@@ -990,7 +942,7 @@ class Service{
                         $paper_tube_model_sql = "select inventory_model_id from inventory_model where short_description ='".$paper_tube_prefix.$paper_tube."'";
                         echo $paper_tube_model_sql;
                         echo "<br>";
-                        $paper_tube_model_result = mysql_query($paper_tube_model_sql, Service::$database_connect);
+                        $paper_tube_model_result = mysql_query($paper_tube_model_sql, $this->conn);
                         $paper_tube_model_row = mysql_fetch_assoc($paper_tube_model_result);
                         $paper_tube_model_id = $paper_tube_model_row['inventory_model_id'];
                     
@@ -998,7 +950,7 @@ class Service{
                         $paper_tube_location_sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$paper_tube_model_id."'";// and quantity > ".$quantity."";
                         echo $paper_tube_location_sql;
                         echo "<br>";
-                        $paper_tube_location_result = mysql_query($paper_tube_location_sql, Service::$database_connect);
+                        $paper_tube_location_result = mysql_query($paper_tube_location_sql, $this->conn);
                         $paper_tube_location_row = mysql_fetch_assoc($paper_tube_location_result);
                         $paper_tube_location_id = $paper_tube_location_row['location_id'];
                         $paper_tube_inventory_location_id = $paper_tube_location_row['inventory_location_id'];
@@ -1008,25 +960,25 @@ class Service{
                             $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                             echo $sql;
                             echo "<br>";
-                            $result = mysql_query($sql, Service::$database_connect);
-                            $paper_tube_transaction_id = mysql_insert_id(Service::$database_connect);
+                            $result = mysql_query($sql, $this->conn);
+                            $paper_tube_transaction_id = mysql_insert_id($this->conn);
                             
                             $paper_tube_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                             values ('".$paper_tube_inventory_location_id."','".$paper_tube_transaction_id."','".$row_1['quantity']."','".$paper_tube_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                             echo $paper_tube_stock_out_sql;
                             echo "<br>";
-                            $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, Service::$database_connect);
+                            $paper_tube_stock_out_result = mysql_query($paper_tube_stock_out_sql, $this->conn);
                             if($paper_tube_stock_out_result){
                                 //paper tube update stock quantity
                                 $paper_tube_update_stock_sql = "update inventory_location set quantity = quantity - ".$row_1['quantity']." where inventory_model_id = '".$paper_tube_model_id."' and location_id = '".$paper_tube_location_id."'";
                                 echo $paper_tube_update_stock_sql;
                                 echo "<br>";
-                                $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, Service::$database_connect);
+                                $paper_tube_update_stock_result = mysql_query($paper_tube_update_stock_sql, $this->conn);
                                 if($paper_tube_update_stock_result){
                                     $paper_tube_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
                                     echo $paper_tube_status_sql;
                                     echo "<br>";
-                                    $paper_tube_status_result = mysql_query($paper_tube_status_sql, Service::$database_connect);
+                                    $paper_tube_status_result = mysql_query($paper_tube_status_sql, $this->conn);
                                 }
                             }
                         }else{
@@ -1042,7 +994,7 @@ class Service{
                     $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".$envelope_field_value."'";
                     echo $envelope_field_sql;
                     echo "<br>";
-                    $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+                    $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
                     $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
                     
                     
@@ -1052,7 +1004,7 @@ class Service{
                     where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
                     echo $envelope_value_sql;
                     echo "<br>";
-                    $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+                    $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
                     $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
                     $envelope = $envelope_value_row['short_description'];
                     echo "<font color='red'>".$envelope."</font><br>";
@@ -1061,7 +1013,7 @@ class Service{
                     $envelope_model_sql = "select inventory_model_id from inventory_model where short_description ='".$envelope_prefix.$envelope."'";
                     echo $envelope_model_sql;
                     echo "<br>";
-                    $envelope_model_result = mysql_query($envelope_model_sql, Service::$database_connect);
+                    $envelope_model_result = mysql_query($envelope_model_sql, $this->conn);
                     $envelope_model_row = mysql_fetch_assoc($envelope_model_result);
                     $envelope_model_id = $envelope_model_row['inventory_model_id'];
                     
@@ -1069,7 +1021,7 @@ class Service{
                     $envelope_location_sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$envelope_model_id."'";// and quantity > ".$quantity."";
                     echo $envelope_location_sql;
                     echo "<br>";
-                    $envelope_location_result = mysql_query($envelope_location_sql, Service::$database_connect);
+                    $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
                     $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
                     $envelope_location_id = $envelope_location_row['location_id'];
                     $inventory_location_id = $envelope_location_row['inventory_location_id'];
@@ -1077,7 +1029,7 @@ class Service{
                     if(!empty($envelope_location_id)){
                         //get category id
                         $sql_2 = "select category_id from inventory_model where inventory_model_id = '".$inventory_model_id."'";
-                        $result_2 = mysql_query($sql_2, Service::$database_connect);
+                        $result_2 = mysql_query($sql_2, $this->conn);
                         $row_2 = mysql_fetch_assoc($result_2);
                         $category_id = $row_2['category_id'];
                         
@@ -1112,25 +1064,25 @@ class Service{
                         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$row['shipment_id']."','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $sql;
                         echo "<br>";
-                        $result = mysql_query($sql, Service::$database_connect);
-                        $envelope_transaction_id = mysql_insert_id(Service::$database_connect);
+                        $result = mysql_query($sql, $this->conn);
+                        $envelope_transaction_id = mysql_insert_id($this->conn);
                         
                         $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
                         values ('".$inventory_location_id."','".$envelope_transaction_id."','".$row_1['quantity']."','".$envelope_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
                         echo $envelope_stock_out_sql;
                         echo "<br>";
-                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, Service::$database_connect);
+                        $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
                         if($envelope_stock_out_result){
                             //envelope update stock quantity
                             $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$row_1['quantity']." where inventory_model_id = '".$envelope_model_id."' and location_id = '".$envelope_location_id."'";
                             echo $envelope_update_stock_sql;
                             echo "<br>";
-                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, Service::$database_connect);
+                            $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
                             if($envelope_update_stock_result){
                                 $envelope_status_sql = "update inventory_transaction set envelope_status = 1 where inventory_transaction_id = '".$row_1['inventory_transaction_id']."'";
                                 echo $envelope_status_sql;
                                 echo "<br>";
-                                $envelope_status_result = mysql_query($envelope_status_sql, Service::$database_connect);
+                                $envelope_status_result = mysql_query($envelope_status_sql, $this->conn);
                             }
                         }
                     }else{
@@ -1153,33 +1105,33 @@ class Service{
         $sql_4 = "delete from custom_field_selection where entity_id = '".$inventory_model_id."'";
         echo $sql_4;
         echo "<br>";
-        $result_4 = mysql_query($sql_4, Service::$database_connect);
+        $result_4 = mysql_query($sql_4, $this->conn);
         
         //get inventory location id
         $sql_6 = "select inventory_location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";
         echo $sql_6;
         echo "<br>";
-        $result_6 = mysql_query($sql_6, Service::$database_connect);
+        $result_6 = mysql_query($sql_6, $this->conn);
         $row_6 = mysql_fetch_assoc($result_6);
         
         //get transaction id
         $sql_7 = "select inventory_transaction_id,transaction_id from inventory_transaction where inventory_location_id = '". $row_6['inventory_location_id']."'";
         echo $sql_7;
         echo "<br>";
-        $result_7 = mysql_query($sql_7, Service::$database_connect);
+        $result_7 = mysql_query($sql_7, $this->conn);
         
         while($row_7 = mysql_fetch_assoc($result_7)){
             //delete transactoin
             $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
             echo $sql_8;
             echo "<br>";
-            $result_8 = mysql_query($sql_8, Service::$database_connect);
+            $result_8 = mysql_query($sql_8, $this->conn);
             
             //delete inventory transaction
             $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
             echo $sql_9;
             echo "<br>";
-            $result_9 = mysql_query($sql_9, Service::$database_connect);
+            $result_9 = mysql_query($sql_9, $this->conn);
         }
         
         /*
@@ -1187,20 +1139,20 @@ class Service{
         $sql_10 = "delete from inventory_location where inventory_location_id = '". $row_6['inventory_location_id']."'";
         echo $sql_10;
         echo "<br>";
-        $result_10 = mysql_query($sql_10, Service::$database_connect);
+        $result_10 = mysql_query($sql_10, $this->conn);
         */
         
         //delete inventory location
         $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
         echo $sql_5;
         echo "<br>";
-        $result_5 = mysql_query($sql_5, Service::$database_connect);
+        $result_5 = mysql_query($sql_5, $this->conn);
         
         //delete sku
         $sql_2 = "delete from inventory_model where inventory_model_id = '".$inventory_model_id."'";
         echo $sql_2;
         echo "<br>";
-        $result_2 = mysql_query($sql_2, Service::$database_connect);
+        $result_2 = mysql_query($sql_2, $this->conn);
     }
     
     private function addInventory($category_id, $inventory_model_code, $short_description, $long_description, $weight, $cost, $envelopes, $quantity, $manufacturer_id){
@@ -1208,7 +1160,7 @@ class Service{
         $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
         echo $weight_field_sql;
         echo "<br>";
-        $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+        $weight_field_result = mysql_query($weight_field_sql, $this->conn);
         $weight_field_row = mysql_fetch_assoc($weight_field_result);
         $weight_field_id = $weight_field_row['custom_field_id'];
         
@@ -1216,7 +1168,7 @@ class Service{
         $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         echo $cost_field_sql;
         echo "<br>";
-        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_result = mysql_query($cost_field_sql, $this->conn);
         $cost_field_row = mysql_fetch_assoc($cost_field_result);
         $cost_field_id =  $cost_field_row['custom_field_id'];
         
@@ -1224,7 +1176,7 @@ class Service{
         $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
         echo $envelope_field_sql;
         echo "<br>";
-        $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+        $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
         $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
         $envelope_field_id = $envelope_field_row['custom_field_id'];
             
@@ -1256,13 +1208,13 @@ class Service{
         ($category_id,$manufacturer_id,'".$inventory_model_code."','".mysql_real_escape_string($short_description)."','".mysql_real_escape_string($long_description)."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         if(!$result){
             
             $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$inventory_model_code."'";
             echo $sql_1;
             echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
             $row_1 = mysql_fetch_assoc($result_1);
             $inventory_model_id = $row_1['inventory_model_id'];
             
@@ -1270,33 +1222,33 @@ class Service{
             $sql_4 = "delete from custom_field_selection where entity_id = '".$inventory_model_id."'";
             echo $sql_4;
             echo "<br>";
-            $result_4 = mysql_query($sql_4, Service::$database_connect);
+            $result_4 = mysql_query($sql_4, $this->conn);
             
             //get inventory location id
             $sql_6 = "select inventory_location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_6;
             echo "<br>";
-            $result_6 = mysql_query($sql_6, Service::$database_connect);
+            $result_6 = mysql_query($sql_6, $this->conn);
             $row_6 = mysql_fetch_assoc($result_6);
             
             //get transaction id
             $sql_7 = "select inventory_transaction_id,transaction_id from inventory_transaction where inventory_location_id = '". $row_6['inventory_location_id']."'";
             echo $sql_7;
             echo "<br>";
-            $result_7 = mysql_query($sql_7, Service::$database_connect);
+            $result_7 = mysql_query($sql_7, $this->conn);
             
             while($row_7 = mysql_fetch_assoc($result_7)){
                 //delete transactoin
                 $sql_8 = "delete from transaction where transaction_id = '".$row_7['transaction_id']."'";
                 echo $sql_8;
                 echo "<br>";
-                $result_8 = mysql_query($sql_8, Service::$database_connect);
+                $result_8 = mysql_query($sql_8, $this->conn);
                 
                 //delete inventory transaction
                 $sql_9 = "delete from inventory_transaction where inventory_transaction_id = '".$row_7['inventory_transaction_id']."'";
                 echo $sql_9;
                 echo "<br>";
-                $result_9 = mysql_query($sql_9, Service::$database_connect);
+                $result_9 = mysql_query($sql_9, $this->conn);
             }
             
             /*
@@ -1304,29 +1256,29 @@ class Service{
             $sql_10 = "delete from inventory_location where inventory_location_id = '". $row_6['inventory_location_id']."'";
             echo $sql_10;
             echo "<br>";
-            $result_10 = mysql_query($sql_10, Service::$database_connect);
+            $result_10 = mysql_query($sql_10, $this->conn);
             */
             
             //delete inventory location
             $sql_5 = "delete from inventory_location where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_5;
             echo "<br>";
-            $result_5 = mysql_query($sql_5, Service::$database_connect);
+            $result_5 = mysql_query($sql_5, $this->conn);
             
             //delete sku
             $sql_2 = "delete from inventory_model where inventory_model_id = '".$inventory_model_id."'";
             echo $sql_2;
             echo "<br>";
-            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $result_2 = mysql_query($sql_2, $this->conn);
             
             //insert sku
             $sql = "insert into inventory_model (category_id,manufacturer_id,inventory_model_code,short_description,long_description,created_by,creation_date) values 
             ($category_id,$manufacturer_id,'".$inventory_model_code."','".mysql_real_escape_string($short_description)."','".mysql_real_escape_string($long_description)."','".$created_by."','".$creation_date."')";
             echo $sql;
             echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
         }
-        $inventory_model_id = mysql_insert_id(Service::$database_connect);
+        $inventory_model_id = mysql_insert_id($this->conn);
         //$inventory_model_id = 100;
         
         //add weight
@@ -1334,47 +1286,47 @@ class Service{
         $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($weight_field_id,'".$weight."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $weight_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
+        $weight_custom_field_value_id = mysql_insert_id($this->conn);
         
         $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($weight_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
         //add cost
         echo "<font color='red'>add cost</font><br>";
         $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($cost_field_id,'".$cost."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $cost_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
+        $cost_custom_field_value_id = mysql_insert_id($this->conn);
         
         $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($cost_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
         //add envelope
         echo "<font color='red'>add envelope</font><br>";
         $sql = "select custom_field_value_id from custom_field_value where custom_field_id = '".$envelope_field_id."' and short_description = '".$envelopes."'";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $envelope_custom_field_value_id = $row['custom_field_value_id'];
         /*
         $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($envelope_field_id,'".$envelope."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $envelope_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
+        $envelope_custom_field_value_id = mysql_insert_id($this->conn);
         */
         echo "<font color='red'>add custom field</font><br>";
         $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($envelope_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
         
         //add location quantity
@@ -1383,8 +1335,8 @@ class Service{
         values ('".$inventory_model_id."','".$location_id."','".$quantity."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $inventory_location_id = mysql_insert_id(Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
+        $inventory_location_id = mysql_insert_id($this->conn);
         
         //restock
         //add transactions  Restock(4)
@@ -1392,8 +1344,8 @@ class Service{
         $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','import stock','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $transaction_id = mysql_insert_id(Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
+        $transaction_id = mysql_insert_id($this->conn);
         
         //add inventory transactions    New Inventory(4)
         echo "<font color='red'>add inventory transactions</font><br>";
@@ -1401,7 +1353,7 @@ class Service{
         values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','4','".$location_id."','".$created_by."','".$creation_date."')";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
     }
     
@@ -1411,7 +1363,7 @@ class Service{
         $sql = "delete from custom_field_value where creation_date > '".$creation_date."'";
         echo $sql;
         echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         */
         $csv_file_name = $_GET['file_name'];
         $categories_id = 4;
@@ -1465,7 +1417,7 @@ class Service{
                 $sql = "select manufacturer_id from manufacturer where LOCATE(short_description,'".trim($data[5])."')";
                 echo $sql;
                 echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
                 $row = mysql_fetch_assoc($result);
                 var_dump($row);
                 $data[5] = $row['manufacturer_id'];
@@ -1507,19 +1459,19 @@ class Service{
         $stock_days_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
         echo $stock_days_field_sql;
         echo "<br>";
-        $stock_days_field_result = mysql_query($stock_days_field_sql, Service::$database_connect);
+        $stock_days_field_result = mysql_query($stock_days_field_sql, $this->conn);
         $stock_days_field_row = mysql_fetch_assoc($stock_days_field_result);
         $stock_days_field_id = $stock_days_field_row['custom_field_id'];
             
         $sql_1 = "select inventory_model_id from inventory_model where manufacturer_id <> '".$manufacturer_id."'";
         echo $sql_1;
         echo "<br>";
-        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $result_1 = mysql_query($sql_1, $this->conn);
         while($row_1 = mysql_fetch_assoc($result_1)){
             $inventory_model_id = $row_1['inventory_model_id'];
             
             $sql = "select cfv.custom_field_value_id from custom_field_value as cfv left join custom_field_selection cfs on cfv.custom_field_value_id = cfs.custom_field_value_id where cfv.custom_field_id = '".$stock_days_field_id."' and cfs.entity_id = '".$inventory_model_id."'";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             if(empty($row['custom_field_value_id'])){
                 //add stock days
@@ -1527,18 +1479,18 @@ class Service{
                 $sql = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values ($stock_days_field_id,'".$stock_days."','".$created_by."','".$creation_date."')";
                 echo $sql;
                 echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
-                $stock_days_custom_field_value_id = mysql_insert_id(Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
+                $stock_days_custom_field_value_id = mysql_insert_id($this->conn);
                 
                 $sql = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values ($stock_days_custom_field_value_id,$entity_qtype_id,$inventory_model_id)";
                 echo $sql;
                 echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
             }else{
                 $sql = "update custom_field_value set short_description = '".$stock_days."',modified_by = '".$modified_by."',modified_date = '".$modified_date."' where custom_field_value_id = '".$row['custom_field_value_id']."'";
                 echo $sql;
                 echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
+                $result = mysql_query($sql, $this->conn);
             }
             
             echo "<br>";
@@ -1557,7 +1509,7 @@ class Service{
         $sql = "select count(*) as count from 
         inventory_model as im left join inventory_location as il on (im.inventory_model_id=il.inventory_model_id) left join location as l on (il.location_id=l.location_id) 
         where il.quantity < im.week_flow";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $count = $row['count'];
         if( $count >0 ) {
@@ -1576,7 +1528,7 @@ class Service{
         where il.quantity < im.week_flow order by ".$sidx." ".$sord." limit ".$start.",".$limit;
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         
         $responce->page = $page;
         $responce->total = $total_pages;
@@ -1596,7 +1548,7 @@ class Service{
         //***********************************************************************************************
         /*
         $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['lowerLimit']."'";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         
         
@@ -1605,7 +1557,7 @@ class Service{
         //echo $sql_1;
         //echo "<br>";
         
-        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $result_1 = mysql_query($sql_1, $this->conn);
         $row_1 = mysql_fetch_assoc($result_1);
         $count = $row_1['count'];
         
@@ -1635,7 +1587,7 @@ class Service{
         //echo "<br>";
         
         $i = 0;
-        $result_2 = mysql_query($sql_2, Service::$database_connect);
+        $result_2 = mysql_query($sql_2, $this->conn);
         while($row_2 = mysql_fetch_assoc($result_2)){
             
             $sql_3 = "select im.inventory_model_id as id,im.week_flow as flow,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
@@ -1643,7 +1595,7 @@ class Service{
             where im.inventory_model_id = '".$row_2['inventory_model_id']."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             $row_3 = mysql_fetch_assoc($result_3);
             
             $responce->rows[$i]['id']= $row_2['inventory_model_id'];
@@ -1661,12 +1613,12 @@ class Service{
         
         //get stock day
         $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $stock_day_field_id = $row['custom_field_id'];
         
         $sql_0 = "select count(*) as count from inventory_model where category_id = '".$_GET['category_id']."'";
-        $result_0 = mysql_query($sql_0, Service::$database_connect);
+        $result_0 = mysql_query($sql_0, $this->conn);
         $row_0 = mysql_fetch_assoc($result_0);
         $count = $row_0['count'];
         
@@ -1690,7 +1642,7 @@ class Service{
         
         $manufacture = array();
         $sql_4 = "select manufacturer_id,short_description from manufacturer";
-        $result_4 = mysql_query($sql_4, Service::$database_connect);
+        $result_4 = mysql_query($sql_4, $this->conn);
         while($row_4 = mysql_fetch_assoc($result_4)){
         	$manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
         }
@@ -1699,7 +1651,7 @@ class Service{
         //echo $sql_1;
         //echo "<br>";
         
-        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $result_1 = mysql_query($sql_1, $this->conn);
         $array = array();
         $i = 0;
         $xx = 0;
@@ -1714,14 +1666,14 @@ class Service{
             $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
             //echo $sql_2;
             //echo "<br>";
-            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $result_2 = mysql_query($sql_2, $this->conn);
             $row_2 = mysql_fetch_assoc($result_2);
             //$array[$i]['quantity'] = $row_2['quantity'];
             
             $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             $row_3 = mysql_fetch_assoc($result_3);
             //$array[$i]['stock_day'] = $row_3['short_description'];
             
@@ -1749,7 +1701,7 @@ class Service{
         
         
         $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['lowerLimit']."'";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         
         
@@ -1758,7 +1710,7 @@ class Service{
         //echo $sql_1;
         //echo "<br>";
         
-        $result_1 = mysql_query($sql_1, Service::$database_connect);
+        $result_1 = mysql_query($sql_1, $this->conn);
         $row_1 = mysql_fetch_assoc($result_1);
         $count = $row_1['count'];
         
@@ -1793,7 +1745,7 @@ class Service{
         //echo "<br>";
         
         $i = 0;
-        $result_2 = mysql_query($sql_2, Service::$database_connect);
+        $result_2 = mysql_query($sql_2, $this->conn);
         while($row_2 = mysql_fetch_assoc($result_2)){
             
             $sql_3 = "select im.inventory_model_id as id,im.week_flow_1,im.week_flow_2,im.week_flow_3,im.inventory_model_code as model,il.quantity,im.short_description as name,l.short_description as location from 
@@ -1801,7 +1753,7 @@ class Service{
             where im.inventory_model_id = '".$row_2['inventory_model_id']."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             $row_3 = mysql_fetch_assoc($result_3);
             
             $responce->rows[$i]['id']= $row_2['inventory_model_id'];
@@ -1822,7 +1774,7 @@ class Service{
         where il.quantity < 0";
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $count = $row['count'];
         if( $count >0 ) {
@@ -1841,7 +1793,7 @@ class Service{
         where il.quantity < 0 order by ".$sidx." ".$sord." limit ".$start.",".$limit;
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
     
         $responce->page = $page;
         $responce->total = $total_pages;
@@ -1866,7 +1818,7 @@ class Service{
         inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id";
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $count = $row['count'];
         if( $count >0 ) {
@@ -1883,7 +1835,7 @@ class Service{
         $sql = "select it.inventory_location_id as id,im.inventory_model_code as model,im.short_description as name,it.quantity,it.creation_date as time from 
         inventory_transaction as it left join inventory_model as im on it.inventory_location_id=im.inventory_model_id 
         order by ".$sidx." ".$sord." limit ".$start.",".$limit;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $responce->page = $page;
         $responce->total = $total_pages;
         $responce->records = $count;
@@ -1905,7 +1857,7 @@ class Service{
         }
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         if(!empty($row['total_shipment_fee'])){
             echo $row['total_shipment_fee'];
@@ -1928,7 +1880,7 @@ class Service{
         }
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $count = $row['count'];
         if( $count > 0 ) {
@@ -1955,7 +1907,7 @@ class Service{
         }
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $responce->page = $page;
         $responce->total = $total_pages;
         $responce->records = $count;
@@ -1972,13 +1924,13 @@ class Service{
     
     public function getCategoryBySku($sku){
 	$sql = "select category_id from inventory_model where inventory_model_code = '".$sku."'";
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
 	$category_id = $row['category_id'];
 	
 	if(!empty($category_id)){
 	    $sql = "select short_description from category where category_id = ".$category_id;
-	    $result = mysql_query($sql, Service::$database_connect);
+	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
 	    return $row['short_description'];
 	}else{
@@ -1988,7 +1940,7 @@ class Service{
     
     public function getWeightBySku($sku){
 	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
-	$result_0 = mysql_query($sql_0, Service::$database_connect);
+	$result_0 = mysql_query($sql_0, $this->conn);
         $row_0 = mysql_fetch_assoc($result_0);
 	$inventory_model_id = $row_0['inventory_model_id'];
 	
@@ -1998,7 +1950,7 @@ class Service{
 	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
 	//echo $weight_field_sql;
 	//echo "<br>";
-	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_result = mysql_query($weight_field_sql, $this->conn);
 	$weight_field_row = mysql_fetch_assoc($weight_field_result);
 	
 	
@@ -2008,7 +1960,7 @@ class Service{
 	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
 	//echo $weight_value_sql;
 	//echo "<br>";
-	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_result = mysql_query($weight_value_sql, $this->conn);
 	$weight_value_row = mysql_fetch_assoc($weight_value_result);
 	$weight = (float)$weight_value_row['short_description'];
 	
@@ -2017,7 +1969,7 @@ class Service{
     
     public function getEPEBySku($sku){
 	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
-	$result_0 = mysql_query($sql_0, Service::$database_connect);
+	$result_0 = mysql_query($sql_0, $this->conn);
         $row_0 = mysql_fetch_assoc($result_0);
 	$inventory_model_id = $row_0['inventory_model_id'];
 	
@@ -2027,7 +1979,7 @@ class Service{
 	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['EPE']."'";
 	//echo $weight_field_sql;
 	//echo "<br>";
-	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_result = mysql_query($weight_field_sql, $this->conn);
 	$weight_field_row = mysql_fetch_assoc($weight_field_result);
 	
 	
@@ -2037,7 +1989,7 @@ class Service{
 	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
 	//echo $weight_value_sql;
 	//echo "<br>";
-	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_result = mysql_query($weight_value_sql, $this->conn);
 	$weight_value_row = mysql_fetch_assoc($weight_value_result);
 	$weight = $weight_value_row['short_description'];
 	
@@ -2051,7 +2003,7 @@ class Service{
 	}
 	
 	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
-	$result_0 = mysql_query($sql_0, Service::$database_connect);
+	$result_0 = mysql_query($sql_0, $this->conn);
         $row_0 = mysql_fetch_assoc($result_0);
 	$inventory_model_id = $row_0['inventory_model_id'];
 	
@@ -2061,7 +2013,7 @@ class Service{
 	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['productGrade']."'";
 	//echo $weight_field_sql;
 	//echo "<br>";
-	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_result = mysql_query($weight_field_sql, $this->conn);
 	$weight_field_row = mysql_fetch_assoc($weight_field_result);
 	
 	
@@ -2071,7 +2023,7 @@ class Service{
 	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
 	//echo $weight_value_sql;
 	//echo "<br>";
-	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_result = mysql_query($weight_value_sql, $this->conn);
 	$weight_value_row = mysql_fetch_assoc($weight_value_result);
 	$weight = $weight_value_row['short_description'];
 	
@@ -2096,7 +2048,7 @@ class Service{
         }
 	
 	$sql_0 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
-	$result_0 = mysql_query($sql_0, Service::$database_connect);
+	$result_0 = mysql_query($sql_0, $this->conn);
         $row_0 = mysql_fetch_assoc($result_0);
 	$inventory_model_id = $row_0['inventory_model_id'];
 	
@@ -2106,7 +2058,7 @@ class Service{
 	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
 	//echo $weight_field_sql;
 	//echo "<br>";
-	$weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+	$weight_field_result = mysql_query($weight_field_sql, $this->conn);
 	$weight_field_row = mysql_fetch_assoc($weight_field_result);
 	
 	
@@ -2116,7 +2068,7 @@ class Service{
 	where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
 	//echo $weight_value_sql;
 	//echo "<br>";
-	$weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+	$weight_value_result = mysql_query($weight_value_sql, $this->conn);
 	$weight_value_row = mysql_fetch_assoc($weight_value_result);
 	$weight = (float)$weight_value_row['short_description'];
 	
@@ -2165,7 +2117,7 @@ class Service{
             //get sku model id
             $sql = "select inventory_model_id,category_id from inventory_model where inventory_model_code='".$sku->skuId."'";
             $this->log("getShippingMethodBySku", $sql."<br>");
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $category = $row['category_id'];
             $inventory_model_id = $row['inventory_model_id'];
@@ -2177,7 +2129,7 @@ class Service{
             $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
             $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
             
-            $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+            $weight_field_result = mysql_query($weight_field_sql, $this->conn);
             $weight_field_row = mysql_fetch_assoc($weight_field_result);
             
             
@@ -2187,7 +2139,7 @@ class Service{
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
             $this->log("getShippingMethodBySku", $weight_value_sql."<br>");
             
-            $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+            $weight_value_result = mysql_query($weight_value_sql, $this->conn);
             $weight_value_row = mysql_fetch_assoc($weight_value_result);
             $weight = (float) $weight_value_row['short_description'] * $sku->quantity;
             $total_weight += $weight;
@@ -2199,7 +2151,7 @@ class Service{
             $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
             $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
 
-            $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+            $cost_field_result = mysql_query($cost_field_sql, $this->conn);
             $cost_field_row = mysql_fetch_assoc($cost_field_result);
             
             
@@ -2209,7 +2161,7 @@ class Service{
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
             $this->log("getShippingMethodBySku", $cost_value_sql."<br>");
 
-            $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+            $cost_value_result = mysql_query($cost_value_sql, $this->conn);
             $cost_value_row = mysql_fetch_assoc($cost_value_result);
             $cost = $cost_value_row['short_description'] * $sku->quantity;
             $this->log("getShippingMethodBySku", "cost: ".$cost."<br><font color='red'>Cost End<br></font>");
@@ -2220,7 +2172,7 @@ class Service{
             $paper_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['paperTube']."'";
             $this->log("getShippingMethodBySku", $paper_field_sql."<br>");
  
-            $paper_field_result = mysql_query($paper_field_sql, Service::$database_connect);
+            $paper_field_result = mysql_query($paper_field_sql, $this->conn);
             $paper_field_row = mysql_fetch_assoc($paper_field_result);
             
             
@@ -2230,7 +2182,7 @@ class Service{
             where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$paper_field_row['custom_field_id']."'";
             $this->log("getShippingMethodBySku", $paper_value_sql."<br>");
             
-            $paper_value_result = mysql_query($paper_value_sql, Service::$database_connect);
+            $paper_value_result = mysql_query($paper_value_sql, $this->conn);
             $paper_value_row = mysql_fetch_assoc($paper_value_result);
             $paper = $paper_value_row['short_description'];
             $this->log("getShippingMethodBySku", "Paper: ".$paper."<br><font color='red'>Paper End<br></font>");
@@ -2316,7 +2268,7 @@ class Service{
             //get sku model id
             $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku->skuId."'";
             $this->log("getShippingMethodBySku", $sql."<br>");
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $inventory_model_id = $row['inventory_model_id'];
             $this->log("getShippingMethodBySku", "Inventory Model Id: ".$inventory_model_id."<br>");
@@ -2327,7 +2279,7 @@ class Service{
                 $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
                 $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
                 
-                $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+                $weight_field_result = mysql_query($weight_field_sql, $this->conn);
                 $weight_field_row = mysql_fetch_assoc($weight_field_result);
                 
                 
@@ -2337,7 +2289,7 @@ class Service{
                 where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
                 $this->log("getShippingMethodBySku", $weight_value_sql."<br>");
                 
-                $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+                $weight_value_result = mysql_query($weight_value_sql, $this->conn);
                 $weight_value_row = mysql_fetch_assoc($weight_value_result);
                 $weight = (float) $weight_value_row['short_description'] * $sku->quantity;
                 $total_weight += $weight;
@@ -2349,7 +2301,7 @@ class Service{
                 $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
                 $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
     
-                $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+                $cost_field_result = mysql_query($cost_field_sql, $this->conn);
                 $cost_field_row = mysql_fetch_assoc($cost_field_result);
                 
                 
@@ -2359,7 +2311,7 @@ class Service{
                 where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
                 $this->log("getShippingMethodBySku", $cost_value_sql."<br>");
     
-                $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+                $cost_value_result = mysql_query($cost_value_sql, $this->conn);
                 $cost_value_row = mysql_fetch_assoc($cost_value_result);
                 $total_cost += $cost_value_row['short_description'] * $sku->quantity;
                 $this->log("getShippingMethodBySku", "Cost: ".$cost."<br><font color='red'>******************************************  Cost End  ******************************************<br></font>");
@@ -2527,7 +2479,7 @@ class Service{
         $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
         //echo $envelope_field_sql;
         //echo "<br>";
-        $envelope_field_result = mysql_query($envelope_field_sql, Service::$database_connect);
+        $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
         $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
         
         
@@ -2545,7 +2497,7 @@ class Service{
                 $this->log("getEnvelopeBySku",$inventory_model_sql."<br>");
                 //echo $inventory_model_sql;
                 //echo "<br>";
-                $inventory_model_result = mysql_query($inventory_model_sql, Service::$database_connect);
+                $inventory_model_result = mysql_query($inventory_model_sql, $this->conn);
                 $inventory_model_row = mysql_fetch_assoc($inventory_model_result);
                 $inventory_model_id = $inventory_model_row['inventory_model_id'];
                 
@@ -2557,7 +2509,7 @@ class Service{
                     $this->log("getEnvelopeBySku",$envelope_value_sql."<br>");
                     //echo $envelope_value_sql;
                     //echo "<br>";
-                    $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+                    $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
                     $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
                     $envelope = $envelope_value_row['short_description'];
                     
@@ -2622,7 +2574,7 @@ class Service{
             $this->log("getEnvelopeBySku",$inventory_model_sql."<br>");
             //echo $inventory_model_sql;
             //echo "<br>";
-            $inventory_model_result = mysql_query($inventory_model_sql, Service::$database_connect);
+            $inventory_model_result = mysql_query($inventory_model_sql, $this->conn);
             $inventory_model_row = mysql_fetch_assoc($inventory_model_result);
             $inventory_model_id = $inventory_model_row['inventory_model_id'];
             
@@ -2634,7 +2586,7 @@ class Service{
                 $this->log("getEnvelopeBySku",$envelope_value_sql."<br>");
                 //echo $envelope_value_sql;
                 //echo "<br>";
-                $envelope_value_result = mysql_query($envelope_value_sql, Service::$database_connect);
+                $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
                 $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
                 $envelope = $envelope_value_row['short_description'];
                 
@@ -2708,7 +2660,7 @@ class Service{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2716,7 +2668,7 @@ class Service{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	//
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
@@ -2726,7 +2678,7 @@ class Service{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2734,7 +2686,7 @@ class Service{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
 	//
@@ -2745,7 +2697,7 @@ class Service{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2753,7 +2705,7 @@ class Service{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
 	//
@@ -2764,7 +2716,7 @@ class Service{
         $this->log("calculateWeekFlow", $sql."<br>");
         //echo $sql;
         //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2772,7 +2724,7 @@ class Service{
             $this->log("calculateWeekFlow", $sql_1."<br>");
             //echo $sql_1;
             //echo "<br>";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
         }
         //print_r($array);
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  End  +++++++++++++++++++++++++++++++</font><br>");
@@ -2782,7 +2734,7 @@ class Service{
 	mysql_query("SET NAMES 'latin1'");
         if(count($_POST) == 0){
             $sql = "select count(*) as count from inventory_model";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $totalCount = $row['count'];
             
@@ -2792,7 +2744,7 @@ class Service{
             }
             
             $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model limit ".$_POST['start'].",".$_POST['limit'];
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $array = array();
         
         }else{
@@ -2819,13 +2771,13 @@ class Service{
             }
                 
             $sql = "select count(*) as count from inventory_model ".$where;
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $row = mysql_fetch_assoc($result);
             $totalCount = $row['count'];
             
             $sql = "select inventory_model_id,category_id,manufacturer_id,inventory_model_code,short_description,long_description from inventory_model ".$where." limit ".$_POST['start'].",".$_POST['limit'];
             //echo $sql;
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             $array = array();
         }
         
@@ -2833,12 +2785,12 @@ class Service{
         $i = 0;
         while($row = mysql_fetch_assoc($result)){
             $sql_1 = "select short_description from category where category_id = '".$row['category_id']."'";
-            $result_1 = mysql_query($sql_1, Service::$database_connect);
+            $result_1 = mysql_query($sql_1, $this->conn);
             $row_1 = mysql_fetch_assoc($result_1);
             
             
             $sql_2 = "select short_description from manufacturer where manufacturer_id = '".$row['manufacturer_id']."'";
-            $result_2 = mysql_query($sql_2, Service::$database_connect);
+            $result_2 = mysql_query($sql_2, $this->conn);
             $row_2 = mysql_fetch_assoc($result_2);
             
             $array[$i]['inventory_model_code'] = $row['inventory_model_code'];
@@ -2851,10 +2803,10 @@ class Service{
             $sql_3 = "select cfv.custom_field_id,cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_qtype_id = 2 and cfs.entity_id = '".$row['inventory_model_id']."'";
             //echo $sql_3;
             //echo "<br>";
-            $result_3 = mysql_query($sql_3, Service::$database_connect);
+            $result_3 = mysql_query($sql_3, $this->conn);
             while($row_3 = mysql_fetch_assoc($result_3)){
                 $sql_4 = "select short_description from custom_field where custom_field_id = '".$row_3['custom_field_id']."'";
-                $result_4 = mysql_query($sql_4, Service::$database_connect);
+                $result_4 = mysql_query($sql_4, $this->conn);
                 $row_4 = mysql_fetch_assoc($result_4);
                 $array[$i][$row_4['short_description']] = $row_3['short_description'];
             }
@@ -2868,7 +2820,7 @@ class Service{
     public function getSuppliers(){
 	mysql_query("SET NAMES 'latin1'");
         $sql = "select manufacturer_id as id,short_description as name from manufacturer";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2879,7 +2831,7 @@ class Service{
     
     public function getCategories(){
         $sql = "select category_id as id,short_description as name from category where inventory_flag = 1";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $array = array();
         while($row = mysql_fetch_assoc($result)){
             $array[] = $row;
@@ -2891,12 +2843,12 @@ class Service{
     public function getCategoriesTree(){
 	$sql = "select category_id,short_description from category where inventory_flag = 1";
 	//echo $sql;
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
 	$array = array();
 	$i = 0;
 	while($row = mysql_fetch_assoc($result)){
             $sql_1 = "select count(*) as count from inventory_model where category_id = '".$row['category_id']."'";
-	    $result_1 = mysql_query($sql_1, Service::$database_connect);
+	    $result_1 = mysql_query($sql_1, $this->conn);
             $row_1 = mysql_fetch_assoc($result_1);
 
             $array[$i]['id'] = $row['category_id'];
@@ -2911,7 +2863,7 @@ class Service{
     public function getModelBySkuId(){
         $sql = "select short_description from inventory_model where inventory_model_code = '".$_REQUEST['skuId']."'";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         //json_encode($row);
         echo 'model:'.$row['short_description'];
@@ -2925,7 +2877,7 @@ class Service{
         //get inventory model id
         $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$_GET['data']."'";
         //$this->log("getSkuCost", $sql."<br>");
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $inventory_model_id = $row['inventory_model_id'];
         
@@ -2934,7 +2886,7 @@ class Service{
         $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         //$this->log("getSkuCost", $cost_field_sql."<br>");
 
-        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_result = mysql_query($cost_field_sql, $this->conn);
         $cost_field_row = mysql_fetch_assoc($cost_field_result);
         
         
@@ -2944,7 +2896,7 @@ class Service{
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
         //$this->log("getSkuCost", $cost_value_sql."<br>");
 
-        $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+        $cost_value_result = mysql_query($cost_value_sql, $this->conn);
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
         //$this->log("getSkuCost", "Cost: ".$cost."<br><font color='red'>******************************************  End  ******************************************<br></font>");
@@ -2964,7 +2916,7 @@ class Service{
 	//get inventory model id
         $sql = "select inventory_model_id,short_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
         //echo $sql."\n";
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
 	$inventory_model_id = $row['inventory_model_id'];
 	
@@ -2979,7 +2931,7 @@ class Service{
         on cfs.custom_field_value_id=cfv.custom_field_value_id 
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$status_field_row['custom_field_id']."'";
 	//echo $status_value_sql."\n";
-	$status_value_result = mysql_query($status_value_sql, Service::$database_connect);
+	$status_value_result = mysql_query($status_value_sql, $this->conn);
         $status_value_row = mysql_fetch_assoc($status_value_result);
 	
 	$status = $status_value_row['short_description'];
@@ -2992,7 +2944,7 @@ class Service{
         //get inventory model id
         $sql = "select inventory_model_id,short_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
         $this->log("getSkuInfo", $sql."<br>");
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $inventory_model_id = $row['inventory_model_id'];
         $short_description = $row['short_description'];
@@ -3001,7 +2953,7 @@ class Service{
         $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         $this->log("getSkuInfo", $cost_field_sql."<br>");
 
-        $cost_field_result = mysql_query($cost_field_sql, Service::$database_connect);
+        $cost_field_result = mysql_query($cost_field_sql, $this->conn);
         $cost_field_row = mysql_fetch_assoc($cost_field_result);
         
         
@@ -3016,7 +2968,7 @@ class Service{
         $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
         $this->log("getSkuInfo", $weight_field_sql."<br>");
                 
-        $weight_field_result = mysql_query($weight_field_sql, Service::$database_connect);
+        $weight_field_result = mysql_query($weight_field_sql, $this->conn);
         $weight_field_row = mysql_fetch_assoc($weight_field_result);
                 
                 
@@ -3026,17 +2978,17 @@ class Service{
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
         $this->log("getSkuInfo", $weight_value_sql."<br>");
                 
-        $weight_value_result = mysql_query($weight_value_sql, Service::$database_connect);
+        $weight_value_result = mysql_query($weight_value_sql, $this->conn);
         $weight_value_row = mysql_fetch_assoc($weight_value_result);
         $weight = (float) $weight_value_row['short_description'];
                 
-        $cost_value_result = mysql_query($cost_value_sql, Service::$database_connect);
+        $cost_value_result = mysql_query($cost_value_sql, $this->conn);
         $cost_value_row = mysql_fetch_assoc($cost_value_result);
         $cost = $cost_value_row['short_description'];
         
         //----------------------------------------- Stock --------------------------------------------
         $stock_sql = "select sum(quantity) as quantity from inventory_location where inventory_model_id = ".$inventory_model_id." group by inventory_model_id";
-        $stock_result = mysql_query($stock_sql, Service::$database_connect);
+        $stock_result = mysql_query($stock_sql, $this->conn);
         $stock_row = mysql_fetch_assoc($stock_result);
         $stock = $stock_row['quantity'];
         
@@ -3049,11 +3001,11 @@ class Service{
     
     public function updateSkuDescription(){
         $sql = "select count(*) as num from description where sku = '".$_POST['sku']."'";
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         if($row['num'] == 0){
             $sql = "insert into description (sku,english,french,germany) values ('".$_POST['sku']."','".htmlentities($_POST['english'], ENT_QUOTES)."','".htmlentities($_POST['french'], ENT_QUOTES)."','".htmlentities($_POST['germany'], ENT_QUOTES)."')";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"add description success."));
             }else{
@@ -3061,7 +3013,7 @@ class Service{
             }
         }else{
             $sql = "update description set english = '".htmlentities($_POST['english'], ENT_QUOTES)."',french = '".htmlentities($_POST['french'], ENT_QUOTES)."',germany = '".htmlentities($_POST['germany'], ENT_QUOTES)."' where sku = '".$_POST['sku']."'";
-            $result = mysql_query($sql, Service::$database_connect);
+            $result = mysql_query($sql, $this->conn);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"update description success."));
             }else{
@@ -3075,20 +3027,20 @@ class Service{
 	session_start();
 	if(strpos($_POST['suppliers'], ",")){
 	    $sql = "delete from sku_suppliers where sku = '".$_POST['sku']."'";
-	    $result = mysql_query($sql, Service::$database_connect);
+	    $result = mysql_query($sql, $this->conn);
 	    foreach(explode(",", $_POST['suppliers']) as $value){
 		$sql = "insert into sku_suppliers (sku,suppliers_id,modified_by,modified_date) values ('".$_POST['sku']."', '".$value."','".$_SESSION['intUserAccountId']."',now())";
 		echo $sql."\n";
-		$result = mysql_query($sql, Service::$database_connect);
+		$result = mysql_query($sql, $this->conn);
 		//var_dump($result);
 	    }
 	}else{
 	    $sql = "delete from sku_suppliers where sku = '".$_POST['sku']."'";
-	    $result = mysql_query($sql, Service::$database_connect);
+	    $result = mysql_query($sql, $this->conn);
 	    
 	    $sql = "insert into sku_suppliers (sku,suppliers_id,modified_by,modified_date) values ('".$_POST['sku']."', '".$_POST['suppliers']."','".$_SESSION['intUserAccountId']."',now())";
 	    echo $sql."\n";
-	    $result = mysql_query($sql, Service::$database_connect);
+	    $result = mysql_query($sql, $this->conn);
 	}
     }
     
@@ -3113,10 +3065,14 @@ class Service{
             case "Germany":
                 $languae = "germany";
             break;
+	
+	    default:
+		$languae = "english";
+	    break;
         }
         $sql = "select ".$languae." from description where sku = '".$_GET['sku']."'";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         echo html_entity_decode($row[$languae], ENT_QUOTES);
     }
@@ -3124,7 +3080,7 @@ class Service{
     public function complaints(){
         $sql = "insert into complaints (sku,content,time) values ('".$_POST['sku']."','".mysql_real_escape_string($_POST['content'])."','".date("Y-m-d H:i:s")."')";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         if($result){
             echo 1;
         }else{
@@ -3135,7 +3091,7 @@ class Service{
     public function addSKuCombo(){
         $sql = "insert into combo (sku,attachment,quantity) values ('".$_POST['sku']."','".$_POST['attachment']."','".$_POST['quantity']."') ";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         if($result){
             echo 1;
         }else{
@@ -3194,7 +3150,7 @@ class Service{
     public function deleteSkuCombo(){
         $sql = "delete from combo where id = '".$_POST['id']."'";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         if($result){
             echo 1;
         }else{
@@ -3204,7 +3160,7 @@ class Service{
     
     private function getUserName($user_account_id){
 	$sql = "select username from user_account where user_account_id = ".$user_account_id;
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
 	return $row['username'];
     }
@@ -3216,7 +3172,7 @@ class Service{
 	$now = date('Y-m-d H:i:s');
 	$sql = "insert into sku_purchase (sku,quantity,price,suppliers_id,remark,created_by,creation_date,modified_by,modified_date,status) values ('".$_POST['sku']."','".$_POST['quantity']."','".$_POST['price']."','".$_POST['suppliers_id']."','".$_POST['remark']."','".$_POST['by']."','".$now."','".$_POST['by']."','".$now."',0)";
         //echo $sql;
-        $result = mysql_query($sql, Service::$database_connect);
+        $result = mysql_query($sql, $this->conn);
         if($result){
             echo 1;
         }else{
@@ -3356,80 +3312,27 @@ class Service{
 	if(empty($_POST['byName'])){
 	    $_POST['byName'] = $this->getUserName($_POST['byId']);
 	}
-	$created_by = $_POST['byId'];
+	
 	$sql = "select sku,quantity,remark from sku_purchase where id = ".$_POST['id'];
-	$result = mysql_query($sql, Service::$database_connect);
+	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
 	$quantity = $row['quantity'];
 	$note = $row['remark'];
+	$sku = $row['sku'];
 	
-	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['sku']."'";
-	$result = mysql_query($sql, Service::$database_connect);
+	
+	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
 	$inventory_model_id = $row['inventory_model_id'];
 	
-	$sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
-        $this->log("skuPurchaseStoring", $sql."<br>");
-        //echo $sql;
-        //echo "<br>";
-        $result = mysql_query($sql, Service::$database_connect);
-        $row = mysql_fetch_assoc($result);
-        $source_location_id = $row['location_id'];
-        $inventory_location_id = $row['inventory_location_id'];
-        
-	if(empty($source_location_id)){
-	    $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
-	    values ('".$inventory_model_id."','6','0','".$created_by."','".date("Y-m-d H:i:s")."')";
-	    $this->log("skuPurchaseStoring", $sql."<br>");
-	    $result = mysql_query($sql, Service::$database_connect);
-	    $inventory_location_id = mysql_insert_id(Service::$database_connect);
-	    $source_location_id = 6;
+	$result = $this->updateStock($inventory_model_id, $quantity, "+", $note);
+	if($result){
+	    $sql = "update sku_purchase set status = 1,modified_by='".$_POST['byName']."',modified_date='".date("Y-m-d H:i:s")."' where id = '".$_POST['id']."'";
+	    $result = mysql_query($sql);
+	    echo "1";
 	}
 	
-        if(!empty($source_location_id)){
-	    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','".$note."','".$created_by."','".date("Y-m-d H:i:s")."')";
-            $this->log("skuPurchaseStoring", $sql."<br>");
-            //echo $sql;
-            //echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
-            $transaction_id = mysql_insert_id(Service::$database_connect);
-	    
-	    //sku purchase storing
-            $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
-            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."',4,'".$source_location_id."','".$created_by."','".date("Y-m-d H:i:s")."')";
-            $this->log("skuPurchaseStoring", $sql."<br>");
-            //echo $sql;
-            //echo "<br>";
-            $result = mysql_query($sql, Service::$database_connect);
-            if($result){
-                //sku update stock quantity
-                $sql = "update inventory_location set quantity = quantity + ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
-                $this->log("skuPurchaseStoring", $sql."<br>");
-                //echo $sql;
-                //echo "<br>";
-                $result = mysql_query($sql, Service::$database_connect);
-                
-                $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
-                $this->log("skuPurchaseStoring", $sql."<br>");
-                $result = mysql_query($sql, Service::$database_connect);
-                $this->log("skuPurchaseStoring", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
-                flush();
-		/*
-                $this->sendMessageToAM("/topic/SkuInToLibrary",
-                        array("sku"=> $inventory_model,
-                              "quantity"=> $quantity,
-                              "shipment_id"=> $shipment_id,
-                              "shipment_method"=> $shipment_method));
-		*/
-		$sql = "update sku_purchase set status = 1,modified_by='".$_POST['byName']."',modified_date='".date("Y-m-d H:i:s")."' where id = '".$_POST['id']."'";
-		$result = mysql_query($sql);
-		if($result){
-		    echo 1;
-		}else{
-		    echo 0;
-		}
-            }
-	}
     }
     
     public function skuPurchaseCancel(){
@@ -3555,27 +3458,6 @@ class Service{
         }
     }
     
-    public function dealSkuStockMessage(){
-    	//ini_set('include_path', '../');
-        require_once 'Stomp.php';
-        require_once 'Stomp/Message/Map.php';
-        
-        $consumer = new Stomp(Service::$active_mq);
-        $consumer->clientId = "inventory";
-        $consumer->connect();
-        $consumer->subscribe("/topic/SkuOutStock", array('transformation' => 'jms-map-json'));
-        while(1){
-            $msg = $consumer->readFrame();
-            if ( $msg != null) {
-                //echo "Message '$msg->body' received from queue\n";
-                //print_r($msg->map);
-                //$this->inventoryTakeOut($msg->map['inventory_model'], $msg->map['quantity'], $msg->map['shipment_id'], $msg->map['shipment_method']);
-                $consumer->ack($msg);
-            }
-            sleep(1);
-        }
-    }
-    
     public function updateSkuStatusFromCsv(){
 	$row = 1;
 	if (($handle = fopen("Inactive.csv", "r")) !== FALSE) {
@@ -3632,77 +3514,32 @@ class Service{
 	file_put_contents("temp1.txt", $sku);
     }
     
-    public function generatePurchaseOrder(){
-	//get stock day
-        $sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['stockDays']."'";
-        $result = mysql_query($sql, Service::$database_connect);
+    public function savePurchaser(){
+	$sql = "select count(*) as num from sku_purchaser where sku = '".$_POST['sku']."'";
+	$result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
-        $stock_day_field_id = $row['custom_field_id'];
-	
-	//get lower limit
-	$sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['MOQ']."'";
-        $result = mysql_query($sql, Service::$database_connect);
-        $row = mysql_fetch_assoc($result);
-        $moq_field_id = $row['custom_field_id'];
-	
-	$manufacture = array();
-        $sql_4 = "select manufacturer_id,short_description from manufacturer";
-        $result_4 = mysql_query($sql_4, Service::$database_connect);
-        while($row_4 = mysql_fetch_assoc($result_4)){
-            $manufacture[$row_4['manufacturer_id']] = $row_4['short_description'];
-        }
-	
-	$sql_1 = "select inventory_model_id,manufacturer_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model";
-	$data = "SKU,英文名称,中文名称,最低起订数,建议采购数,(目前库存量-安全库存量)差值,目前库存量,最低（安全）库存量,备货天数,前三天销售数量,上周销售数量,上上周销售数量,上上上周销售数量";
-	while($row_1 = mysql_fetch_assoc($result_1)){
-            //$array[$i]['inventory_model_id'] = $row_1['inventory_model_id'];
-            //$array[$i]['inventory_model_code'] = $row_1['inventory_model_code'];
-            //$array[$i]['short_description'] = $row_1['short_description'];
-            //$array[$i]['week_flow'] = $row_1['week_flow'];
-            
-            $sql_2 = "select sum(quantity) as quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."'";
-            //echo $sql_2;
-            //echo "<br>";
-            $result_2 = mysql_query($sql_2, Service::$database_connect);
-            $row_2 = mysql_fetch_assoc($result_2);
-            //$array[$i]['quantity'] = $row_2['quantity'];
-	    
-	    $sql_3 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$stock_day_field_id."'";
-            //echo $sql_3;
-            //echo "<br>";
-            $result_3 = mysql_query($sql_3, Service::$database_connect);
-            $row_3 = mysql_fetch_assoc($result_3);
-	    
-	    $sql_4 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id = cfv.custom_field_value_id where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$moq_field_id."'";
-            //echo $sql_3;
-            //echo "<br>";
-            $result_4 = mysql_query($sql_4, Service::$database_connect);
-            $row_4 = mysql_fetch_assoc($result_4);
-	    
-	    $safe_stock = $row_3['short_description'] * (($row_1['three_day_flow'] / 3) * 0.3 + ($row_1['week_flow_1'] / 7) * 0.3 + ($row_1['week_flow_2'] / 7) * 0.2 + ($row_1['week_flow_3'] / 7) * 0.2);
-	    $virtual_stock = $row_2['quantity'] - $safe_stock;
-	    
-	    if($virtual_stock > 0){
-		if($row_4['short_description'] > 0){
-		    if($row_4['short_description'] > $virtual_stock * -1){
-			$purchase = $row_4['short_description'];
-		    }else{
-			$purchase = $virtual_stock * -1;
-		    }
-		}else{
-		    $purchase = $virtual_stock * -1;
-		}
-		
-		$flow = ($row_1['week_flow_1'] * 0.5 + $row_1['week_flow_2'] * 0.3 + $row_1['week_flow_3'] * 0.2 / 3) / 7;
-		if($row_2['quantity'] < $flow * $row_3['short_description']){
-		    $data .= $row_1['inventory_model_code'].",".$row_1['short_description'].",".$row_1['long_description'].",".$purchase.",".
-		    $virtual_stock.",".$row_2['quantity'].",".$safe_stock.",".$row_3['short_description'].",".
-		    $row_1['three_day_flow'].",".$row_1['week_flow_1'].",".$row_1['week_flow_2'].",".$row_1['week_flow_3'];
-		}
-	    }
+	if($row['num'] == 0){
+	    $sql_1 = "insert into sku_purchaser (sku,purchaser_id) values ('".$_POST['sku']."','".$_POST['purchaser_id']."')";
+	    $result_1 = mysql_query($sql_1, $this->conn);
+	}else{
+	    $sql_1 = "update sku_purchaser set purchaser_id = '".$_POST['purchaser_id']."' where sku = '".$_POST['sku']."'";
+	    $result_1 = mysql_query($sql_1, $this->conn);
 	}
-	
-	file_put_contents(Service::PO_PATH."/".date("Y-m-d"), $data, FILE_APPEND);
+	echo $result_1;
+    }
+    
+    public function addSkuCompanyContactPrice(){
+	$sql = "insert into sku_company_contact_price (sku,company_id,contact_id,purchase_price,created_by) values 
+	('".$_POST['sku']."','".$_POST['vendors_id']."','".$_POST['contact_id']."','".$_POST['purchase_price']."','".$this->getCurrentUserName()."')";
+	$result = mysql_query($sql, $this->conn);
+        echo $result;
+    }
+    
+    public function deleteSkuCompanyContactPrice(){
+	$sql = "delete from sku_company_contact_price where id = '".$_POST['id']."'";
+	//echo $sql;
+	$result = mysql_query($sql, $this->conn);
+        echo $result;
     }
     
     public function caclCost(){
@@ -3710,8 +3547,19 @@ class Service{
 	echo 3.95 * $_GET['price'] - 81.8 * $_GET['weight'] - 4.2;
     }
     
+    public function getContactByCompany(){
+	mysql_query("SET NAMES 'latin1'");
+	$sql = "select contact_id as id,CONCAT(first_name, ' ', last_name) as name from contact where company_id = ".$_GET['company_id'];
+	$result = mysql_query($sql);
+	$array = array();
+        while($row = mysql_fetch_assoc($result)){
+	    $array[] = $row;
+	}
+	echo json_encode($array);
+    }
+    
     public function __destruct(){
-        mysql_close(Service::$database_connect);
+        mysql_close($this->conn);
     }
     
     

@@ -99,14 +99,16 @@ class Purchase extends Base{
 	
 	$where = " where 1 = 1 ";
 	if(!empty($_POST['vendors'])){
-	    $where .= " and vendors = '".$_POST['vendors']."'";
+	    $where .= " and vendors_id = '".$_POST['vendors']."'";
 	}
 	if(!empty($_POST['sku'])){
 	    $where .= " and sku like '".$_POST['sku']."%'";
 	}
-	if(!empty($_POST['purchase_type'])){
+	if(!empty($_POST['purchase_type']) && $_POST['purchase_type'] != 3){
+	    $_POST['purchase_type'] = $_POST['purchase_type'] - 1;
 	    $where .= " and purchase_type = '".$_POST['purchase_type']."'";
 	}
+	
 	if(!empty($_POST['purchase_status'])){
 	    $where .= " and purchase_status = '".$_POST['purchase_status']."'";
 	}
@@ -152,10 +154,14 @@ class Purchase extends Base{
 	sku_old_price = sku_price,sku_price = '".$_POST['sku_price']."',sku_price_remark = '".mysql_real_escape_string($_POST['sku_price_remark'])."',sku_total_price = '".($_POST['sku_purchase_qty'] * $_POST['sku_price'])."' 
 	where id = '".$_POST['id']."'";
 	$result = mysql_query($sql);
+	//echo $sql;
 	if($result){
-	    echo "1";
+	    echo '{success: true}';
+		
 	}else{
-	    echo "0";
+	    echo '{success: false,
+		      errors: {message: "can\'t update."}
+		}';
 	}
     }
     
@@ -172,8 +178,8 @@ class Purchase extends Base{
 	    on c.address_id = a.address_id set a.short_description = '".$_POST['address']."',a.modified_by = '".$_SESSION['intUserAccountId']."' 
 	    where c.company_id = ".$_POST['vendors_id'];
 	    $result_2 = mysql_query($sql_2);
-	    //$this->updateCustomFieldValue($_POST['vendors_id'], $this->conf['fieldArray']['paymentMethod'], '', '', $this->conf['entityQtype']['Company']);
-	    $this->updateCustomFieldValue($_POST['vendors_id'], $this->conf['fieldArray']['receiveAccounts'], $_POST['receive_account'],'', $this->conf['entityQtype']['Company']);
+	    $this->updateCustomFieldValue($_POST['vendors_id'], $this->conf['fieldArray']['paymentMethod'], str_replace("_", " ", $_POST['payment_method']), '', $this->conf['entityQtype']['Company']);
+	    $this->updateCustomFieldValue($_POST['vendors_id'], $this->conf['fieldArray']['receiveAccounts'], $_POST['receive_account'], '', $this->conf['entityQtype']['Company']);
 	}
 	
 	if($result){
@@ -266,7 +272,8 @@ class Purchase extends Base{
 	    $array['sku_defective_qty'] = "";
 	    $array['sku_rework_qty'] = "";
 	
-	    $array['sku_purchase_cycle'] = $this->getCustomFieldValueBySku($row['sku'], $this->conf['fieldArray']['purchaseCycle']);
+	    //$array['sku_purchase_cycle'] = $this->getCustomFieldValueBySku($row['sku'], $this->conf['fieldArray']['purchaseCycle']);
+	    $array['sku_purchase_cycle'] = $row['stock_days'];
 	    $array['sku_three_day_flow'] = $row['three_day_flow'];
 	    $array['sku_week_flow'] = $row['week_flow_1'];
 	    $array['created_by'] = "system";
