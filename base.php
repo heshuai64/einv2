@@ -182,37 +182,79 @@ class Base{
     }
     
     protected function updateCustomFieldValue($entity_id, $field_name, $field_value, $operate = "", $entity_qtype_id = 2){
-	$field_sql = "select custom_field_id from custom_field where short_description = '".$field_name."'";
+	$this->log("updateCustomFieldValue", "<br>-----------------------------------".date("Y-m-d H:i:s")."----------------------------------<br>");
+	
+	$field_sql = "select custom_field_id,custom_field_qtype_id from custom_field where short_description = '".$field_name."'";
         $field_result = mysql_query($field_sql, $this->conn);
         $field_row = mysql_fetch_assoc($field_result);
         $field_id = $field_row['custom_field_id'];
+	$field_qtype_id = $field_row['custom_field_qtype_id'];
 	
 	$sql_1 = "select count(*) as num from custom_field_selection as cfs left join custom_field_value as cfv 
 	on cfs.custom_field_value_id=cfv.custom_field_value_id 
 	where cfs.entity_qtype_id='".$entity_qtype_id."' and cfs.entity_id='".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
 	$result_1 = mysql_query($sql_1, $this->conn);
 	$row_1 = mysql_fetch_assoc($result_1);
+	$this->log("updateCustomFieldValue", $sql_1."<br>");
+	
+	$this->log("updateCustomFieldValue", print_r($row_1, true));
 	
 	if($row_1['num'] == 0){
-	    $sql_2 = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values  
-	    (".$field_id.",'".$field_value."',1,now())";
-	    $result_2 = mysql_query($sql_2, $this->conn);
-	    $custom_field_value_id = mysql_insert_id($this->conn);
-
-	    $sql_4 = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values 
-	    (".$custom_field_value_id.",".$entity_qtype_id.",".$entity_id.")";
-	    $result_4 = mysql_query($sql_4, $this->conn);
-	}else{
-	    if(!empty($operate)){
-		$sql_2 = "update custom_field_selection as cfs left join custom_field_value as cfv 
-		on cfs.custom_field_value_id=cfv.custom_field_value_id set cfv.short_description = cfv.short_description ".$operate." ".$field_value." 
-		where cfs.entity_qtype_id='".$entity_qtype_id."' and cfs.entity_id='".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
+	    //select
+	    if($this->conf['customFieldQtype']['select'] == $field_qtype_id){
+		$sql_2 = "select custom_field_value_id from custom_field_value where custom_field_id = '".$field_id."' and short_description = '".$field_value."'";
 		$result_2 = mysql_query($sql_2, $this->conn);
+		$row_2 = mysql_fetch_assoc($result_2);
+		$this->log("updateCustomFieldValue", $sql_2."<br>");
+		
+		$sql_3 = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) 
+		values ('".$row_2['custom_field_value_id']."','".$entity_qtype_id."','".$entity_id."')";
+		$result_3 = mysql_query($sql_3, $this->conn);
+		$this->log("updateCustomFieldValue", $sql_3."<br>");
 	    }else{
-		$sql_2 = "update custom_field_selection as cfs left join custom_field_value as cfv 
-		on cfs.custom_field_value_id=cfv.custom_field_value_id set cfv.short_description = '".$field_value."' 
-		where cfs.entity_qtype_id='".$entity_qtype_id."' and cfs.entity_id='".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
+		$sql_2 = "insert into custom_field_value (custom_field_id,short_description,created_by,creation_date) values  
+		(".$field_id.",'".$field_value."',1,now())";
 		$result_2 = mysql_query($sql_2, $this->conn);
+		$custom_field_value_id = mysql_insert_id($this->conn);
+		$this->log("updateCustomFieldValue", $sql_2."<br>");
+		
+		$sql_3 = "insert into custom_field_selection (custom_field_value_id,entity_qtype_id,entity_id) values 
+		(".$custom_field_value_id.",".$entity_qtype_id.",".$entity_id.")";
+		$result_3 = mysql_query($sql_3, $this->conn);
+		$this->log("updateCustomFieldValue", $sql_3."<br>");
+	    }
+	}else{
+	    //select
+	    if($this->conf['customFieldQtype']['select'] == $field_qtype_id){
+		$sql_2 = "select custom_field_value_id from custom_field_value where custom_field_id = '".$field_id."' and short_description = '".$field_value."'";
+		$result_2 = mysql_query($sql_2, $this->conn);
+		$row_2 = mysql_fetch_assoc($result_2);
+		$this->log("updateCustomFieldValue", $sql_2."<br>");
+		/*
+		$sql_3 = "update custom_field_selection set custom_field_value_id = '".$row_2['custom_field_value_id']."'
+		where entity_id = '".$entity_id."' and entity_qtype_id= '".$entity_qtype_id."'";
+		$result_3 = mysql_query($sql_3, $this->conn);
+		$this->log("updateCustomFieldValue", $sql_3."<br>");
+		*/
+		$sql_3 = "update custom_field_selection as cfs left join custom_field_value as cfv on cfs.custom_field_value_id=cfv.custom_field_value_id
+		set cfs.custom_field_value_id = '".$row_2['custom_field_value_id']."' 
+		where cfs.entity_qtype_id= '".$entity_qtype_id."' and cfs.entity_id = '".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
+		$result_3 = mysql_query($sql_3, $this->conn);
+		$this->log("updateCustomFieldValue", $sql_3."<br>");
+	    }else{
+		if(!empty($operate)){
+		    $sql_2 = "update custom_field_selection as cfs left join custom_field_value as cfv 
+		    on cfs.custom_field_value_id=cfv.custom_field_value_id set cfv.short_description = cfv.short_description ".$operate." ".$field_value." 
+		    where cfs.entity_qtype_id='".$entity_qtype_id."' and cfs.entity_id='".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
+		    $result_2 = mysql_query($sql_2, $this->conn);
+		    $this->log("updateCustomFieldValue", $sql_2."<br>");
+		}else{
+		    $sql_2 = "update custom_field_selection as cfs left join custom_field_value as cfv 
+		    on cfs.custom_field_value_id=cfv.custom_field_value_id set cfv.short_description = '".$field_value."' 
+		    where cfs.entity_qtype_id='".$entity_qtype_id."' and cfs.entity_id='".$entity_id."' and cfv.custom_field_id = '".$field_id."'";
+		    $result_2 = mysql_query($sql_2, $this->conn);
+		    $this->log("updateCustomFieldValue", $sql_2."<br>");
+		}
 	    }
 	}
     }

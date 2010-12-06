@@ -395,12 +395,15 @@ class Cron extends Base{
 	    }else{
 		$min_purchase_quantity = 50;
 	    }
-	    
+	    /*
 	    if($min_purchase_quantity % 10 < 5){
 		$min_purchase_quantity = floor($min_purchase_quantity / 10) * 10 + 5;
 	    }elseif($min_purchase_quantity % 10 > 5){
 		$min_purchase_quantity = floor($min_purchase_quantity / 10) * 10 + 10;
 	    }
+	    */
+	    //$min_purchase_quantity = ceil($min_purchase_quantity / 10) * 10;
+	    
 	    //get virtual stock
 	    $sql_5 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
 	    on cfs.custom_field_value_id = cfv.custom_field_value_id 
@@ -427,6 +430,8 @@ class Cron extends Base{
 	    $rate = 1;
 	    $flow = ($row_1['week_flow_1'] + $row_1['week_flow_2']) / 12;
 	    $suggest_purchase_num = $flow * ($stock_day + $buffer_day) * $rate - $virtual_stock - $purchase_in_transit;
+	    $suggest_purchase_num = ceil($suggest_purchase_num / 10) * 10;
+	    
 	    if($suggest_purchase_num > $stock){
 		$sql_7 = "insert into purchase_planned (date,sku,sku_status,title,min_purchase_num,
 		purchase_in_the_way,suggest_purchase_num,stock,virtual_stock,stock_days,three_day_flow,
