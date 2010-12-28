@@ -473,6 +473,14 @@ class QInventoryTransactComposite extends QControl {
 						$this->objInventoryTransaction->SourceLocationId = $SourceLocationId;
 						$this->objInventoryTransaction->DestinationLocationId = $DestinationLocationId;
 						$this->objInventoryTransaction->Save();
+		
+						$this->http_post("http://127.0.0.1:8080/inventory/service.php", 'updateVirtualStock', array(
+							//'byName' => '',
+							'inventory_model_id' => $objInventoryLocation->InventoryModelId,
+							'virtualStock' => $objInventoryLocation->intTransactionQuantity,
+							'operate' => '+'
+							)
+						);
 					}
 					
 					// Commit the above transactions to the database

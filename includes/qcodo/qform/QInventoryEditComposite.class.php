@@ -358,7 +358,7 @@ class QInventoryEditComposite extends QControl {
 		$this->btnEdit->CausesValidation = false;
 		
 		$this->btnDelete->Enabled = false;
-		if(@$this->arrCustomFields[7]['input']->SelectedValue == 5918){
+		if(@$this->arrCustomFields[7]['input']->SelectedValue == 5918 && QApplication::$objUserAccount->RoleId != 1){
 			$this->btnEdit->Enabled = false;
 		}
 		

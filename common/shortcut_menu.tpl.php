@@ -38,7 +38,7 @@
 							</tr>
 <?php						
 		for ($i=0; $i<count($this->objShortcutArray); $i++) {
-
+			$this->objShortcutArray[$i]->__set("ShortDescription", QApplication::Translate($this->objShortcutArray[$i]->__get("ShortDescription")));
 			echo ('<tr>');
 			echo (sprintf('<td width="30" align="center"><img src="%s/icons/%s" name="shortcut%s"></td>', __IMAGE_ASSETS__, $this->objShortcutArray[$i]->__toStringIcon(), $i));
 			echo (sprintf('<td style="border-left:1px solid #CCCCCC;border-bottom:1px solid #CCCCCC;padding-left:5px;cursor:pointer;" onmouseover="this.style.backgroundColor=\'#EEEEEE\';" onmouseout="this.style.backgroundColor=\'#FFFFFF\';">%s</td>', $this->objShortcutArray[$i]->__toStringWithLink('graylink')));

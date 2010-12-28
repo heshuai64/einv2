@@ -112,7 +112,13 @@
 
 <link rel="stylesheet" href="../css/jquery.tabs.css" type="text/css" media="print, projection, screen">
 <link rel="stylesheet" href="../css/jquery.multiselect2side.css" type="text/css">
-
+<style>
+.manage-block{
+	text-align: left; 
+	border: solid #98BF21;
+	position: relative;
+}
+</style>
 <!-- Additional IE/Win specific style sheet (Conditional Comments) -->
 <!--[if lte IE 7]>
 <link rel="stylesheet" href="../css/jquery.tabs-ie.css" type="text/css" media="projection, screen">
@@ -199,7 +205,7 @@ if(!empty($_GET['intInventoryModelId'])){
 	}
 	*/
 	
-	if(in_array($currency_user_role, $role_1)){
+	
 		$suppliers_id = array();
 		$sql_3 = "select suppliers_id from sku_suppliers where sku = '".$sku."'";
 		$result_3 = mysql_query($sql_3);
@@ -224,41 +230,40 @@ if(!empty($_GET['intInventoryModelId'])){
 		$suppliers_select  .= $suppliers_option;
 		$suppliers_select  .= '</select>';
 ?>
-
-<script type="text/javascript">
-	$().ready(function() {
-		$('#suppliers').multiselect2side({moveOptions: false});
-	});
-	
-	function updateSuppliers(){
-		//alert($("#manufacturer").val());
-		var suppliers;
-		if($.isArray($("#suppliers").val())){
-			var xx = $("#suppliers").val();
-			//alert(xx);
-			$.each(xx, function(index, value) {
-				suppliers += value + ",";
-			});
-			suppliers = suppliers.substring(9, suppliers.length - 1);
-		}else{
-			suppliers = $("#suppliers").val();
-		}
-		$.post("/inventory/service.php?action=updateSuppliers",
-		       {
-				sku     : $("#c19").val(),
-				suppliers : suppliers
-		       },
-			function(data){
-				//alert(data.msg);
-			}, "json"
-		);
-		       
-		return false;
-	}
-</script>
 <!-- 
 <br><br>
 <div id="Suppliers" style="text-align: left; border: dotted; height: 860px; position: relative;">
+	<script type="text/javascript">
+		$().ready(function() {
+			$('#suppliers').multiselect2side({moveOptions: false});
+		});
+		
+		function updateSuppliers(){
+			//alert($("#manufacturer").val());
+			var suppliers;
+			if($.isArray($("#suppliers").val())){
+				var xx = $("#suppliers").val();
+				//alert(xx);
+				$.each(xx, function(index, value) {
+					suppliers += value + ",";
+				});
+				suppliers = suppliers.substring(9, suppliers.length - 1);
+			}else{
+				suppliers = $("#suppliers").val();
+			}
+			$.post("/inventory/service.php?action=updateSuppliers",
+			       {
+					sku     : $("#c19").val(),
+					suppliers : suppliers
+			       },
+				function(data){
+					//alert(data.msg);
+				}, "json"
+			);
+			       
+			return false;
+		}
+	</script>
 	<h2>Suppliers</h2>
 	<div style="font-size: 12px; position: relative;"><div style="float: left; color: blue;">Suppliers List</div><div style="position: absolute; float: left; left: 320px; color: green;">SKU Suppliers</div></div>
 	<?=$suppliers_select?>
@@ -267,93 +272,8 @@ if(!empty($_GET['intInventoryModelId'])){
 	</div>
 </div>
  -->
-<?php
-}
-mysql_query("SET NAMES 'UTF8'");
-$sql = "select * from description where sku = '".$sku."'";
-$result = mysql_query($sql);
-$row = mysql_fetch_assoc($result);
-
-?>
-
-<script type="text/javascript">
-	function updateDescription(){
-
-		$.post("/inventory/service.php?action=updateSkuDescription",
-		       {
-				sku     : $("#c19").val(),
-				english : e.getData(),
-				french  : f.getData(),
-				germany : g.getData()
-		       },
-			function(data){
-		    	//console.log(data);
-				alert(data.msg);
-				//msg += data.msg;
-				
-		    	$.post("/eBayListing/service.php?action=updateSkuDescription",
-		 		       {
-		 				sku     : $("#c19").val(),
-		 				english : e.getData(),
-		 				french  : f.getData(),
-		 				germany : g.getData()
-		 		       },
-		 			function(data){
-		 				//console.log(data);
-		 		    	//msg += data.msg;
-		 		    	alert(data.msg);
-		 			}, "json"
-		 		);
-			}, "json"
-		);
-
-		return false;
-	}
-</script>	
-<script type="text/javascript" src="../js/ckeditor/ckeditor.js"></script>
-<br><br>
-<div id="description-tabs" style="text-align: left; border: dotted;">
-	<ul>
-	    <li><a href="#fragment-1"><span><?=QApplication::Translate('English')?></span></a></li>
-	    <li><a href="#fragment-2"><span><?=QApplication::Translate('French')?></span></a></li>
-	    <li><a href="#fragment-3"><span><?=QApplication::Translate('Germany')?></span></a></li>
-	</ul>
-	<div id="fragment-1">
-		<textarea id="english" rows="40" cols="120"><?=html_entity_decode($row['english'], ENT_QUOTES)?></textarea>
-	</div>
-	<div id="fragment-2">
-		<textarea id="french" rows="40" cols="120"><?=html_entity_decode($row['french'], ENT_QUOTES)?></textarea>
-	</div>
-	<div id="fragment-3">
-		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
-	</div>
-	<?php
-	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
-	$result_1 = mysql_query($sql_1);
-	$row_1 = mysql_fetch_assoc($result_1);
-	$custom_field_value_id = $row_1['custom_field_value_id'];
-	
-	$sql_2 = "select count(*) as num from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id = ".$custom_field_value_id." and entity_id = ".$_GET['intInventoryModelId'];
-	$result_2 = mysql_query($sql_2);
-	$row_2 = mysql_fetch_assoc($result_2);
-	$active = $row_2['num'];
-	
-	if($active == 0){?>
-	<button onclick="return updateDescription();">Update Description</button>
-	<?php }?>
-</div>
-<br>
-<br>
-<script type="text/javascript">
-	var e = CKEDITOR.replace( 'english' );
-	var f = CKEDITOR.replace( 'french' );
-	var g = CKEDITOR.replace( 'germany' );
-	$('#description-tabs').tabs();
-</script>
-<?php
-}
-?>	
-<div id="image-panel" style="position:relative; display: none;">
+ <br><br>
+ <div id="image-panel" class="manage-block">
 	<script type="text/javascript">
 		/*
 		$("#c17").bind("blur", function(e){
@@ -408,25 +328,236 @@ $row = mysql_fetch_assoc($result);
 	
 		}
 	</script>	
+	<h2><?=QApplication::Translate('Image Manage')?></h2>
 	<form name="form" action="" method="POST" enctype="multipart/form-data">
 		<input id="fileToUpload" type="file" size="45" name="fileToUpload" class="input"><br>
-		<button class="button" id="buttonUpload" onclick="return ajaxFileUpload();" style="height:32px">Upload Image</button>
+		<button class="button" id="buttonUpload" onclick="return ajaxFileUpload();" style="height:32px"><?=QApplication::Translate('Upload Image')?></button>
 	</form>
 	<img id="loading" src="../images/loading.gif" style="display:none;">
 	<div style="position:absolute;right:300px;top:0px">
-		<img style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=$this->lstCategory->SelectedValue?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/>
+		<a href="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"><img border=0 style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/></a>
 	</div>
 </div>
-<?php 
-if(!empty($_GET['intInventoryModelId'])){
+<br><br>
+<?php
+if(in_array($currency_user_role, $role_1)){
 ?>
-<div id="combo-panel" style="border: dotted;">
+<div id="purchaser-panel" class="manage-block">
+	<script type="text/javascript">
+		function save_purchaser(){
+			$.post("/inventory/service.php?action=savePurchaser", { sku: '<?=$sku?>', purchaser_id: $("#purchaser_id").val()},
+				function(data){
+				window.location.reload();
+				//$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			});
+		}
+	</script>
+	<h2><?=QApplication::Translate('Purchaser Manage')?></h2>
+	<?php
+	$sql = "select purchaser_id from sku_purchaser where sku = '".$sku."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+	$purchaser_id = $row['purchaser_id'];
+	
+	$purchaser = "";
+	$sql = "select user_account_id,username from user_account";
+	$result = mysql_query($sql);
+	$purchaser .= '<select id="purchaser_id">';
+	while($row = mysql_fetch_assoc($result)){
+		$purchaser .= '<option value="'.$row['user_account_id'].'"'.($purchaser_id == $row['user_account_id']?' selected="selected"':'').'>'.$row['username'].'</option>';
+	}
+	$purchaser .= '</select>';
+	echo $purchaser;
+	?>
+	<input type='button' value='<?=QApplication::Translate('Save')?>' onClick='save_purchaser()'/>
+</div>
+<br><br>
+<div id="vendors-panel" class="manage-block">
+	<script type="text/javascript">
+		function add_sku_company_contact_price(){
+			$.post("/inventory/service.php?action=addSkuCompanyContactPrice", { sku: '<?=$sku?>', vendors_id: $("#vendors_id").val(), contact_id: $("#contact_id").val(), purchase_price: $("#purchase_price").val() },
+				function(data){
+				window.location.reload();	
+				//$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			});
+		}
+		
+		function delete_sku_company_contact_price(id){
+			$.post("/inventory/service.php?action=deleteSkuCompanyContactPrice", { id: id},
+				function(data){
+				window.location.reload();	
+				//$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			});
+		}
+		
+		$(document).ready(function() {
+			$('#vendors_id').change(function() {
+				$.getJSON('../service.php?action=getContactByCompany&company_id='+this.value, function(data) {
+					$('#contact_id').empty();
+					$.each(data, function(key, value){
+						$('#contact_id').
+						append($("<option></option>").
+							attr("value", value.id).
+							text(value.name));
+					})
+
+				});
+
+			});
+		});
+	</script>
+	<h2><?=QApplication::Translate('Vendors Manage')?></h2>
+	<?php
+	$company = QApplication::Translate('Company').": ";
+	$sql = "select * from company";
+	$result = mysql_query($sql);
+	$company .= '<select id="vendors_id">';
+	while($row = mysql_fetch_assoc($result)){
+		$company_array[$row['company_id']] = $row['short_description'];
+		$company .= '<option value="'.$row['company_id'].'">'.$row['short_description'].'</option>';
+	}
+	$company .= '</select>';
+	echo $company;
+	
+	$contact = "&nbsp;&nbsp;".QApplication::Translate('Contact').": ";
+	$contact .= '<select id="contact_id">
+		</select>';
+	
+	$sql = "select * from contact";
+	$result = mysql_query($sql);
+	//$contact .= '<select id="contact_id">';
+	while($row = mysql_fetch_assoc($result)){
+		$contact_array[$row['contact_id']] = $row['first_name'].$row['last_name'];
+		//$contact .= '<option value="'.$row['contact_id'].'">'.$row['first_name'].$row['last_name'].'</option>';
+	}
+	//$contact .= '</select>';
+	
+	echo $contact;
+	?>
+	&nbsp;&nbsp;<?=QApplication::Translate('Purchase Price')?>: <input id="purchase_price" name="purchase_price" type="text" style="width: 100px;"/>
+	<input type='button' value='<?=QApplication::Translate('Add')?>' onClick='add_sku_company_contact_price()'/>
+	<?php
+	$sql = "select * from sku_company_contact_price where sku = '".$sku."'";
+	$result = mysql_query($sql);
+	$vendors_table = "";
+	while($row = mysql_fetch_assoc($result)){
+		$vendors_table .= "<tr>";
+		$vendors_table .= "<td>";
+		$vendors_table .= $company_array[$row['company_id']];
+		$vendors_table .= "</td>";
+		$vendors_table .= "<td>";
+		$vendors_table .= $contact_array[$row['contact_id']];
+		$vendors_table .= "</td>";
+		$vendors_table .= "<td>";
+		$vendors_table .= $row['purchase_price'];
+		$vendors_table .= "</td>";
+		$vendors_table .= "<td>";
+		$vendors_table .= $row['created_by'];
+		$vendors_table .= "</td>";
+		$vendors_table .= "<td>";
+		$vendors_table .= "<input type='button' value='".QApplication::Translate('Delete')."' onClick='delete_sku_company_contact_price(".$row['id'].")'>";
+		$vendors_table .= "</td>";
+		$vendors_table .= "</tr>";
+	}
+	?>
+	<div id="vendors-price-list">
+		<table border=1>
+			<tr><th><?=QApplication::Translate('Company')?></th><th><?=QApplication::Translate('Contact')?></th><th><?=QApplication::Translate('Purchase Price')?></th><th><?=QApplication::Translate('Created By')?></th><th><?=QApplication::Translate('Operate')?></th></tr>
+			<?=$vendors_table?>
+		</table>
+	</div>
+</div>
+<?php
+}
+mysql_query("SET NAMES 'UTF8'");
+$sql = "select * from description where sku = '".$sku."'";
+$result = mysql_query($sql);
+$row = mysql_fetch_assoc($result);
+
+?>
+<br><br>
+<div id="description-tabs" class="manage-block">
+	<script type="text/javascript">
+		function updateDescription(){
+	
+			$.post("/inventory/service.php?action=updateSkuDescription",
+			       {
+					sku     : $("#c19").val(),
+					english : e.getData(),
+					french  : f.getData(),
+					germany : g.getData()
+			       },
+				function(data){
+			    	//console.log(data);
+					alert(data.msg);
+					//msg += data.msg;
+					
+			    	$.post("/eBayListing/service.php?action=updateSkuDescription",
+			 		       {
+			 				sku     : $("#c19").val(),
+			 				english : e.getData(),
+			 				french  : f.getData(),
+			 				germany : g.getData()
+			 		       },
+			 			function(data){
+			 				//console.log(data);
+			 		    	//msg += data.msg;
+			 		    	alert(data.msg);
+			 			}, "json"
+			 		);
+				}, "json"
+			);
+	
+			return false;
+		}
+	</script>	
+	<script type="text/javascript" src="../js/ckeditor/ckeditor.js"></script>
+	<h2><?=QApplication::Translate('Description Manage')?></h2>
+	<ul>
+	    <li><a href="#fragment-1"><span><?=QApplication::Translate('English')?></span></a></li>
+	    <li><a href="#fragment-2"><span><?=QApplication::Translate('French')?></span></a></li>
+	    <li><a href="#fragment-3"><span><?=QApplication::Translate('Germany')?></span></a></li>
+	</ul>
+	<div id="fragment-1">
+		<textarea id="english" rows="40" cols="120"><?=html_entity_decode($row['english'], ENT_QUOTES)?></textarea>
+	</div>
+	<div id="fragment-2">
+		<textarea id="french" rows="40" cols="120"><?=html_entity_decode($row['french'], ENT_QUOTES)?></textarea>
+	</div>
+	<div id="fragment-3">
+		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
+	</div>
+	<?php
+	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
+	$result_1 = mysql_query($sql_1);
+	$row_1 = mysql_fetch_assoc($result_1);
+	$custom_field_value_id = $row_1['custom_field_value_id'];
+	
+	$sql_2 = "select count(*) as num from custom_field_selection where entity_qtype_id = 2 and custom_field_value_id = ".$custom_field_value_id." and entity_id = ".$_GET['intInventoryModelId'];
+	$result_2 = mysql_query($sql_2);
+	$row_2 = mysql_fetch_assoc($result_2);
+	$active = $row_2['num'];
+	
+	if($active == 0){?>
+	<button onclick="return updateDescription();"><?=QApplication::Translate('Save')?></button>
+	<?php }?>
+	
+	<script type="text/javascript">
+		var e = CKEDITOR.replace( 'english' );
+		var f = CKEDITOR.replace( 'french' );
+		var g = CKEDITOR.replace( 'germany' );
+		$('#description-tabs').tabs();
+	</script>
+</div>
+<br><br>
+
+<div id="combo-panel" class="manage-block">
 	<h2><?=QApplication::Translate('Combo')?></h2>
 	<div id="add-combo-panel">
 		<form >
 			SKU: <input type="text" id="attachment"/>
 			<?=QApplication::Translate('Quantity')?>: <input type="text" id="quantity"/>
-			<input id="add-combo" type="button" value="Add"/>
+			<input id="add-combo" type="button" value="<?=QApplication::Translate('Add')?>"/>
 		</form>
 	</div>
 	<script type="text/javascript">
@@ -494,7 +625,8 @@ if(!empty($_GET['intInventoryModelId'])){
 	</div>
 </div>
 <br><br>
-<div id="complaints-panel" style="border: dotted;">
+
+<div id="complaints-panel" class="manage-block">
 	<h2><?=QApplication::Translate('Complaints')?></h2>
 	<table border=1>
 		<tr>
@@ -518,7 +650,8 @@ if(!empty($_GET['intInventoryModelId'])){
 	</table>
 </div>
 <br><br>
-<div id="purchase-panel" style="border: dotted;">
+
+<div id="purchase-panel" class="manage-block">
 	<h2><?=QApplication::Translate('Purchase In The Way')?></h2>
 	<div id="add-purchase-panel">
 		<form >
@@ -526,6 +659,20 @@ if(!empty($_GET['intInventoryModelId'])){
 			<input id="add-purchase" type="button" value="Add Quantity"/>
 		</form>
 	</div>
+	<?php
+	$content = "";
+	$sql = "select vendors_id,contact_id,sku_price,sku_purchase_qty,expected_arrival_date from purchase_orders where sku = '".$sku."' and purchase_status = '6'";
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+		$content .= "<tr>";
+		$content .= "<td>".$company_array[$row['vendors_id']]."</td>";
+		$content .= "<td>".$contact_array[$row['contact_id']]."</td>";
+		$content .= "<td>".$row['sku_price']."</td>";
+		$content .= "<td>".$row['sku_purchase_qty']."</td>";
+		$content .= "<td>".$row['expected_arrival_date']."</td>";
+		$content .= "</tr>";
+	}
+	?>
 	<div id="purchase-list-panel">
 		<table border=1>
 			<tr>

@@ -108,6 +108,9 @@ MsgStr "修改日期"
 MsgId "- Select One -"
 MsgStr "请选择"
 
+MsgId "Add"
+MsgStr "添加"
+
 MsgId "Save"
 MsgStr "保存"
 
@@ -124,7 +127,7 @@ MsgId "Short Description"
 MsgStr "标题"
 
 MsgId "Long Description"
-MsgStr "描述"
+MsgStr "中文名称"
 
 MsgId "Create Inventory"
 MsgStr "创建SKU"		
@@ -207,6 +210,9 @@ MsgStr "创建新联系人"
 #Contact
 MsgId "Company"
 MsgStr "公司"
+
+MsgId "Contact"
+MsgStr "联系人"
 
 MsgId "Name"
 MsgStr "姓名"

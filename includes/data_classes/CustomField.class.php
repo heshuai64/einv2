@@ -357,7 +357,7 @@
 					}
 	 				$arrCustomFields[$i]['lbl']->Name = $objCustomFieldArray[$i]->ShortDescription;
 	 				if ($blnEditMode && $objCustomFieldArray[$i]->CustomFieldSelection) {
-	 					$arrCustomFields[$i]['lbl']->Text = nl2br($objCustomFieldArray[$i]->CustomFieldSelection->CustomFieldValue->ShortDescription);
+	 					$arrCustomFields[$i]['lbl']->Text = nl2br(QApplication::Translate($objCustomFieldArray[$i]->CustomFieldSelection->CustomFieldValue->ShortDescription));
 	 				}
 	 				elseif ($blnEditMode && !$objCustomFieldArray[$i]->CustomFieldSelection) {
 	 					$arrCustomFields[$i]['lbl']->Text = 'None';
