@@ -15,6 +15,12 @@ class Cron extends Base{
 	$three_week_ago = date("Y-m-d", time() - ((21 * 24 * 60 * 60)));
         $today = date("Y-m-d");
 	
+	$sql_0 = "update inventory_model set three_day_flow=0,week_flow_1=0,week_flow_2=0,week_flow_3=0";
+	$this->log("calculateWeekFlow", $sql_0."<br>");
+	//echo $sql_1;
+	//echo "<br>";
+	$result_0 = mysql_query($sql_0, $this->conn);
+	
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
 	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
 	where it.destination_location_id = 3 and it.creation_date between '".$three_day_ago."' and '".$today."' group by im.inventory_model_code";
@@ -32,7 +38,8 @@ class Cron extends Base{
             //echo "<br>";
             $result_1 = mysql_query($sql_1, $this->conn);
         }
-	//
+	
+	//one week flow
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
 	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
 	where it.destination_location_id = 3 and it.creation_date between '".$one_week_ago."' and '".$today."' group by im.inventory_model_code";
@@ -51,7 +58,7 @@ class Cron extends Base{
             $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
-	//
+	//two week flow
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
 	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
 	where it.destination_location_id = 3 and it.creation_date between '".$two_week_ago."' and '".$one_week_ago."' group by im.inventory_model_code";
@@ -70,7 +77,7 @@ class Cron extends Base{
             $result_1 = mysql_query($sql_1, $this->conn);
         }
 	
-	//
+	//three week flow
 	$sql = "select im.inventory_model_code,sum(it.quantity) as week_flow from (inventory_model as im left join inventory_location il on im.inventory_model_id = il.inventory_model_id) 
 	left join inventory_transaction as it on il.inventory_location_id = it.inventory_location_id 
 	where it.destination_location_id = 3 and it.creation_date between '".$three_week_ago."' and '".$two_week_ago."' group by im.inventory_model_code";
@@ -405,6 +412,7 @@ class Cron extends Base{
 	    //$min_purchase_quantity = ceil($min_purchase_quantity / 10) * 10;
 	    
 	    //get virtual stock
+	    /*
 	    $sql_5 = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
 	    on cfs.custom_field_value_id = cfv.custom_field_value_id 
 	    where cfs.entity_id = '".$row_1['inventory_model_id']."' and cfs.entity_qtype_id = '2' and cfv.custom_field_id = '".$virtual_stock_field_id."'";
@@ -413,34 +421,49 @@ class Cron extends Base{
             $result_5 = mysql_query($sql_5, $this->conn);
             $row_5 = mysql_fetch_assoc($result_5);
 	    $virtual_stock = $row_5['short_description'];
+	    */
+	    $virtual_stock = $this->getVirtualStock($row_1['inventory_model_id']);
 	    
 	    //get stock qty
+	    /*
 	    $sql_6 = "select quantity from inventory_location where inventory_model_id = '".$row_1['inventory_model_id']."' and location_id = '".$this->conf['location']['warehouse']."'";
 	    $result_6 = mysql_query($sql_6, $this->conn);
 	    $row_6 = mysql_fetch_assoc($result_6);
 	    $stock = $row_6['quantity'];
+	    */
+	    $stock = $this->getStock($row_1['inventory_model_id']);
 	    
 	    //get purchase in transit
+	    /*
 	    $sql_8 = "select sum(sku_purchase_qty) as purchase_in_transit from purchase_orders where purchase_status = '6' and sku = '".$row_1 ['inventory_model_code']."' group by sku";
 	    $result_8 = mysql_query($sql_8, $this->conn);
             $row_8 = mysql_fetch_assoc($result_8);
 	    $purchase_in_transit = $row_8['purchase_in_transit'];
+	    */
+	    $purchase_in_transit = $this->getSkuPurchaseInTransit($row_1['inventory_model_code']);
+	    echo $row_1['inventory_model_code'].":".$stock."|".$virtual_stock."|".$purchase_in_transit."\n";
+	    //continue;
 	    
 	    $buffer_day = 2;
-	    $rate = 1;
-	    $flow = ($row_1['week_flow_1'] + $row_1['week_flow_2']) / 12;
-	    $suggest_purchase_num = $flow * ($stock_day + $buffer_day) * $rate - $virtual_stock - $purchase_in_transit;
-	    $suggest_purchase_num = ceil($suggest_purchase_num / 10) * 10;
+	    $purchase_rate = 1;
+	    $flow = $row_1['week_flow_1'] / 6;
+	    $suggest_purchase_num = ($flow * ($stock_day + $buffer_day) - $purchase_in_transit - $virtual_stock) * $purchase_rate;
 	    
 	    if($suggest_purchase_num > $stock){
+		if($suggest_purchase_num < $min_purchase_quantity){
+		    $suggest_purchase_num = $min_purchase_quantity;
+		}
+		$suggest_purchase_num = ceil($suggest_purchase_num / 10) * 10;
+		//
 		$sql_7 = "insert into purchase_planned (date,sku,sku_status,title,min_purchase_num,
 		purchase_in_the_way,suggest_purchase_num,stock,virtual_stock,stock_days,three_day_flow,
 		week_flow_1,week_flow_2,week_flow_3,
 		purchase_status,purchase_type) values 
-		('".$date."','".$row_1 ['inventory_model_code']."','".$status."','".$row_1['long_description']."','".$min_purchase_quantity."',
+		('".$date."','".$row_1['inventory_model_code']."','".$status."','".mysql_real_escape_string($row_1['long_description'])."','".$min_purchase_quantity."',
 		'".$purchase_in_transit."','".$suggest_purchase_num."','".$stock."','".$virtual_stock."','".$stock_day."','".$row_1 ['three_day_flow']."',
 		'".$row_1 ['week_flow_1']."','".$row_1 ['week_flow_2']."','".$row_1 ['week_flow_3']."',
 		'0','0')";
+		echo $sql_7."\n";
 		$result_7 = mysql_query($sql_7, $this->conn);
 	    }
 	}

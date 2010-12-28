@@ -2995,8 +2995,12 @@ class Service extends Base{
 	//-----------------------------------------  Lowest Price  ------------------------------------
 	$sku_lowest_price = $this->getSkuLowestPrice($_GET['data'], true);
 	
+	
+	//------------------------------------------ Locator Number -----------------------------------
+	$locator_number = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['LocatorNumber']);
+	
         $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuLowestPrice: ".$sku_lowest_price.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=> $weight, 'skuStock'=>$stock));
+        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=>$weight, 'skuStock'=>$stock, 'locatorNumber'=>$locator_number));
     }
     
     public function updateSkuDescription(){

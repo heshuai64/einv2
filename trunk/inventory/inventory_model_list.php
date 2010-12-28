@@ -105,6 +105,7 @@
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt('<img src=../images/icons/attachment_gray.gif border=0 title=Attachments alt=Attachments>', '<?= Attachment::toStringIcon($_ITEM->GetVirtualAttribute(\'attachment_count\')); ?>', 'SortByCommand="__attachment_count ASC"', 'ReverseSortByCommand="__attachment_count DESC"', 'CssClass="dtg_column"', 'HtmlEntities="false"'));
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Inventory Code'), '<?= $_ITEM->__toStringWithLink("bluelink"); ?>', 'SortByCommand="inventory_model_code ASC"', 'ReverseSortByCommand="inventory_model_code DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Model'), '<?= $_ITEM->ShortDescription ?>', 'Width=200', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"'));
+      $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Long Description'), '<?= $_ITEM->LongDescription ?>', 'Width=200', 'SortByCommand="long_description ASC"', 'ReverseSortByCommand="long_description DESC"', 'CssClass="dtg_column"'));
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Category'), '<?= $_ITEM->Category->__toString(); ?>', 'SortByCommand="inventory_model__category_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__category_id__short_description DESC"', 'CssClass="dtg_column"'));
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Manufacturer'), '<?= $_ITEM->Manufacturer->__toString(); ?>', 'SortByCommand="inventory_model__manufacturer_id__short_description ASC"', 'ReverseSortByCommand="inventory_model__manufacturer_id__short_description DESC"', 'CssClass="dtg_column"'));
       $this->dtgInventoryModel->AddColumn(new QDataGridColumnExt(QApplication::Translate('Quantity'), '<?= $_ITEM->__toStringQuantity(); ?>', 'SortByCommand="inventory_model_quantity ASC"', 'ReverseSortByCommand="inventory_model_quantity DESC"', 'CssClass="dtg_column"'));
@@ -209,7 +210,7 @@
   	protected function lstLocation_Create() {
   		$this->lstLocation = new QListBox($this);
   		$this->lstLocation->Name = QApplication::Translate('Location');
-  		$this->lstLocation->AddItem('- ALL -', null);
+  		$this->lstLocation->AddItem(QApplication::Translate('- ALL -'), null);
   		foreach (Location::LoadAllLocations(false, false, 'short_description') as $objLocation) {
   			$this->lstLocation->AddItem($objLocation->ShortDescription, $objLocation->LocationId);
   		}
@@ -220,7 +221,7 @@
 	  protected function lstCategory_Create() {
 	  	$this->lstCategory = new QListBox($this);
 			$this->lstCategory->Name = QApplication::Translate('Category');
-			$this->lstCategory->AddItem('- ALL -', null);
+			$this->lstCategory->AddItem(QApplication::Translate('- ALL -'), null);
 			foreach (Category::LoadAllWithFlags(false, true, 'short_description') as $objCategory) {
 				$this->lstCategory->AddItem($objCategory->ShortDescription, $objCategory->CategoryId);
 			}
@@ -229,7 +230,7 @@
 	  protected function lstManufacturer_Create() {
       $this->lstManufacturer = new QListBox($this);
 			$this->lstManufacturer->Name = QApplication::Translate('Manufacturer');
-			$this->lstManufacturer->AddItem('- ALL -', null);
+			$this->lstManufacturer->AddItem(QApplication::Translate('- ALL -'), null);
 			foreach (Manufacturer::LoadAll(QQ::Clause(QQ::OrderBy(QQN::Manufacturer()->ShortDescription))) as $objManufacturer) {
 				$this->lstManufacturer->AddItem($objManufacturer->ShortDescription, $objManufacturer->ManufacturerId);
 			}

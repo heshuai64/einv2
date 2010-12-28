@@ -8,9 +8,10 @@ class Purchase extends Base{
     2: waiting inquiry
     3: waiting approval
     4: approval not pass
-    5: approval pass
-    6: in transit
+    5: approval pass / in transit
+    //6: in transit
     7: change to GIO
+    8: delete
     */
     
     /*
@@ -110,7 +111,11 @@ class Purchase extends Base{
 	}
 	
 	if(!empty($_POST['purchase_status'])){
-	    $where .= " and purchase_status = '".$_POST['purchase_status']."'";
+	    if($_POST['purchase_status'] == 2){
+		$where .= " and (purchase_status = 2 or purchase_status = 4)";
+	    }else{
+		$where .= " and purchase_status = '".$_POST['purchase_status']."'";
+	    }
 	}
 	if(!empty($_POST['purchaser'])){
 	    $where .= " and purchaser = '".$_POST['purchaser']."'";
@@ -149,10 +154,35 @@ class Purchase extends Base{
 	    where sku = '".$row['sku']."' and company_id = '".$row['vendors_id']."' and contact_id = '".$row['contact_id']."'";    
 	    $result_1 = mysql_query($sql_1);
 	}
-	
+	/*
 	$sql = "update purchase_orders set sku_old_purchase_qty = sku_purchase_qty,sku_purchase_qty = '".$_POST['sku_purchase_qty']."',sku_purchase_qty_remark = '".mysql_real_escape_string($_POST['sku_purchase_qty_remark'])."',
 	sku_old_price = sku_price,sku_price = '".$_POST['sku_price']."',sku_price_remark = '".mysql_real_escape_string($_POST['sku_price_remark'])."',sku_total_price = '".($_POST['sku_purchase_qty'] * $_POST['sku_price'])."' 
+	where id = '".$_POST['id']."' and sku_old_price = 0 and sku_old_purchase_qty = 0";
+	$result = mysql_query($sql);
+	*/
+	$sql = "select sku_price,sku_purchase_qty from purchase_orders where id = '".$_POST['id']."'";
+	$result = mysql_query($sql);
+	$row = mysql_fetch_assoc($result);
+	$sku_old_price = $row['sku_price'];
+	$sku_old_purchase_qty = $row['sku_purchase_qty'];
+	
+	if($_POST['sku_price'] != $sku_old_price){
+	    $sql = "update purchase_orders set sku_old_price = sku_price,sku_price = '".$_POST['sku_price']."',sku_price_remark = '".mysql_real_escape_string($_POST['sku_price_remark'])."' 
+	    where id = '".$_POST['id']."'";
+	    //echo $sql."\n";
+	    $result = mysql_query($sql);
+	}
+	
+	if($_POST['sku_purchase_qty'] != $sku_old_purchase_qty){
+	    $sql = "update purchase_orders set sku_old_purchase_qty = sku_purchase_qty,sku_purchase_qty = '".$_POST['sku_purchase_qty']."',sku_purchase_qty_remark = '".mysql_real_escape_string($_POST['sku_purchase_qty_remark'])."' 
+	    where id = '".$_POST['id']."'";
+	    //echo $sql."\n";
+	    $result = mysql_query($sql);
+	}
+	
+	$sql = "update purchase_orders set remark='".mysql_real_escape_string($_POST['remark'])."',sku_total_price = sku_price * sku_purchase_qty 
 	where id = '".$_POST['id']."'";
+	//echo $sql."\n";
 	$result = mysql_query($sql);
 	//echo $sql;
 	if($result){
@@ -209,13 +239,43 @@ class Purchase extends Base{
     public function deletePurchaseOrders(){
 	$ids = explode(",", $_POST['ids']);
 	foreach($ids as $id){
-	    $sql = "delete from purchase_orders where id = '".$id."'";
+	    $sql = "update purchase_orders set purchase_status = 8 where id = '".$id."'";
 	    $result = mysql_query($sql, $this->conn);
 	}
 	echo "1";
     }
     
+    public function importPO(){
+	$po_id = "";
+	require_once '../class/PHPExcel.php';
+	require_once '../class/PHPExcel/IOFactory.php';
+        
+        $objPHPExcel = PHPExcel_IOFactory::load($_FILES['alexcel']['tmp_name']);
+        //$objPHPExcel = $objReader->load($_FILES['alexcel']['tmp_name']);
+	$objWorksheet = $objPHPExcel->getActiveSheet();
+        foreach ($objWorksheet->getRowIterator() as $row) {
+            $po = array();
+	    $cellIterator = $row->getCellIterator();
+            $cellIterator->setIterateOnlyExistingCells(false);
+            $i = 0;
+	    foreach ($cellIterator as $cell) {
+                //echo $cell->getValue();
+		$po[$i] = $cell->getValue();
+		$i++;
+            }
+	    $po_id .= $this->createPurchaseOrders($po[0], $po[1], $po[2], true).",";
+        }
+	$po_id = substr($po_id, 0, -1);
+	if($po){
+	    echo '{success: true, msg: "'.$po_id.'"}';
+	}
+    }
+    
     public function createPOFromPP(){
+	if(empty($_POST['ids'])){
+	    echo "0";
+	    return 0;
+	}
 	$ids = explode(",", $_POST['ids']);
 	foreach($ids as $id){
 	    $array = array();
@@ -266,7 +326,11 @@ class Purchase extends Base{
 	    $array['sku_stock'] = $row['stock'];
 	    $array['sku_virtual_stock'] = $row['virtual_stock'];
 	    $array['sku_purchase_in_transit'] = $row['purchase_in_the_way'];
+	    
+	    $array['sku_old_purchase_qty'] = $row['suggest_purchase_num'];
 	    $array['sku_purchase_qty'] = $row['suggest_purchase_num'];
+	    
+	    $array['sku_old_price'] = $row_3['purchase_price'];
 	    $array['sku_price'] = $row_3['purchase_price'];
 	    $array['sku_total_price'] = $row['suggest_purchase_num'] * $row_3['purchase_price'];
 	    $array['sku_defective_qty'] = "";
@@ -287,11 +351,28 @@ class Purchase extends Base{
 	echo "1";
     }
     
-    private function updatePurchaseOrdersStatus($ids = null, $status = null){
+    private function checkVendorsContact($po_id){
+	$sql = "select vendors_id,contact_id from purchase_orders where id = '".$po_id."'";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	if(!empty($row['vendors_id']) && !empty($row['contact_id'])){
+	    return 1;
+	}else{
+	    return 0;
+	}
+    }
+    
+    private function updatePurchaseOrdersStatus($ids = '', $status = '', $remark = ''){
 	if(!empty($ids) && !empty($status)){
 	    $ids = explode(",", $ids);
 	    foreach($ids as $id){
-		$sql_1 = "update purchase_orders set purchase_status = ".$status." where id = '".$id."'";
+		if($status == 2 && $this->checkVendorsContact($id) == 0){
+		    continue;
+		}
+		if(!empty($remark)){
+		    $remark = ",remark='".mysql_real_escape_string($remark)."'";
+		}
+		$sql_1 = "update purchase_orders set purchase_status = ".$status.$remark." where id = '".$id."'";
 		$result_1 = mysql_query($sql_1, $this->conn);
 	    }
 	    echo "1";
@@ -300,12 +381,22 @@ class Purchase extends Base{
 	}
     }
     
-    public function createPurchaseOrders(){
-	$sku = $_POST['sku'];
-	$sku_price = $_POST['sku_price'];
-	$sku_purchase_qty = $_POST['sku_purchase_qty'];
-	$vendors_id = $_POST['vendors_id'];
-	$contact_id = $_POST['contact_id'];
+    public function createPurchaseOrders($sku = "", $sku_price = "", $sku_purchase_qty = "", $internal = false){
+	$array = array();
+	if(!empty($_POST)){
+	    $sku = $_POST['sku'];
+	    $sku_price = $_POST['sku_price'];
+	    $sku_purchase_qty = $_POST['sku_purchase_qty'];
+	    $vendors_id = $_POST['vendors_id'];
+	    $contact_id = $_POST['contact_id'];
+	}else{
+	    $sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
+	    $vendors_id = $row['company_id'];
+	    $contact_id = $row['contact_id'];
+	    $array['sku_old_price'] = $row['purchase_price'];
+	}
 	
 	$sql_1 = "select purchaser_id from sku_purchaser where sku = '".$sku."'";
 	$result_1 = mysql_query($sql_1, $this->conn);
@@ -353,10 +444,11 @@ class Purchase extends Base{
 	$array['sku_status'] = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['skuStatus']);
 	$array['sku_stock'] = $this->getStock("", $sku);
 	$array['sku_virtual_stock'] = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['virtualStock']);
-	$array['sku_purchase_in_transit'] = "";//
+	$array['sku_purchase_in_transit'] = $this->getSkuPurchaseInTransit($sku);
 	$array['sku_purchase_qty'] = $sku_purchase_qty;
 	$array['sku_price'] = $sku_price;
 	$array['sku_total_price'] = $sku_purchase_qty * $sku_price;
+	$array['sku_purchase_cycle'] = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['purchaseCycle']);
 	$array['sku_defective_qty'] = "";
 	$array['sku_rework_qty'] = "";
 	$array['created_by'] = "system";
@@ -364,8 +456,10 @@ class Purchase extends Base{
 	
 	$result = $this->_C("purchase_orders", $array);
 	if($result){
+	    if($internal){
+		return $array['id'];
+	    }
 	    echo '{success: true}';
-		
 	}else{
 	    echo '{success: false,
 		      errors: {message: "can\'t create."}
@@ -382,7 +476,7 @@ class Purchase extends Base{
     }
     
     public function approvalPurchaseOrdersNotPass(){
-	$this->updatePurchaseOrdersStatus($_POST['ids'], 4);
+	$this->updatePurchaseOrdersStatus($_POST['ids'], 4, $_POST['remark']);
     }
     
     public function approvalPurchaseOrdersPass(){

@@ -11,7 +11,8 @@ if(empty($_SESSION['intUserAccountId'])){
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<link rel="stylesheet" type="text/css" href="/inventory/css/tracmor.css"></link>
 		<link rel="stylesheet" type="text/css" href="../resources/css/ext-all.css" />
-		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-gray.css" />	
+		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-gray.css" />
+		<link rel="stylesheet" type="text/css" href="fileuploadfield.css"/>
 	    <!-- GC -->
 	 	<!-- LIBS -->
 	 	<script type="text/javascript" src="../adapter/ext/ext-base.js"></script>
@@ -19,6 +20,7 @@ if(empty($_SESSION['intUserAccountId'])){
 	
 		<script type="text/javascript" src="../ext-all.js"></script>
 		<script type="text/javascript" src="zh_cn.js"></script>
+		<script src="FileUploadField.js"></script>
 		<script type="text/javascript" src="purchase.js"></script>
 	</head>
 	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0" style="width: 1630px;">

@@ -20,7 +20,7 @@ Ext.onReady(function(){
             totalProperty: 'totalCount',
             idProperty: 'id',
             autoLoad:true,
-            fields: ['id', 'sku','title', 'min_purchase_num', 'purchase_in_the_way', 'suggest_purchase_num', 'stock', 'virtual_stock', 'stock_days', 'three_day_flow', 'week_flow_1', 'week_flow_2', 'week_flow_3', 'purchase_status', 'purchase_type'],
+            fields: ['id', 'sku', 'sku_status', 'title', 'min_purchase_num', 'purchase_in_the_way', 'suggest_purchase_num', 'stock', 'virtual_stock', 'stock_days', 'three_day_flow', 'week_flow_1', 'week_flow_2', 'week_flow_3', 'purchase_status', 'purchase_type'],
             url:'purchase.php?action=getPurchasePlanned'
     });
     
@@ -37,9 +37,15 @@ Ext.onReady(function(){
                 align: 'center',
                 sortable: true
             },{
+                header: lang.Sku_Status,
+                dataIndex: 'sku_status',
+                width: 70,
+                align: 'center',
+                sortable: true
+            },{
                 header: lang.Title,
                 dataIndex: 'title',
-                width: 130,
+                width: 230,
                 align: 'center'
             },{
                 header: lang.Min_Purchase_Num,
@@ -101,13 +107,13 @@ Ext.onReady(function(){
                 width: 70,
                 align: 'center',
                 sortable: true
-            },{
+            }/*,{
                 header: lang.Purchase_Planned_Type,
                 dataIndex: 'purchase_type',
                 width: 80,
                 align: 'center',
                 sortable: true
-            }],
+            }*/],
             tbar: [
                 lang.Purchase_Planned_Type,{
                     xtype:"combo",
@@ -140,12 +146,12 @@ Ext.onReady(function(){
                     }
                 }    
             ],
-            bbar: [{
+            bbar: [/*{
                     text: lang.Add_Purchase_Planned,
                     handler: function(){
                         
                     }
-                },'-',{
+                },'-',*/{
                     text: lang.Create_Purchase_Orders,
                     handler: function(){
                         var selections = purchasePlannedGrid.selModel.getSelections();
@@ -168,7 +174,7 @@ Ext.onReady(function(){
                                         purchasePlannedStore.reload();
                                         break;
                                     default:
-                                        Ext.MessageBox.alert('Uh uh...', 'We couldn\'t save him...');
+                                        Ext.MessageBox.alert('Uh uh...', 'We couldn\'t create');
                                         break;
                                 }
                             },
@@ -280,6 +286,13 @@ Ext.onReady(function(){
     })
     
     */
+    function renderPurchaseOrdersId(v, p, r){
+        if(r.data.purchase_status == 4){
+            v = "<font color='blue'>"+v+"</font>";
+        }
+        return v;
+    }
+    
     function renderPurchaseOrdersStatus(v, p, r){
         return lang.Purchase_Orders_Status_Array[v-1];
     }
@@ -341,6 +354,7 @@ Ext.onReady(function(){
             dataIndex: 'id',
             width: 100,
             align: 'center',
+            renderer: renderPurchaseOrdersId,
             sortable: true
         },{
             header: lang.Purchase_Orders_Type,
@@ -669,6 +683,73 @@ Ext.onReady(function(){
             }
         },
         bbar:[{
+                id: 'import-purchase-orders',
+                text: lang.Import_Purchase_Orders,
+                handler: function(){
+                    var  importExcelWindow = new Ext.Window({
+                        title: lang.Import_Purchase_Orders_Excel,
+                        closable:true,
+                        width: 360,
+                        height: 180,
+                        plain:true,
+                        layout: 'fit',
+                        items: [{
+                             xtype:'form',
+                             id:'import-purchase-orders-form',
+                             fileUpload: true,
+                             frame: true,
+                             autoHeight: true,
+                             bodyStyle: 'padding: 10px 10px 0 10px;',
+                             labelWidth: 80,
+                             defaults: {
+                                 anchor: '95%'
+                                 //allowBlank: false
+                             },
+                             items:[{
+                                  title:"",
+                                  xtype:"fieldset",
+                                  items:[{
+                                       xtype: 'fileuploadfield',
+                                       id: 'stcsv',
+                                       emptyText: lang.Select_An_Excel_File,
+                                       fieldLabel: lang.File,
+                                       //hideLabel:true,
+                                       name: 'alexcel',
+                                       buttonText: '',
+                                       buttonCfg: {
+                                           iconCls: 'upload-icon'
+                                       }
+                                  },{
+                                       xtype: 'button',
+                                       text: lang.Upload,
+                                       handler: function(){
+                                            var fp = Ext.getCmp("import-purchase-orders-form");
+                                            if(fp.getForm().isValid()){
+                                                fp.getForm().submit({
+                                                    url: 'purchase.php?action=importPO',
+                                                    waitMsg: lang.Waitting,
+                                                    success: function(fp, o){
+                                                        purchaseOrdersStore.reload();
+                                                        //Ext.MessageBox.alert(lang.Success, o.result.msg);
+                                                        alert(o.result.msg);
+                                                        importExcelWindow.close();
+                                                    }
+                                                });
+                                            }
+                                       }
+                                  }]
+                             }]
+                         }],                                           
+                         buttons: [{
+                            text: lang.Close,
+                            handler: function(){
+                                 importExcelWindow.close();
+                            }
+                        }]         
+                    })
+                    importExcelWindow.show();  
+                }
+            },'-',{
                 id: 'create-purchase-orders',
                 text: lang.Create_Purchase_Orders,
                 handler: function(){
@@ -825,7 +906,7 @@ Ext.onReady(function(){
                     var purchaseOrdersForm = new Ext.FormPanel({
                         autoScroll:true,
                         reader:new Ext.data.JsonReader({
-                            }, ['sku_old_price','sku_purchase_qty','sku_old_purchase_qty','sku_purchase_qty_remark','sku_price','sku_price_remark']
+                            }, ['remark','sku_old_price','sku_purchase_qty','sku_old_purchase_qty','sku_purchase_qty_remark','sku_price','sku_price_remark']
                         ),
                         items:[{                        
                             layout:"column",
@@ -853,7 +934,7 @@ Ext.onReady(function(){
                                     name:"sku_price_remark",
                                     //allowBlank: false,
                                     width: 200, 
-                                    height: 100
+                                    height: 70
                                   }]
                                 },{
                                 columnWidth:0.5,
@@ -879,9 +960,16 @@ Ext.onReady(function(){
                                     name:"sku_purchase_qty_remark",
                                     //allowBlank: false,
                                     width: 200, 
-                                    height: 100
+                                    height: 70
                                   }]
                             }]
+                        },{
+                            xtype:"textarea",
+                            fieldLabel: lang.Remark,
+                            name:"remark",
+                            //allowBlank: false,
+                            width: 400, 
+                            height: 50    
                         },{
                             xtype:"hidden",
                             name:"id",
@@ -950,6 +1038,111 @@ Ext.onReady(function(){
                                 */
                             }
                         },{
+                            text: lang.Close,
+                            handler: function(){
+                                purchaseOrdersWindow.close();
+                            }
+                        }]
+                    });
+                    purchaseOrdersWindow.show();
+                }
+            },'-',{
+                id: 'show-remark',    
+                text: lang.Show_Remark,
+                handler: function(){
+                    var selections = purchaseOrdersGrid.selModel.getSelections();
+                    var purchase_orders_id = selections[0].data.id;
+                    
+                    var purchaseOrdersForm = new Ext.FormPanel({
+                        autoScroll:true,
+                        reader:new Ext.data.JsonReader({
+                            }, ['remark','sku_old_price','sku_purchase_qty','sku_old_purchase_qty','sku_purchase_qty_remark','sku_price','sku_price_remark']
+                        ),
+                        items:[{                        
+                            layout:"column",
+                            items:[{
+                                columnWidth:0.5,
+                                layout:"form",
+                                title:"Price",
+                                items:[{
+                                    xtype:"numberfield",
+                                    disabled: true,
+                                    fieldLabel: lang.Sku_Old_Price,
+                                    name:"sku_old_price"
+                                  },{
+                                    xtype:"numberfield",
+                                    fieldLabel: lang.Sku_Price,
+                                    name:"sku_price",
+                                    listeners: {
+                                        change: function(){
+                                            purchaseOrdersForm.getForm().items.items[2].allowBlank = false;
+                                        }
+                                    }
+                                  },{
+                                    xtype:"textarea",
+                                    fieldLabel: lang.Sku_Price_Remark,
+                                    name:"sku_price_remark",
+                                    //allowBlank: false,
+                                    width: 200, 
+                                    height: 70
+                                  }]
+                                },{
+                                columnWidth:0.5,
+                                layout:"form",
+                                title:"Quantity",
+                                items:[{
+                                    xtype:"numberfield",
+                                    disabled: true,
+                                    fieldLabel: lang.Sku_Old_Purchase_Qty,
+                                    name:"sku_old_purchase_qty"
+                                  },{
+                                    xtype:"numberfield",
+                                    fieldLabel: lang.Sku_Purchase_Qty,
+                                    name:"sku_purchase_qty",
+                                    listeners: {
+                                        change: function(){
+                                            purchaseOrdersForm.getForm().items.items[5].allowBlank = false;
+                                        }
+                                    }
+                                  },{
+                                    xtype:"textarea",
+                                    fieldLabel: lang.Sku_Purchase_Qty_Remark,
+                                    name:"sku_purchase_qty_remark",
+                                    //allowBlank: false,
+                                    width: 200, 
+                                    height: 70
+                                  }]
+                            }]
+                        },{
+                            xtype:"textarea",
+                            fieldLabel: lang.Remark,
+                            name:"remark",
+                            //allowBlank: false,
+                            width: 400, 
+                            height: 50    
+                        },{
+                            xtype:"hidden",
+                            name:"id",
+                            value: purchase_orders_id
+                        }]
+                    })
+                    
+                    purchaseOrdersForm.getForm().load({url:'purchase.php?action=getPurchaseOrdersById', 
+                            method:'GET', 
+                            params: {id: purchase_orders_id}, 
+                            waitMsg:'Please wait...'
+                        }
+                    );
+                    
+                    var purchaseOrdersWindow = new Ext.Window({
+                        title: purchase_orders_id ,
+                        closable:true,
+                        width: 660,
+                        height: 300,
+                        plain:true,
+                        layout: 'fit',
+                        items: purchaseOrdersForm,
+                        buttons: [{
                             text: lang.Close,
                             handler: function(){
                                 purchaseOrdersWindow.close();
@@ -1032,33 +1225,35 @@ Ext.onReady(function(){
                 handler: function(){
                     var selections = purchaseOrdersGrid.selModel.getSelections();
                     var ids = "";
-                    for(i = 0; i< purchaseOrdersGrid.selModel.getCount(); i++){
-                            ids += selections[i].data.id + ","
-                    }
-                    ids = ids.slice(0, -1);
-                    //console.log(ids);
-                    Ext.Ajax.request({
-                        waitMsg: 'Please wait...',
-                        url: 'purchase.php?action=approvalPurchaseOrdersNotPass',
-                        params: {
-                            ids: ids
-                        },
-                        success: function(response){
-                            var result = eval(response.responseText);
-                            switch (result) {
-                                case 1:
-                                    purchaseOrdersStore.reload();
-                                    break;
-                                default:
-                                    Ext.MessageBox.alert('Uh uh...', 'We couldn\'t save him...');
-                                    break;
+                    if(purchaseOrdersGrid.selModel.getCount() == 1){
+                        Ext.Msg.prompt(lang.Prompt, lang.Please_Type_Remark, function(btn, text){
+                            if (btn == 'ok'){
+                                Ext.Ajax.request({
+                                    waitMsg: 'Please wait...',
+                                    url: 'purchase.php?action=approvalPurchaseOrdersNotPass',
+                                    params: {
+                                        ids: selections[0].data.id,
+                                        remark: text
+                                    },
+                                    success: function(response){
+                                        var result = eval(response.responseText);
+                                        switch (result) {
+                                            case 1:
+                                                purchaseOrdersStore.reload();
+                                                break;
+                                            default:
+                                                Ext.MessageBox.alert('Uh uh...', 'We couldn\'t save him...');
+                                                break;
+                                        }
+                                    },
+                                    failure: function(response){
+                                        var result = response.responseText;
+                                        Ext.MessageBox.alert('error', 'could not connect to the database. retry later');
+                                    }
+                                });	
                             }
-                        },
-                        failure: function(response){
-                            var result = response.responseText;
-                            Ext.MessageBox.alert('error', 'could not connect to the database. retry later');
-                        }
-                    });	
+                        });
+                    }
                 }
             },'-',{
                 id: 'purchase-orders-approval-pass',
@@ -1407,8 +1602,10 @@ Ext.onReady(function(){
     var purchaseOrdersUI = function(status){
         switch(status){
             case 1:
+                Ext.getCmp("import-purchase-orders").enable();
                 Ext.getCmp("create-purchase-orders").enable();
                 Ext.getCmp("edit-purchase-orders").enable();
+                Ext.getCmp("show-remark").disable();
                 Ext.getCmp("submit-purchase-orders").enable();
                 Ext.getCmp("purchase-orders-inquiry-complete").disable();
                 Ext.getCmp("purchase-orders-approval-not-pass").disable();
@@ -1420,8 +1617,10 @@ Ext.onReady(function(){
             break;
         
             case 2:
+                Ext.getCmp("import-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").enable();
+                Ext.getCmp("show-remark").disable();
                 Ext.getCmp("submit-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-inquiry-complete").enable();
                 Ext.getCmp("purchase-orders-approval-not-pass").disable();
@@ -1433,8 +1632,10 @@ Ext.onReady(function(){
             break;
         
             case 3:
+                Ext.getCmp("import-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
+                Ext.getCmp("show-remark").enable();
                 Ext.getCmp("submit-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-inquiry-complete").disable();
                 Ext.getCmp("purchase-orders-approval-not-pass").enable();
@@ -1446,8 +1647,10 @@ Ext.onReady(function(){
             break;
         
             case 5:
+                Ext.getCmp("import-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
+                Ext.getCmp("show-remark").enable();
                 Ext.getCmp("submit-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-inquiry-complete").disable();
                 Ext.getCmp("purchase-orders-approval-not-pass").disable();
@@ -1459,6 +1662,7 @@ Ext.onReady(function(){
             break;
         
             case 6:
+                Ext.getCmp("import-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("submit-purchase-orders").disable();

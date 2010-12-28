@@ -1270,5 +1270,35 @@
 					}
 			}
 		}
+		
+		  public function http_get($url, $action, $params = ''){
+		  	$p = "";
+			if(!empty($params)){
+			    foreach($params as $key=>$value){
+				$p .= "&".$key."=".urlencode($value);
+			    }
+			}
+		    $ch = curl_init($url.'?action='.$action.$p);
+		    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		    $result = curl_exec($ch);
+		    curl_close($ch);
+			return $result;
+		  }
+		  
+		  public function http_post($url, $action, $params){
+		  	$p = "";
+			foreach($params as $key=>$value){
+		    	$p .= $key."=".urlencode($value)."&";
+		    }
+		    $p = substr($p, 0, -1);
+		        
+		    $ch = curl_init($url."?action=".$action);
+		    curl_setopt($ch, CURLOPT_POST, 1);
+		    curl_setopt($ch, CURLOPT_POSTFIELDS, $p);
+		    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		    $result = curl_exec($ch);
+		    curl_close($ch);
+			return $result;
+		  }	
 	}
 ?>

@@ -17,12 +17,39 @@ MsgId "Lower Limit"
 MsgStr "最低库存量"
 	
 MsgId "Stock Day"
-MsgStr "库存周期"
+MsgStr "备货天数"
+
+MsgId "Stock Days"
+MsgStr "采购周期"
+
+MsgId "Bubble Bag"
+MsgStr "气泡袋"
+
+MsgId "Product Grade"
+MsgStr "产品等级"
 
 MsgId "Sku Status"
 MsgStr "状态"
 
+MsgId "MOQ"
+MsgStr "最低起订数"
+
+MsgId "Locator Number"
+MsgStr "货位号"
+
+MsgId "Virtual Stock"
+MsgStr "虚拟库存"
+
+MsgId "Accessories"
+MsgStr "配件"
+
 #
+MsgId "Image Manage"
+MsgStr "图片管理（支持JPG格式）"
+
+MsgId "Description Manage"
+MsgStr "描述管理"
+
 MsgId "English"
 MsgStr "英文"
 
@@ -53,26 +80,129 @@ MsgStr "内容"
 MsgId "Time"
 MsgStr "时间"
 
-MsgId "Product Grade"
-MsgStr "产品等级"
-
-MsgId "Stock Days"
-MsgStr "库存周转天数"
-
-MsgId "Bubble Bag"
-MsgStr "气泡袋"
-
 MsgId "Purchase In The Way"
 MsgStr "采购在途"
+
+MsgId "View Purchase Planned"
+MsgStr "查看采购计划"
 
 MsgId "Create Purchase Order"
 MsgStr "创建采购订单"
 
-MsgId "Audit Purchase Order"
-MsgStr "审核采购订单"
+MsgId "Approval Purchase Order"
+MsgStr "采购订单审核"
 
 MsgId "Search Purchase Order"
-MsgStr "查询采购订单"
+MsgStr "采购订单草稿"
 
+MsgId "Inquiry Purchase Order"
+MsgStr "采购订单询价"
 
+MsgId "Purchase In Transit"
+MsgStr "采购订单在途"
 
+MsgId "Purchase To Inventory Order"
+MsgStr "采购入库单"
+
+MsgId "Purchase Price"
+MsgStr "采购价"
+
+MsgId "Purchaser Manage"
+MsgStr "采购员管理"
+
+MsgId "Vendors Manage"
+MsgStr "供应商管理"
+
+MsgId "Upload Image"
+MsgStr "上传图片"
+
+MsgId "Created By"
+MsgStr "创建者"
+
+MsgId "Inventory"
+MsgStr "库存管理"
+
+MsgId "Contacts"
+MsgStr "联系人管理"
+
+MsgId "Purchase"
+MsgStr "采购管理"
+
+MsgId "Miscellaneous"
+MsgStr "杂项"
+
+MsgId "Admin"
+MsgStr "系统管理"
+
+#Shortcuts
+MsgId "Shortcuts"
+MsgStr "选项"
+
+MsgId "Create Inventory"
+MsgStr "创建库存"
+
+MsgId "Move Inventory"
+MsgStr "移动库存"
+
+MsgId "Take Out Inventory"
+MsgStr "库存出库"
+
+MsgId "Restock Inventory"
+MsgStr "库存入库"
+
+#
+MsgId "Create Company"
+MsgStr "创建供应商"
+
+MsgId "Companies"
+MsgStr "供应商管理"
+
+MsgId "Create Contact"
+MsgStr "创建联系人"
+
+#Admin
+MsgId "Categories"
+MsgStr "分类管理"
+
+MsgId "Locations"
+MsgStr "仓库管理"
+
+MsgId "Custom Fields"
+MsgStr "用户定义字段管理"
+
+MsgId "User Roles"
+MsgStr "用户角色管理"
+
+MsgId "Users"
+MsgStr "用户管理"
+
+#Contacts
+MsgId "- Select One -"
+MsgStr "请选择"
+
+MsgId "Payment Method"
+MsgStr "付款方法"
+
+MsgId "Receive Accounts"
+MsgStr "收款账户"
+
+MsgId "Advance Payment"
+MsgStr "预付款"
+
+MsgId "Express Collection"
+MsgStr "快递代收"
+
+MsgId "Delivery Payment"
+MsgStr "货到付款"
+
+MsgId "Weekly"
+MsgStr "周结"
+
+MsgId "A Half Monthly"
+MsgStr "半月结"
+
+MsgId "Monthly"
+MsgStr "月结"
+
+MsgId "Import Export"
+MsgStr "导入/导出"

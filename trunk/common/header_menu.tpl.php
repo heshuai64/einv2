@@ -70,7 +70,7 @@
 											$strTabClass = 'current_tab_';
 										}
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Purchase</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
+										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Purchase").'</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 
 										if(empty($_GET['type'])){
@@ -79,7 +79,16 @@
 											$strTabClass = 'current_tab_';
 										}
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Miscellaneous</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
+										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Miscellaneous").'</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
+										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+
+										if(empty($_GET['type'])){
+											$strTabClass = 'other_tab_';
+										}else{
+											$strTabClass = 'current_tab_';
+										}
+										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Import Export").'</a></td>', $strTabClass, '../import_export/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 
 										if (QApplication::$objUserAccount->AdminFlag) {
@@ -90,11 +99,11 @@
 												$strTabClass = 'current_tab_';
 											}
 											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">Admin</a></td>', $strTabClass, '../admin/category_list.php', $strTabClass));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Admin").'</a></td>', $strTabClass, '../admin/category_list.php', $strTabClass));
 											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										}
 									?>
-									<td class="empty_tab_space" width="100%">&nbsp;</td>
+									<td class="empty_tab_space" width="600">&nbsp;</td>
 								</tr>
 							</table>
 						</td>

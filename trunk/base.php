@@ -1,8 +1,8 @@
 <?php
 class Base{
     protected $conn;
-    protected $conf;
-    private $log = true;
+    public $conf;
+    public $log = true;
     
     public function __construct(){
         $this->conf = parse_ini_file('config.ini', true);
@@ -151,7 +151,7 @@ class Base{
 	return $result;
     }
     
-    protected function getCustomFieldId($field_name){
+    public function getCustomFieldId($field_name){
 	$field_sql = "select custom_field_id from custom_field where short_description = '".$field_name."'";
         //echo $field_sql."\n";
 	$field_result = mysql_query($field_sql, $this->conn);
@@ -160,7 +160,7 @@ class Base{
 	return $field_id;
     }
     
-    protected function getCustomFieldValue($entity_id, $field_name, $entity_qtype_id = 2){
+    public function getCustomFieldValue($entity_id, $field_name, $entity_qtype_id = 2){
 	$field_id = $this->getCustomFieldId($field_name);
 	
 	$value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
@@ -172,7 +172,7 @@ class Base{
 	return $value_row['short_description'];
     }
     
-    protected function getCustomFieldValueBySku($sku, $field_name, $entity_qtype_id = 2){
+    public function getCustomFieldValueBySku($sku, $field_name, $entity_qtype_id = 2){
 	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
 	$result = mysql_query($sql, $this->conn);
 	$row = mysql_fetch_assoc($result);
@@ -181,7 +181,7 @@ class Base{
 	return $this->getCustomFieldValue($inventory_model_id, $field_name, $entity_qtype_id);
     }
     
-    protected function updateCustomFieldValue($entity_id, $field_name, $field_value, $operate = "", $entity_qtype_id = 2){
+    public function updateCustomFieldValue($entity_id, $field_name, $field_value, $operate = "", $entity_qtype_id = 2){
 	$this->log("updateCustomFieldValue", "<br>-----------------------------------".date("Y-m-d H:i:s")."----------------------------------<br>");
 	
 	$field_sql = "select custom_field_id,custom_field_qtype_id from custom_field where short_description = '".$field_name."'";
@@ -259,7 +259,7 @@ class Base{
 	}
     }
     
-    protected function sendMessageToAM($destination, $message){
+    public function sendMessageToAM($destination, $message){
         require_once 'Stomp.php';
         require_once 'Stomp/Message/Map.php';
         
@@ -390,8 +390,11 @@ class Base{
 	}
     }
     
-    public function getPurchaseInTransit(){
-	
+    public function getVirtualStock($inventory_model_id="", $sku=""){
+	if(!empty($sku)){
+	    return $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['virtualStock']);
+	}
+	return $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['virtualStock']);
     }
     
     public function updateVirtualStock($inventory_model_id="", $virtualStock="", $operate = ""){
@@ -401,6 +404,27 @@ class Base{
     		$operate = $_POST['operate'];
     	}
 	$this->updateCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['virtualStock'], $virtualStock, $operate);
+    }
+    
+    public function getPurchaseInTransit($inventory_model_id){
+	$sql_1 = "select inventory_model_code from inventory_model where inventory_model_id = '".$inventory_model_id."'";
+	$result_1 = mysql_query($sql_1, $this->conn);
+	$row_1 = mysql_fetch_assoc($result_1);
+	$sku = $row_1['inventory_model_code'];
+	    
+	$sql = "select sum(sku_purchase_qty) as purchase_in_transit from purchase_orders where purchase_status = '5' and sku = '".$sku."' group by sku";
+	//echo $sql."\n";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	return (!empty($row['purchase_in_transit']))?$row['purchase_in_transit']:0;
+    }
+    
+    public function getSkuPurchaseInTransit($sku){
+	$sql = "select sum(sku_purchase_qty) as purchase_in_transit from purchase_orders where purchase_status = '5' and sku = '".$sku."' group by sku";
+	//echo $sql."\n";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	return (!empty($row['purchase_in_transit']))?$row['purchase_in_transit']:0;
     }
 }
 ?>
