@@ -9,7 +9,63 @@ class Cron extends Base{
     
     public function calculateWeekFlow(){
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
-        $three_day_ago = date("Y-m-d", time() - ((3 * 24 * 60 * 60)));
+        $result_json = $this->get($this->conf['service']['ebayBO'], 'getSkuFlow');
+	$service_result = json_decode($result_json);
+	
+	$sql_0 = "update inventory_model set three_day_flow=0,week_flow_1=0,week_flow_2=0,week_flow_3=0";
+	$this->log("calculateWeekFlow", $sql_0."<br>");
+	//echo $sql_1;
+	//echo "<br>";
+	$result_0 = mysql_query($sql_0, $this->conn);
+	
+	//file_put_contents("/tmp/11", print_r($service_result, true));
+	//exit;
+	foreach($service_result as $key=>$value){
+	    switch($key){
+		case "three_day":
+		    foreach($value as $sku){
+			$sql_1 = "update inventory_model set three_day_flow = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+			$this->log("calculateWeekFlow", $sql_1."<br>");
+			//echo $sql_1;
+			//echo "<br>";
+			$result_1 = mysql_query($sql_1, $this->conn);
+		    }
+		break;
+	    
+		case "one_week":
+		    foreach($value as $sku){
+			$sql_1 = "update inventory_model set week_flow_1 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+			$this->log("calculateWeekFlow", $sql_1."<br>");
+			echo $sql_1."\n";
+			//echo "<br>";
+			$result_1 = mysql_query($sql_1, $this->conn);
+		    }
+		break;
+	    
+		case "two_week":
+		    foreach($value as $sku){
+			$sql_1 = "update inventory_model set week_flow_2 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+			$this->log("calculateWeekFlow", $sql_1."<br>");
+			echo $sql_1."\n";
+			//echo "<br>";
+			$result_1 = mysql_query($sql_1, $this->conn);
+		    }
+		break;
+	    
+		case "three_week":
+		    foreach($value as $sku){
+			$sql_1 = "update inventory_model set week_flow_3 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+			$this->log("calculateWeekFlow", $sql_1."<br>");
+			echo $sql_1."\n";
+			//echo "<br>";
+			$result_1 = mysql_query($sql_1, $this->conn);
+		    }
+		break;
+	    }
+	}
+	
+	/*
+	$three_day_ago = date("Y-m-d", time() - ((3 * 24 * 60 * 60)));
 	$one_week_ago = date("Y-m-d", time() - ((7 * 24 * 60 * 60)));
 	$two_week_ago = date("Y-m-d", time() - ((14 * 24 * 60 * 60)));
 	$three_week_ago = date("Y-m-d", time() - ((21 * 24 * 60 * 60)));
@@ -95,6 +151,7 @@ class Cron extends Base{
             //echo "<br>";
             $result_1 = mysql_query($sql_1, $this->conn);
         }
+	*/
         //print_r($array);
         $this->log("calculateWeekFlow", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  End  +++++++++++++++++++++++++++++++</font><br>");
     }
@@ -447,6 +504,7 @@ class Cron extends Base{
 	    $buffer_day = 2;
 	    $purchase_rate = 1;
 	    $flow = $row_1['week_flow_1'] / 6;
+	    $stock_day = 45;
 	    $suggest_purchase_num = ($flow * ($stock_day + $buffer_day) - $purchase_in_transit - $virtual_stock) * $purchase_rate;
 	    
 	    if($suggest_purchase_num > $stock){
