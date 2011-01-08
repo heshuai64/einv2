@@ -14,8 +14,6 @@ class Cron extends Base{
 	
 	$sql_0 = "update inventory_model set three_day_flow=0,week_flow_1=0,week_flow_2=0,week_flow_3=0";
 	$this->log("calculateWeekFlow", $sql_0."<br>");
-	//echo $sql_1;
-	//echo "<br>";
 	$result_0 = mysql_query($sql_0, $this->conn);
 	
 	//file_put_contents("/tmp/11", print_r($service_result, true));
@@ -23,44 +21,36 @@ class Cron extends Base{
 	foreach($service_result as $key=>$value){
 	    switch($key){
 		case "three_day":
-		    foreach($value as $sku){
-			$sql_1 = "update inventory_model set three_day_flow = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
-			$this->log("calculateWeekFlow", $sql_1."<br>");
-			//echo $sql_1;
-			//echo "<br>";
-			$result_1 = mysql_query($sql_1, $this->conn);
-		    }
+		    $flow_field = "three_day_flow";
 		break;
 	    
 		case "one_week":
-		    foreach($value as $sku){
-			$sql_1 = "update inventory_model set week_flow_1 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
-			$this->log("calculateWeekFlow", $sql_1."<br>");
-			echo $sql_1."\n";
-			//echo "<br>";
-			$result_1 = mysql_query($sql_1, $this->conn);
-		    }
+		    $flow_field = "week_flow_1";
 		break;
 	    
 		case "two_week":
-		    foreach($value as $sku){
-			$sql_1 = "update inventory_model set week_flow_2 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
-			$this->log("calculateWeekFlow", $sql_1."<br>");
-			echo $sql_1."\n";
-			//echo "<br>";
-			$result_1 = mysql_query($sql_1, $this->conn);
-		    }
+		    $flow_field = "week_flow_2";
 		break;
 	    
 		case "three_week":
-		    foreach($value as $sku){
-			$sql_1 = "update inventory_model set week_flow_3 = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
-			$this->log("calculateWeekFlow", $sql_1."<br>");
-			echo $sql_1."\n";
-			//echo "<br>";
+		    $flow_field = "week_flow_3";
+		break;
+	    }
+	    
+	    foreach($value as $sku){
+		$sku_combo = $this->getSkuCombo($sku->skuId);
+		if(count($sku_combo) > 1){
+		    $this->log("calculateComboWeekFlow", "<br>-------------------".$sku->skuId."-------------------<br>");
+		    foreach($sku_combo as $sku_c){
+			$sql_1 = "update inventory_model set ".$flow_field." = ".($sku->flow * $sku_c['quantity'])." where inventory_model_code = '".$sku_c['attachment']."'";
+			$this->log("calculateComboWeekFlow", $sql_1."<br>");
 			$result_1 = mysql_query($sql_1, $this->conn);
 		    }
-		break;
+		}else{
+		    $sql_1 = "update inventory_model set ".$flow_field." = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+		    $this->log("calculateWeekFlow", $sql_1."<br>");
+		    $result_1 = mysql_query($sql_1, $this->conn);
+		}
 	    }
 	}
 	
@@ -504,7 +494,7 @@ class Cron extends Base{
 	    $buffer_day = 2;
 	    $purchase_rate = 1;
 	    $flow = $row_1['week_flow_1'] / 6;
-	    $stock_day = 45;
+	    $stock_day = 40;
 	    $suggest_purchase_num = ($flow * ($stock_day + $buffer_day) - $purchase_in_transit - $virtual_stock) * $purchase_rate;
 	    
 	    if($suggest_purchase_num > $stock){
