@@ -1,4 +1,6 @@
 <?php
+echo "Closed!";
+exit;
 ini_set('include_path', '../');
 session_start();
 
