@@ -4,6 +4,38 @@ include('../includes/prepend.inc.php');
 if(empty($_SESSION['intUserAccountId'])){
 	header('Location: /inventory/login.php');
 }
+
+$db_conf = unserialize(DB_CONNECTION_1);
+$conn = mysql_connect($db_conf['server'], $db_conf['username'], $db_conf['password']);
+
+if (!$conn) {
+    echo "Unable to connect to DB: " . mysql_error();
+    exit;
+}
+  
+if (!mysql_select_db($db_conf['database'])) {
+    echo "Unable to select mydbname: " . mysql_error();
+    exit;
+}
+
+$role = array();
+$sql = "select role_id,short_description from role";
+$result = mysql_query($sql);
+while($row = mysql_fetch_assoc($result)){
+	$role[$row['role_id']] = $row['short_description'];
+}
+
+$role_1 = array('Administrator', 'PPMC');
+
+$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
+$result = mysql_query($sql);
+$row = mysql_fetch_assoc($result);
+$currency_user_role = $role[$row['role_id']];
+
+if(!in_array($currency_user_role, $role_1)){
+	echo "没有权限访问!";
+	exit;	
+}
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
