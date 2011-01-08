@@ -426,5 +426,14 @@ class Base{
 	$row = mysql_fetch_assoc($result);
 	return (!empty($row['purchase_in_transit']))?$row['purchase_in_transit']:0;
     }
+    
+    public function getSkuCombo($sku){
+	$sql = "select attachment,quantity from combo where sku = '".$sku."'";
+	$result = mysql_query($sql, $this->conn);
+	while($row = mysql_fetch_assoc($result)){
+	    $array[] = $row;
+	}
+	return $array;
+    }
 }
 ?>
