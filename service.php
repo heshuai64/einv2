@@ -2940,14 +2940,16 @@ class Service extends Base{
     }
     
     public function getSkuInfo(){
+	mysql_query("SET NAMES 'latin1'");
     	$this->log("getSkuInfo", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
         //get inventory model id
-        $sql = "select inventory_model_id,short_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
+        $sql = "select inventory_model_id,short_description,long_description from inventory_model where inventory_model_code = '".$_GET['data']."'";
         $this->log("getSkuInfo", $sql."<br>");
         $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         $inventory_model_id = $row['inventory_model_id'];
         $short_description = $row['short_description'];
+	$long_description = $row['long_description'];
         //-------------------------------------------    Cost    -----------------------------------------------
         //get cost field id
         $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
@@ -2999,8 +3001,8 @@ class Service extends Base{
 	//------------------------------------------ Locator Number -----------------------------------
 	$locator_number = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['LocatorNumber']);
 	
-        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuCost: ".$cost.", skuLowestPrice: ".$sku_lowest_price.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
-        echo json_encode(array('skuTitle'=>$short_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=>$weight, 'skuStock'=>$stock, 'locatorNumber'=>$locator_number));
+        $this->log("getSkuInfo", "skuTitle: ".$short_description.", skuChineseTitle: ".$long_description.", skuCost: ".$cost.", skuLowestPrice: ".$sku_lowest_price.", skuWeight: ".$weight.", skuStock: ".$stock."<br><font color='red'>******************************************  End  ******************************************<br></font>");
+        echo json_encode(array('skuTitle'=>$short_description, 'skuChineseTitle'=>$long_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=>$weight, 'skuStock'=>$stock, 'locatorNumber'=>$locator_number));
     }
     
     public function updateSkuDescription(){
