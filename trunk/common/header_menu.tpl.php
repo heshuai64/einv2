@@ -64,31 +64,21 @@
 										}
 									?>
 									<?php
-										if(empty($_GET['type'])){
-											$strTabClass = 'other_tab_';
-										}else{
-											$strTabClass = 'current_tab_';
-										}
+										$strTabClass = 'other_tab_';
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Purchase").'</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-
-										if(empty($_GET['type'])){
-											$strTabClass = 'other_tab_';
-										}else{
-											$strTabClass = 'current_tab_';
-										}
+										/*
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Miscellaneous").'</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-
-										if(empty($_GET['type'])){
-											$strTabClass = 'other_tab_';
-										}else{
-											$strTabClass = 'current_tab_';
-										}
+										*/
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Import Export").'</a></td>', $strTabClass, '../import_export/index.php', $strTabClass));
+										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+										
+										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Warehouse").'</a></td>', $strTabClass, '../warehouse/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 
 										if (QApplication::$objUserAccount->AdminFlag) {
