@@ -91,6 +91,14 @@ class Purchase extends Base{
     }
     
     public function getPurchaseOrders(){
+	if(empty($_POST['limit']) && empty($_POST['start'])){
+	    $limit = 20;
+	    $start = 0;
+	}else{
+	    $limit = $_POST['limit'];
+	    $start = $_POST['start'];
+	}
+	
 	if($_POST['purchase_status'] == 6){
 	    $this->getGoInventoryOrders();
 	    return 1;
@@ -121,7 +129,12 @@ class Purchase extends Base{
 	    $where .= " and purchaser = '".$_POST['purchaser']."'";
 	}
 	
-	$sql = "select * from purchase_orders ".$where;
+	$sql_0 = "select count(*) as totalCount from purchase_orders ".$where;
+	$result_0 = mysql_query($sql_0, $this->conn);
+	$row_0 = mysql_fetch_assoc($result_0);
+	$totalCount = $row_0['totalCount'];
+	
+	$sql = "select * from purchase_orders ".$where." limit $start,$limit";
 	//echo $sql."\n";
 	
 	$result = mysql_query($sql, $this->conn);
@@ -132,7 +145,7 @@ class Purchase extends Base{
             $array[] = $row;
             $i++;
         }
-        echo json_encode(array('totalCount'=>$i, 'records'=>$array));
+        echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
         mysql_free_result($result);
     }
     
@@ -294,9 +307,16 @@ class Purchase extends Base{
 		$array['purchaser'] = $row_2['first_name'].$row_2['last_name'];
 	    }
 	    
-	    $sql_3 = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$row['sku']."'";
+	    $sql_3 = "select company_id,contact_id,purchase_price from sku_company_contact_price where `default` = 1 and sku = '".$row['sku']."'";
 	    $result_3 = mysql_query($sql_3, $this->conn);
 	    $row_3 = mysql_fetch_assoc($result_3);
+	    if(empty($row_3)){
+		$sql_3 = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$row['sku']."' order by created_on desc";
+		$result_3 = mysql_query($sql_3, $this->conn);
+		$row_3 = mysql_fetch_assoc($result_3);    
+	    }
+	    
+	    
 	    /*
 	    if(!empty($row_3)){
 		$sql_4 = "select short_description from company where company_id = ".$row_3['company_id'];
@@ -505,12 +525,12 @@ class Purchase extends Base{
 	//print_r($_POST);
 	if($_POST['quantity'] < $_POST['total_quantity']){
 	    $sku_total_price = $_POST['quantity'] * $_POST['price'];
-	    $sql = "insert into go_inventory_orders (id,purchase_type,purchaser,vendors_id,contact_id,
+	    $sql = "insert into go_inventory_orders (id,po_id,purchase_type,purchaser,vendors_id,contact_id,
 	    purchase_status,generate_date,approval_pass_date,sku,sku_status,sku_title,sku_stock,sku_virtual_stock,
 	    sku_purchase_in_transit,sku_purchase_qty,sku_old_purchase_qty,sku_purchase_qty_remark,
 	    sku_price,sku_old_price,sku_price_remark,sku_total_price,sku_defective_qty,sku_rework_qty,
 	    sku_purchase_cycle,sku_three_day_flow,sku_week_flow,expected_arrival_date,created_by,created_on) 
-	    select '".$go_inventory_orders_id."',purchase_type,purchaser,vendors_id,contact_id,
+	    select '".$go_inventory_orders_id."','".$_POST['id']."',purchase_type,purchaser,vendors_id,contact_id,
 	    '1',generate_date,approval_pass_date,sku,sku_status,sku_title,sku_stock,sku_virtual_stock,
 	    sku_purchase_in_transit,'".$_POST['quantity']."',sku_old_purchase_qty,sku_purchase_qty_remark,
 	    sku_price,sku_old_price,sku_price_remark,'".$sku_total_price."',sku_defective_qty,sku_rework_qty,
@@ -524,12 +544,12 @@ class Purchase extends Base{
 	    //echo $sql."\n";
 	    $result = mysql_query($sql, $this->conn);
 	}else{
-	    $sql = "insert into go_inventory_orders (id,purchase_type,purchaser,vendors_id,contact_id,
+	    $sql = "insert into go_inventory_orders (id,po_id,purchase_type,purchaser,vendors_id,contact_id,
 	    purchase_status,generate_date,approval_pass_date,sku,sku_status,sku_title,sku_stock,sku_virtual_stock,
 	    sku_purchase_in_transit,sku_purchase_qty,sku_old_purchase_qty,sku_purchase_qty_remark,
 	    sku_price,sku_old_price,sku_price_remark,sku_total_price,sku_defective_qty,sku_rework_qty,
 	    sku_purchase_cycle,sku_three_day_flow,sku_week_flow,expected_arrival_date,created_by,created_on) 
-	    select '".$go_inventory_orders_id."',purchase_type,purchaser,vendors_id,contact_id,
+	    select '".$go_inventory_orders_id."','".$_POST['id']."',purchase_type,purchaser,vendors_id,contact_id,
 	    '1',generate_date,approval_pass_date,sku,sku_status,sku_title,sku_stock,sku_virtual_stock,
 	    sku_purchase_in_transit,sku_purchase_qty,sku_old_purchase_qty,sku_purchase_qty_remark,
 	    sku_price,sku_old_price,sku_price_remark,sku_total_price,sku_defective_qty,sku_rework_qty,
@@ -548,7 +568,25 @@ class Purchase extends Base{
 	$allCompany = $this->getAllCompany();
 	$allContact = $this->getAllContact();
 	
-	$sql = "select * from go_inventory_orders where purchase_status = 1";
+	$where = " where 1 = 1 ";
+	if(!empty($_POST['vendors'])){
+	    $where .= " and vendors_id = '".$_POST['vendors']."'";
+	}
+	if(!empty($_POST['sku'])){
+	    $where .= " and sku like '".$_POST['sku']."%'";
+	}
+	if(!empty($_POST['purchase_type']) && $_POST['purchase_type'] != 3){
+	    $_POST['purchase_type'] = $_POST['purchase_type'] - 1;
+	    $where .= " and purchase_type = '".$_POST['purchase_type']."'";
+	}
+	
+	if(!empty($_POST['go_inventory_orders_status'])){
+	    $where .= " and purchase_status = '".$_POST['go_inventory_orders_status']."'";
+	}elseif(count($_POST) == 0){
+	    $where .= " and purchase_status = 1";
+	}
+	
+	$sql = "select * from go_inventory_orders".$where;
 	$result = mysql_query($sql, $this->conn);
 	$i = 0;
 	$array = "";
@@ -565,7 +603,7 @@ class Purchase extends Base{
 	session_start();
 	$ids = explode(",", $_POST['ids']);
 	foreach($ids as $id){
-	    $sql = "select sku,sku_purchase_qty from go_inventory_orders where id = '".$id."'";
+	    $sql = "select sku,sku_purchase_qty from go_inventory_orders where id = '".$id."' and purchase_status = 1";
 	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
 	    
@@ -575,7 +613,7 @@ class Purchase extends Base{
 	    
 	    $result = $this->updateStock($row_1['inventory_model_id'], $row['sku_purchase_qty'], "+");
 	    if($result){
-		$sql_1 = "update go_inventory_orders set purchase_status = 2 where id = '".$id."'";
+		$sql_1 = "update go_inventory_orders set go_inventory_by='".$this->getCurrentUserName()."',go_inventory_on=now(),purchase_status = 2 where id = '".$id."'";
 		$result_1 = mysql_query($sql_1, $this->conn);
 	    }
 	}

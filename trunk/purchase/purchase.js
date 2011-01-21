@@ -1403,43 +1403,6 @@ Ext.onReady(function(){
                     }
                     */
                 }
-            },'-',{
-                id: 'go-inventory-orders-to-inventory',
-                text: lang.Go_Inventory_Orders_To_Inventory,
-                handler: function(){
-                    //alert(lang.Close);    
-                    //return 0;
-                
-                    var selections = purchaseOrdersGrid.selModel.getSelections();
-                    var ids = "";
-                    for(i = 0; i< purchaseOrdersGrid.selModel.getCount(); i++){
-                            ids += selections[i].data.id + ","
-                    }
-                    ids = ids.slice(0, -1);
-                    //console.log(ids);
-                    Ext.Ajax.request({
-                        waitMsg: 'Please wait...',
-                        url: 'purchase.php?action=GIOToInventory',
-                        params: {
-                            ids: ids
-                        },
-                        success: function(response){
-                            var result = eval(response.responseText);
-                            switch (result) {
-                                case 1:
-                                    purchaseOrdersStore.reload();
-                                    break;
-                                default:
-                                    Ext.MessageBox.alert('Uh uh...', 'We couldn\'t save him...');
-                                    break;
-                            }
-                        },
-                        failure: function(response){
-                            var result = response.responseText;
-                            Ext.MessageBox.alert('error', 'could not connect to the database. retry later');
-                        }
-                    });	
-                }
             },'-',new Ext.PagingToolbar({
                 //pageSize: 20,
                 store: purchaseOrdersStore,
@@ -1520,7 +1483,7 @@ Ext.onReady(function(){
                                 'id',
                                 'name'
                             ],
-                            data: [['1', lang.Purchase_Orders_Status_Enum.draft ], ['2', lang.Purchase_Orders_Status_Enum.waiting_inquiry], ['3', lang.Purchase_Orders_Status_Enum.waiting_approval], ['4', lang.Purchase_Orders_Status_Enum.approval_not_pass], ['5', lang.Purchase_Orders_Status_Enum.approval_pass], ['6', lang.Purchase_Orders_Status_Enum.in_transit]]
+                            data: [['1', lang.Purchase_Orders_Status_Enum.draft ], ['2', lang.Purchase_Orders_Status_Enum.waiting_inquiry], ['3', lang.Purchase_Orders_Status_Enum.waiting_approval], ['4', lang.Purchase_Orders_Status_Enum.approval_not_pass], /*['5', lang.Purchase_Orders_Status_Enum.approval_pass],*/ ['5', lang.Purchase_Orders_Status_Enum.in_transit], ['7', lang.Purchase_Orders_Status_Enum.change_to_go]]
                         }),
                         valueField: 'id',
                         displayField: 'name',
@@ -1576,6 +1539,347 @@ Ext.onReady(function(){
         }
     })
     
+    function renderGoInventoryOrdersStatus(v, p, r){
+        return lang.Go_Inventory_Orders_Status_Array[v-1];
+    }
+    
+    var goInventoryOrdersStore = new Ext.data.JsonStore({
+            root: 'records',
+            totalProperty: 'totalCount',
+            idProperty: 'id',
+            autoLoad:true,
+            fields: ['id', 'po_id', 'purchase_type','purchaser', 'vendors', 'vendors_phone', 'vendors_fax', 'purchase_status', 'generate_date', 'approval_pass_date', 'sku', 'sku_status', 'sku_title', 'sku_stock', 'sku_virtual_stock', 'sku_purchase_in_transit', 'sku_purchase_qty', 'sku_old_purchase_qty', 'sku_price', 'sku_old_price', 'sku_total_price', 'sku_defective_qty', 'sku_rework_qty', 'sku_purchase_cycle', 'sku_three_day_flow', 'sku_week_flow', 'expected_arrival_date', 'created_by', 'created_on', 'go_inventory_on'],
+            url:'purchase.php?action=getGoInventoryOrders'
+    });
+    
+    var sm3 = new Ext.grid.CheckboxSelectionModel();
+    var goInventoryOrdersGrid = new Ext.grid.GridPanel({
+        autoHeight: true,
+        //height: 600,
+        store: goInventoryOrdersStore,
+        selModel: sm3,
+        columns:[sm3,
+        {
+            header: lang.Go_Inventory_Orders,
+            dataIndex: 'id',
+            width: 100,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Purchase_Orders_Id,
+            dataIndex: 'po_id',
+            width: 100,
+            align: 'center',
+            renderer: renderPurchaseOrdersId,
+            sortable: true
+        },{
+            header: lang.Purchase_Orders_Type,
+            dataIndex: 'purchase_type',
+            width: 75,
+            align: 'center',
+            renderer: renderPurchaseOrdersType,
+            sortable: true
+        },{
+            header: lang.Vendors,
+            dataIndex: 'vendors',
+            width: 140,
+            align: 'center',
+            sortable: true
+        },/*{
+            header: lang.Vendors_Phone,
+            dataIndex: 'vendors_phone',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Vendors_Fax,
+            dataIndex: 'vendors_fax',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },*/{
+            header: lang.Go_Inventory_Orders_Status,
+            dataIndex: 'purchase_status',
+            width: 65,
+            align: 'center',
+            renderer: renderGoInventoryOrdersStatus,
+            sortable: true
+        },{
+            header: lang.Generate_Purchase_Orders_Date,
+            dataIndex: 'generate_date',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Approval_Pass_Date,
+            dataIndex: 'approval_pass_date',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Expected_Arrival_Date,
+            dataIndex: 'expected_arrival_date',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Go_Inventory__Date,
+            dataIndex: 'go_inventory_on',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku,
+            dataIndex: 'sku',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Status,
+            dataIndex: 'sku_status',
+            width: 60,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Title,
+            dataIndex: 'sku_title',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Stock,
+            dataIndex: 'sku_stock',
+            width: 60,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Virtual_Stock,
+            dataIndex: 'sku_virtual_stock',
+            width: 75,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Purchase_In_Transit,
+            dataIndex: 'sku_purchase_in_transit',
+            width: 75,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Old_Price,
+            dataIndex: 'sku_old_price',
+            width: 65,
+            align: 'center',
+            renderer: renderPurchaseOrdersOldPurchasePrice,
+            sortable: true
+        },{
+            header: lang.Sku_Price,
+            dataIndex: 'sku_price',
+            width: 60,
+            align: 'center',
+            renderer: renderPurchaseOrdersPurchasePrice,
+            sortable: true
+        },{
+            header: lang.Sku_Old_Purchase_Qty,
+            dataIndex: 'sku_old_purchase_qty',
+            width: 85,
+            align: 'center',
+            renderer: renderPurchaseOrdersOldPurchaseQty,
+            sortable: true
+        },{
+            header: lang.Sku_Purchase_Qty,
+            dataIndex: 'sku_purchase_qty',
+            width: 75,
+            align: 'center',
+            renderer: renderPurchaseOrdersPurchaseQty,
+            sortable: true
+        },{
+            header: lang.Sku_Total_Price,
+            dataIndex: 'sku_total_price',
+            width: 60,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.SKU_Purchase_Cycle,
+            dataIndex: 'sku_purchase_cycle',
+            width: 75,
+            align: 'center',
+            sortable: true
+        }/*,{
+            header: lang.SKU_Three_Day_Flow,
+            dataIndex: 'sku_three_day_flow',
+            width: 75,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.SKU_Week_Flow,
+            dataIndex: 'sku_week_flow',
+            width: 75,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Defective_Qty,
+            dataIndex: 'sku_defective_qty',
+            width: 75,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Rework_Qty,
+            dataIndex: 'sku_rework_qty',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Created_By,
+            dataIndex: 'created_by',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Created_On,
+            dataIndex: 'created_on',
+            width: 100,
+            align: 'center',
+            sortable: true
+        }*/],
+        bbar:[{
+                id: 'go-inventory-orders-to-inventory',
+                text: lang.Go_Inventory_Orders_To_Inventory,
+                handler: function(){
+                    //alert(lang.Close);    
+                    //return 0;
+                    var mark = false;
+                    var selections = goInventoryOrdersGrid.selModel.getSelections();
+                    var ids = "";
+                    for(i = 0; i< goInventoryOrdersGrid.selModel.getCount(); i++){
+                        ids += selections[i].data.id + ",";
+                        if(selections[i].data.purchase_status == 2){
+                            mark = true;
+                        }
+                    }
+                    if(mark){
+                        Ext.MessageBox.alert(lang.Warning, lang.Go_Inventory_Orders_To_Inventory_Warning);
+                        return 0;
+                    }
+                    ids = ids.slice(0, -1);
+                    //console.log(ids);
+                    Ext.Ajax.request({
+                        waitMsg: 'Please wait...',
+                        url: 'purchase.php?action=GIOToInventory',
+                        params: {
+                            ids: ids
+                        },
+                        success: function(response){
+                            var result = eval(response.responseText);
+                            switch (result) {
+                                case 1:
+                                    goInventoryOrdersStore.reload();
+                                    break;
+                                default:
+                                    Ext.MessageBox.alert('Uh uh...', 'We couldn\'t save him...');
+                                    break;
+                            }
+                        },
+                        failure: function(response){
+                            var result = response.responseText;
+                            Ext.MessageBox.alert('error', 'could not connect to the database. retry later');
+                        }
+                    });	
+                }
+            }],
+        tbar:{
+            id:"go-inventory-orders-form",
+            xtype:"form",
+            labelWidth: 80,
+            items:[{
+                layout:"column",
+                items:[{
+                    columnWidth:0.18,
+                    layout:"form",
+                    defaults:{
+                      width:120
+                    },
+                    items:[{
+                        xtype:"combo",
+                        mode: 'local',
+                        store: new Ext.data.JsonStore({
+                            autoLoad: true,
+                            fields: ['id', 'name'],
+                            url: "purchase.php?action=getVendors"
+                        }),
+                        valueField:'id',
+                        displayField:'name',
+                        fieldLabel: lang.Vendors,
+                        triggerAction: 'all',
+                        editable: false,
+                        listWidth: 200,
+                        selectOnFocus:true,
+                        name:"combovalue",
+                        hiddenName:"combovalue"
+                      },{
+                        xtype:"textfield",
+                        fieldLabel: lang.Sku,
+                        name:"textvalue"
+                      }]
+                  },{
+                    columnWidth:0.18,
+                    layout:"form",
+                    defaults:{
+                      width:120
+                    },
+                    items:[{
+                        xtype:"combo",
+                        fieldLabel: lang.Purchase_Orders_Type,
+                        width: 80,
+                        mode: 'local',
+                        store: new Ext.data.ArrayStore({
+                            fields: [
+                                'id',
+                                'name'
+                            ],
+                            data: [['3', lang.Purchase_Planned_Type_Enum.all], ['2', lang.Purchase_Planned_Type_Enum.manual], ['1', lang.Purchase_Planned_Type_Enum.normal]]
+                        }),
+                        valueField: 'id',
+                        displayField: 'name',
+                        triggerAction: 'all',
+                        editable: false,
+                        selectOnFocus:true
+                    
+                      },{
+                        xtype:"combo",
+                        fieldLabel: lang.Go_Inventory_Orders_Status,
+                        width: 80,
+                        mode: 'local',
+                        store: new Ext.data.ArrayStore({
+                            fields: [
+                                'id',
+                                'name'
+                            ],
+                            data: [['1', lang.Go_Inventory_Orders_Status_Enum.waiting ], ['2', lang.Go_Inventory_Orders_Status_Enum.to_inventory]]
+                        }),
+                        valueField: 'id',
+                        displayField: 'name',
+                        triggerAction: 'all',
+                        editable: false,
+                        selectOnFocus:true
+                    }]
+                  }]
+            }],
+            buttonAlign: 'center',
+            buttons: [{
+                text: lang.Search,
+                handler: function(){
+                    goInventoryOrdersStore.baseParams = {
+                        vendors: Ext.getCmp("go-inventory-orders-form").getForm().items.items[0].getValue(),
+                        sku: Ext.getCmp("go-inventory-orders-form").getForm().items.items[1].getValue(),
+                        purchase_type: Ext.getCmp("go-inventory-orders-form").getForm().items.items[2].getValue(),
+                        go_inventory_orders_status: Ext.getCmp("go-inventory-orders-form").getForm().items.items[3].getValue()
+                    };
+                    goInventoryOrdersStore.load();
+                }
+            }]
+        }
+    })
+    
     var purchasePlannedPanel = new Ext.Panel({
         id: 'purchase-planned',
         autoScroll: true,
@@ -1594,9 +1898,26 @@ Ext.onReady(function(){
         renderTo: 'purchase-orders-panel'
     });
     
+    var goInventoryOrdersPanel = new Ext.Panel({
+        id: 'go-inventory-orders',
+        autoScroll: true,
+        width: 1820,
+        hidden: true,
+        items: goInventoryOrdersGrid,
+        renderTo: 'go-inventory-orders-panel'
+    });
+    
     Ext.EventManager.addListener("view-purchase-planned", "click", function(){
         purchasePlannedPanel.show();
         purchaseOrdersPanel.hide();
+        goInventoryOrdersPanel.hide();
+    })
+    
+    Ext.EventManager.addListener("go-inventory-orders", "click", function(){
+        purchasePlannedPanel.hide();
+        purchaseOrdersPanel.hide();
+        goInventoryOrdersPanel.show();
+        goInventoryOrdersStore.load();
     })
     
     var purchaseOrdersUI = function(status){
@@ -1613,7 +1934,7 @@ Ext.onReady(function(){
                 Ext.getCmp("purchase-orders-return-approval").disable();
                 Ext.getCmp("delete-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-to-go-inventory-orders").disable();
-                Ext.getCmp("go-inventory-orders-to-inventory").disable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").disable();
             break;
         
             case 2:
@@ -1628,7 +1949,7 @@ Ext.onReady(function(){
                 Ext.getCmp("purchase-orders-return-approval").disable();
                 Ext.getCmp("delete-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-to-go-inventory-orders").disable();
-                Ext.getCmp("go-inventory-orders-to-inventory").disable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").disable();
             break;
         
             case 3:
@@ -1643,7 +1964,7 @@ Ext.onReady(function(){
                 Ext.getCmp("purchase-orders-return-approval").disable();
                 Ext.getCmp("delete-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-to-go-inventory-orders").disable();
-                Ext.getCmp("go-inventory-orders-to-inventory").disable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").disable();
             break;
         
             case 5:
@@ -1658,7 +1979,7 @@ Ext.onReady(function(){
                 Ext.getCmp("purchase-orders-return-approval").enable();
                 Ext.getCmp("delete-purchase-orders").enable();
                 Ext.getCmp("purchase-orders-to-go-inventory-orders").enable();
-                Ext.getCmp("go-inventory-orders-to-inventory").disable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").disable();
             break;
         
             case 6:
@@ -1672,12 +1993,27 @@ Ext.onReady(function(){
                 Ext.getCmp("purchase-orders-return-approval").disable();
                 Ext.getCmp("delete-purchase-orders").disable();
                 Ext.getCmp("purchase-orders-to-go-inventory-orders").disable();
-                Ext.getCmp("go-inventory-orders-to-inventory").enable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").enable();
+            break;
+        
+            case 8:
+                Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("create-purchase-orders").disable();
+                Ext.getCmp("edit-purchase-orders").disable();
+                Ext.getCmp("submit-purchase-orders").disable();
+                Ext.getCmp("purchase-orders-inquiry-complete").disable();
+                Ext.getCmp("purchase-orders-approval-not-pass").disable();
+                Ext.getCmp("purchase-orders-approval-pass").disable();
+                Ext.getCmp("purchase-orders-return-approval").disable();
+                Ext.getCmp("delete-purchase-orders").disable();
+                Ext.getCmp("purchase-orders-to-go-inventory-orders").disable();
+                //Ext.getCmp("go-inventory-orders-to-inventory").enable();
             break;
         }
         
         purchaseOrdersPanel.show();
         purchasePlannedPanel.hide();
+        goInventoryOrdersPanel.hide();
         purchaseOrdersStore.baseParams = {
             purchase_status: status
         };
@@ -1698,7 +2034,12 @@ Ext.onReady(function(){
     Ext.EventManager.addListener("purchase-in-transit", "click", function(){
         purchaseOrdersUI(5);
     })
+    Ext.EventManager.addListener("deleted-purchase-orders", "click", function(){
+        purchaseOrdersUI(8);
+    })
+    /*
     Ext.EventManager.addListener("go-inventory-orders", "click", function(){
         purchaseOrdersUI(6);
     })
+    */
 })

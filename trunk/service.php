@@ -2326,13 +2326,13 @@ class Service extends Base{
             $shippingMethod = "S";
         }else{
             if(in_array($data->country, $AEACJ)){
-                if($total_cost > 200){
+                if($total_cost > 150){
                     $shippingMethod = "R";
                 }else{
                     $shippingMethod = "B";
                 }
             }else{
-                if($total_cost > 150){
+                if($total_cost > 130){
                     $shippingMethod = "R";
                 }else{
                     $shippingMethod = "B";
@@ -3542,7 +3542,14 @@ class Service extends Base{
     }
     
     public function deleteSkuCompanyContactPrice(){
-	$sql = "delete from sku_company_contact_price where id = '".$_POST['id']."'";
+	$sql = "delete from sku_company_contact_price where id = ".$_POST['id'];
+	//echo $sql;
+	$result = mysql_query($sql, $this->conn);
+        echo $result;
+    }
+    
+    public function setDefaultSkuCompanyContact(){
+	$sql = "update sku_company_contact_price set `default` = 1 where id = ".$_POST['id'];
 	//echo $sql;
 	$result = mysql_query($sql, $this->conn);
         echo $result;
