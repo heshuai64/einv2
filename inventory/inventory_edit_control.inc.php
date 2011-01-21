@@ -390,6 +390,14 @@ if(in_array($currency_user_role, $role_1)){
 			});
 		}
 		
+		function set_default_sku_company_contact(id){
+			$.post("/inventory/service.php?action=setDefaultSkuCompanyContact", { id: id},
+				function(data){
+				//window.location.reload();	
+				//$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
+			});
+		}
+		
 		$(document).ready(function() {
 			$('#vendors_id').change(function() {
 				$.getJSON('../service.php?action=getContactByCompany&company_id='+this.value, function(data) {
@@ -443,10 +451,13 @@ if(in_array($currency_user_role, $role_1)){
 	while($row = mysql_fetch_assoc($result)){
 		$vendors_table .= "<tr>";
 		$vendors_table .= "<td>";
+		$vendors_table .= $row['default']==1?'<font color="red">'.QApplication::Translate('Y').'</font>':QApplication::Translate('N');
+		$vendors_table .= "</td>";
+		$vendors_table .= "<td>";
 		$vendors_table .= $company_array[$row['company_id']];
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
-		$vendors_table .= $contact_array[$row['contact_id']];
+		$vendors_table .= @$contact_array[$row['contact_id']];
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
 		$vendors_table .= $row['purchase_price'];
@@ -455,14 +466,14 @@ if(in_array($currency_user_role, $role_1)){
 		$vendors_table .= $row['created_by'];
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
-		$vendors_table .= "<input type='button' value='".QApplication::Translate('Delete')."' onClick='delete_sku_company_contact_price(".$row['id'].")'>";
+		$vendors_table .= "<input type='button' value='".QApplication::Translate('Set Default')."' onClick='set_default_sku_company_contact(".$row['id'].")'><input type='button' value='".QApplication::Translate('Delete')."' onClick='delete_sku_company_contact_price(".$row['id'].")'>";
 		$vendors_table .= "</td>";
 		$vendors_table .= "</tr>";
 	}
 	?>
 	<div id="vendors-price-list">
 		<table border=1>
-			<tr><th><?=QApplication::Translate('Company')?></th><th><?=QApplication::Translate('Contact')?></th><th><?=QApplication::Translate('Purchase Price')?></th><th><?=QApplication::Translate('Created By')?></th><th><?=QApplication::Translate('Operate')?></th></tr>
+			<tr><th><?=QApplication::Translate('Default')?></th><th><?=QApplication::Translate('Company')?></th><th><?=QApplication::Translate('Contact')?></th><th><?=QApplication::Translate('Purchase Price')?></th><th><?=QApplication::Translate('Created By')?></th><th><?=QApplication::Translate('Operate')?></th></tr>
 			<?=$vendors_table?>
 		</table>
 	</div>

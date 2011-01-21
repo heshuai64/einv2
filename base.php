@@ -259,6 +259,15 @@ class Base{
 	}
     }
     
+    public function updateCustomFieldValueBySku($sku, $field_name, $field_value, $operate = "", $entity_qtype_id = 2){
+	$sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	$inventory_model_id = $row['inventory_model_id'];
+	
+	$this->updateCustomFieldValue($inventory_model_id, $field_name, $field_value, $operate, $entity_qtype_id);
+    }
+    
     public function sendMessageToAM($destination, $message){
         require_once 'Stomp.php';
         require_once 'Stomp/Message/Map.php';

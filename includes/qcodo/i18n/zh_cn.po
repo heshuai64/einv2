@@ -101,6 +101,9 @@ MsgStr "采购订单询价"
 MsgId "Purchase In Transit"
 MsgStr "采购订单在途"
 
+MsgId "Deleted Purchase Orders"
+MsgStr "删除的采购订单"
+
 MsgId "Purchase To Inventory Order"
 MsgStr "采购入库单"
 
@@ -206,3 +209,24 @@ MsgStr "月结"
 
 MsgId "Import Export"
 MsgStr "导入/导出"
+
+MsgId "Warehouse"
+MsgStr "仓库"
+
+MsgId "Position Management"
+MsgStr "仓位管理"
+
+MsgId "SKU Search"
+MsgStr "SKU 查询"
+
+MsgId "Y"
+MsgStr "是"
+
+MsgId "N"
+MsgStr "否"
+
+MsgId "Default"
+MsgStr "默认"
+
+MsgId "Set Default"
+MsgStr "设为默认"
