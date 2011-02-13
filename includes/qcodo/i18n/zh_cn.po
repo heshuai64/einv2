@@ -230,3 +230,7 @@ MsgStr "默认"
 
 MsgId "Set Default"
 MsgStr "设为默认"
+
+MsgId "Sku Status Manage"
+MsgStr "SKU状态管理"
+

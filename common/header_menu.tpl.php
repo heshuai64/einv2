@@ -68,6 +68,8 @@
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Purchase").'</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										
 										/*
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Miscellaneous").'</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
@@ -76,12 +78,19 @@
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Import Export").'</a></td>', $strTabClass, '../import_export/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										
+										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Warehouse").'</a></td>', $strTabClass, '../warehouse/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-
+										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+																			
 										if (QApplication::$objUserAccount->AdminFlag) {
+											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Sku Status Manage").'</a></td>', 'other_tab_', '../admin/status_manage.php', 'other_tab_'));
+											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										
 											if (QApplication::$objRoleModule) {
 												$strTabClass = 'other_tab_';
 											}

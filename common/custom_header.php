@@ -1,12 +1,30 @@
 <?php
-    $custom_module = array(array('id'=>'inventory','label'=>QApplication::Translate('Inventory')),
-                           array('id'=>'contacts','label'=>QApplication::Translate('Contacts')),
-                           array('id'=>'purchase','label'=>QApplication::Translate('Purchase')),
-                           array('id'=>'import_export','label'=>QApplication::Translate('Import Export')),
-                           array('id'=>'warehouse','label'=>QApplication::Translate('Warehouse')),
+    $role = array();
+    $sql = "select role_id,short_description from role";
+    $result = mysql_query($sql);
+    while($row = mysql_fetch_assoc($result)){
+            $role[$row['role_id']] = $row['short_description'];
+    }
+    
+    $sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
+    $result = mysql_query($sql);
+    $row = mysql_fetch_assoc($result);
+    $currency_role = $role[$row['role_id']];
+
+    $custom_module = array(array('id'=>'inventory','label'=>QApplication::Translate('Inventory'),'role'=>''),
+                           array('id'=>'contacts','label'=>QApplication::Translate('Contacts'),'role'=>''),
+                           array('id'=>'purchase','label'=>QApplication::Translate('Purchase'),'role'=>array('Administrator', 'PPMC')),
+                           array('id'=>'import_export','label'=>QApplication::Translate('Import Export'),'role'=>''),
+                           array('id'=>'warehouse','label'=>QApplication::Translate('Warehouse'),'role'=>array('Administrator', 'PPMC')),
+                           array('id'=>'status_manage','label'=>QApplication::Translate('Sku Status Manage'),'link'=>'../admin/status_manage.php','role'=>array('Administrator'))
                            );
-    $temp = explode("/", $_SERVER['SCRIPT_NAME']);
-    $current_module = $temp[count($temp)-2];
+    if(strpos($_SERVER['SCRIPT_NAME'], '.php')){
+        $temp = explode("/", $_SERVER['SCRIPT_NAME']);
+        $current_module = str_replace('.php', '', $temp[count($temp)-1]);
+    }else{
+        $temp = explode("/", $_SERVER['SCRIPT_NAME']);
+        $current_module = $temp[count($temp)-2];
+    }
     //var_dump($current_module);
 ?>
 
@@ -33,13 +51,14 @@
                                 }else{
                                     $class = "other";
                                 }
-                                echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
-                                echo '<td class="'.$class.'_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
-                                    <td class="'.$class.'_tab_middle"><a border="0" class="'.$class.'_tab_label" href="../'.$module['id'].'/">'.$module['label'].'</a></td>
-                                    <td class="'.$class.'_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
-                                    ';
-                                echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
-                                
+                                if(empty($module['role']) || in_array($currency_role, $module['role'])){
+                                    echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+                                    echo '<td class="'.$class.'_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
+                                        <td class="'.$class.'_tab_middle"><a border="0" class="'.$class.'_tab_label" href="'.((!empty($module['link']))?$module['link']:'../'.$module['id'].'/').'">'.$module['label'].'</a></td>
+                                        <td class="'.$class.'_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
+                                        ';
+                                    echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+                                }
                             }
                         ?>
                         
