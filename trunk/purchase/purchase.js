@@ -338,7 +338,7 @@ Ext.onReady(function(){
             totalProperty: 'totalCount',
             idProperty: 'id',
             autoLoad:true,
-            fields: ['id', 'purchase_type','purchaser', 'vendors', 'vendors_phone', 'vendors_fax', 'purchase_status', 'generate_date', 'approval_pass_date', 'sku', 'sku_status', 'sku_title', 'sku_stock', 'sku_virtual_stock', 'sku_purchase_in_transit', 'sku_purchase_qty', 'sku_old_purchase_qty', 'sku_price', 'sku_old_price', 'sku_total_price', 'sku_defective_qty', 'sku_rework_qty', 'sku_purchase_cycle', 'sku_three_day_flow', 'sku_week_flow', 'expected_arrival_date', 'created_by', 'created_on'],
+            fields: ['id', 'purchase_type','purchaser', 'vendors', 'vendors_phone', 'vendors_fax', 'purchase_status', 'generate_date', 'approval_pass_date', 'sku', 'sku_status', 'sku_title', 'sku_accessories', 'sku_stock', 'sku_virtual_stock', 'sku_purchase_in_transit', 'sku_purchase_qty', 'sku_old_purchase_qty', 'sku_price', 'sku_old_price', 'sku_total_price', 'sku_defective_qty', 'sku_rework_qty', 'sku_purchase_cycle', 'sku_three_day_flow', 'sku_week_flow', 'expected_arrival_date', 'created_by', 'created_on'],
             url:'purchase.php?action=getPurchaseOrders'
     });
     
@@ -422,6 +422,12 @@ Ext.onReady(function(){
             header: lang.Sku_Title,
             dataIndex: 'sku_title',
             width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Accessories,
+            dataIndex: 'sku_accessories',
+            width: 170,
             align: 'center',
             sortable: true
         },{
@@ -1892,7 +1898,7 @@ Ext.onReady(function(){
     var purchaseOrdersPanel = new Ext.Panel({
         id: 'purchase-orders',
         autoScroll: true,
-        width: 1820,
+        width: 2000,
         hidden: true,
         items: purchaseOrdersGrid,
         renderTo: 'purchase-orders-panel'

@@ -45,6 +45,7 @@ lang = {
     Sku: 'SKU',
     Sku_Status: 'SKU 状态',
     Sku_Title: 'SKU 名称',
+    Sku_Accessories: 'SKU 配件',
     Sku_Stock: 'SKU 库存',
     Sku_Virtual_Stock: 'SKU 虚拟库存',
     Sku_Purchase_In_Transit: 'SKU 采购在途',

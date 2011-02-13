@@ -343,6 +343,7 @@ class Purchase extends Base{
 	    
 	    $array['sku_status'] = $row['sku_status'];
 	    $array['sku_title'] = $row['title'];
+	    $array['sku_accessories'] = $this->getCustomFieldValueBySku($row['sku'], $this->conf['fieldArray']['accessories']);
 	    $array['sku_stock'] = $row['stock'];
 	    $array['sku_virtual_stock'] = $row['virtual_stock'];
 	    $array['sku_purchase_in_transit'] = $row['purchase_in_the_way'];
