@@ -1,31 +1,50 @@
 <?php
-ini_set('include_path', '../');
-session_start();
-
+include('../includes/configuration.inc.php');
+include('../includes/prepend.inc.php');
 if(empty($_SESSION['intUserAccountId'])){
     header('Location: /inventory/login.php');
 }
 
+$db_conf = unserialize(DB_CONNECTION_1);
+$conn = mysql_connect($db_conf['server'], $db_conf['username'], $db_conf['password']);
+
+if (!$conn) {
+    echo "Unable to connect to DB: " . mysql_error();
+    exit;
+}
+  
+if (!mysql_select_db($db_conf['database'])) {
+    echo "Unable to select mydbname: " . mysql_error();
+    exit;
+}
+ini_set('include_path', '../');
 $config = parse_ini_file('config.ini', true);
 
 require_once 'Stomp.php';
 require_once 'Stomp/Message/Map.php';
 define("ACTIVE_MQ", "tcp://192.168.1.168:61613");
 
-$conn = mysql_connect($config['database']['host'], $config['database']['user'], $config['database']['password']);
-
-if (!$conn) {
-    echo "Unable to connect to DB: " . mysql_error();
-    exit;
-}
-
 mysql_query("SET NAMES 'UTF8'");
 
-if (!mysql_select_db($config['database']['name'])) {
-    echo "Unable to select mydbname: " . mysql_error();
-    exit;
+$role = array();
+$sql = "select role_id,short_description from role";
+$result = mysql_query($sql);
+while($row = mysql_fetch_assoc($result)){
+	$role[$row['role_id']] = $row['short_description'];
 }
-		
+
+$role_1 = array('Administrator');
+
+$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
+$result = mysql_query($sql);
+$row = mysql_fetch_assoc($result);
+$currency_user_role = $role[$row['role_id']];
+
+if(!in_array($currency_user_role, $role_1)){
+	echo "没有权限访问!";
+	exit;	
+}
+
 //get status field id
 $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
 $status_field_result = mysql_query($status_field_sql);
@@ -129,15 +148,34 @@ $status_value = $status_array_1[$row_2['custom_field_value_id']];
 		exit;
 	}
 ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-<head>
-    <title>SKU Status Manage</title>
-    <link rel="stylesheet" type="text/css" href="/ext-3.2.0/resources/css/ext-all.css"/>
-    <link rel="stylesheet" type="text/css" href="status-manage.css"/>
-    <script type="text/javascript" src="/ext-3.2.0/adapter/ext/ext-base.js"></script>
-    <script type="text/javascript" src="/ext-3.2.0/ext-all.js"></script>
-    <script type="text/javascript" src="js/status-manage-min.js"></script>
-</head>
+	<head>
+	    <title>SKU Status Manage</title>
+	    <link rel="stylesheet" type="text/css" href="/ext-3.2.0/resources/css/ext-all.css"/>
+	    <link rel="stylesheet" type="text/css" href="status-manage.css"/>
+	    <script type="text/javascript" src="/ext-3.2.0/adapter/ext/ext-base.js"></script>
+	    <script type="text/javascript" src="/ext-3.2.0/ext-all.js"></script>
+	    <script type="text/javascript" src="js/status-manage-min.js"></script>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link rel="stylesheet" type="text/css" href="/inventory/css/tracmor.css"></link>
+		<link rel="stylesheet" type="text/css" href="../resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-gray.css" />
+		<link rel="stylesheet" type="text/css" href="fileuploadfield.css"/>
+	    <!-- GC -->
+	 	<!-- LIBS -->
+	 	<script type="text/javascript" src="../adapter/ext/ext-base.js"></script>
+	 	<!-- ENDLIBS -->
+	
+		<script type="text/javascript" src="../ext-all.js"></script>
+		<script type="text/javascript" src="zh_cn.js"></script>
+		<script src="FileUploadField.js"></script>
+		<script type="text/javascript" src="purchase.js"></script>
+	</head>
+	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0">
+	<?php
+            include("../common/custom_header.php");
+        ?>
 <body>
 	<div id="menu-panel" style="position:relative; width: 200px;">
 		<div id="new-button" style="position:absolute; top: 100px;"></div>
