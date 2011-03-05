@@ -12,6 +12,7 @@ lang = {
     No: '编号',
     Qty: '数量',
     Search: '查询',
+    Export: '导出',
     Save: '保存',
     Create:'创建',
     Update:'更新',
@@ -24,5 +25,14 @@ lang = {
     Success: '成功',
     Failure: '错误',
     Network_Error: '网络错误,请稍后再试.',
-    SKU_Is_Empty: 'SKU 为空!'
+    SKU_Is_Empty: 'SKU 为空!',
+    
+    Title:'名称',
+    Locator:'仓位',
+    Stock:'库存',
+    Virtual_Stock:'虚拟库存',
+    Good_Products_Warehouse:'布吉仓',
+    Bad_Products_Warehouse:'不良品仓',
+    Repair_Warehouse:'返修仓',
+    Sample_Warehouse:'样品仓',
 }

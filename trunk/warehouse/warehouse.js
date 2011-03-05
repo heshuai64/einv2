@@ -290,14 +290,149 @@ Ext.onReady(function(){
         hidden: true,
         renderTo: 'sku-management-panel'    
     });
+
+    var skuStocStore = new Ext.data.JsonStore({
+            root: 'records',
+            totalProperty: 'totalCount',
+            idProperty: 'id',
+            autoLoad:true,
+            fields: ['sku', 'title', 'locator', 'stock', 'virtual_stock', 'good_products_warehouse', 'bad_products_warehouse', 'repair_warehouse', 'sample_warehouse'],
+            url:'warehouse.php?action=getSkuWarehouseStock'
+    });
+
+    var skuStockGrid = new Ext.grid.GridPanel({
+        autoHeight: true,
+        //height: 600,
+        store: skuStocStore,
+        columns:[{
+            header: lang.SKU,
+            dataIndex: 'sku',
+            width: 100,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Title,
+            dataIndex: 'title',
+            width: 250,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Locator,
+            dataIndex: 'locator',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Stock,
+            dataIndex: 'stock',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Virtual_Stock,
+            dataIndex: 'virtual_stock',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Good_Products_Warehouse,
+            dataIndex: 'good_products_warehouse',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Bad_Products_Warehouse,
+            dataIndex: 'bad_products_warehouse',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Repair_Warehouse,
+            dataIndex: 'repair_warehouse',
+            width: 70,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sample_Warehouse,
+            dataIndex: 'sample_warehouse',
+            width: 70,
+            align: 'center',
+            sortable: true
+        }],
+        bbar: new Ext.PagingToolbar({
+              pageSize: 50,
+              store: skuStocStore,
+              displayInfo: true
+        }),
+        tbar:{
+            id:"sku-sotck-search-form",
+            xtype:"form",
+            labelWidth: 80,
+            items:[{
+                layout:"column",
+                items:[{
+                    columnWidth:0.5,
+                    layout:"form",
+                    defaults:{
+                      width:120
+                    },
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel: lang.SKU,
+                        name:"textvalue"
+                      }]
+                  },{
+                    columnWidth:0.5,
+                    layout:"form",
+                    defaults:{
+                      width:120
+                    },
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel: lang.Title,
+                        name:"textvalue"
+                      }]
+                }]
+            }],
+            buttonAlign: 'center',
+            buttons: [{
+                text: lang.Search,
+                handler: function(){
+                    skuStocStore.baseParams = {
+                        sku: Ext.getCmp("sku-sotck-search-form").getForm().items.items[0].getValue(),
+                        title: Ext.getCmp("sku-sotck-search-form").getForm().items.items[1].getValue()
+                    };
+                    skuStocStore.load();
+                }
+            },{
+                text: lang.Export,
+                handler: function(){
+                    window.open("warehouse.php?action=getSkuWarehouseStock&type=xls&"
+                                +Ext.urlEncode({'sku': Ext.getCmp("sku-sotck-search-form").getForm().items.items[0].getValue(),
+                                                'title': Ext.getCmp("sku-sotck-search-form").getForm().items.items[1].getValue()}),
+                                "_blank","toolbar=no, location=yes, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=no, copyhistory=yes, width=100, height=100");  
+                }
+            }]
+        },
+        hidden: true,
+        renderTo: 'sku-stock-panel'   
+    })
     
     Ext.EventManager.addListener("position-management", "click", function(){
         sku_form.hide();
+        skuStockGrid.hide();
         position_management_panel.show();
     })
     
     Ext.EventManager.addListener("sku-info-search", "click", function(){
         position_management_panel.hide();
+        skuStockGrid.hide();
         sku_form.show();
+    })
+    
+    Ext.EventManager.addListener("sku-stock-search", "click", function(){
+        sku_form.hide();
+        position_management_panel.hide();
+        skuStockGrid.show();
     })
 })
