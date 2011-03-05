@@ -96,6 +96,12 @@ if(!in_array($currency_user_role, $role_1)){
                                                                     <a id="sku-info-search" class="graylink"><?=QApplication::Translate('SKU Search')?></a>
                                                                 </td>
                                                             </tr>
+							    <tr>
+                                                                <td align="center" width="30"><img name="shortcut0" src="/inventory/images/icons/calendar.gif"/></td>
+                                                                <td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);">
+                                                                    <a id="sku-stock-search" class="graylink"><?=QApplication::Translate('SKU Stock')?></a>
+                                                                </td>
+                                                            </tr>
                                                         </tbody>
                                                     </table>
                                             </td>
@@ -108,6 +114,7 @@ if(!in_array($currency_user_role, $role_1)){
 			<td width="100%" valign="top">
                             <div id="position-management-panel" style="position: absolute; top: 10px;"></div>
 			    <div id="sku-management-panel" style="position: absolute; top: 10px;">
+			    <div id="sku-stock-panel" style="position: absolute; top: 10px;">
 			</td>
 		</table>
         </div>
