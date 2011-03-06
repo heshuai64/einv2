@@ -124,13 +124,13 @@ Ext.onReady(function(){
     });
     
     var sku_form = new Ext.form.FormPanel({
-        width: 800,
+        width: 900,
         layout:"column",
         reader:new Ext.data.JsonReader({},
                                        ['title','status','weight','accessories','image','stock','position','pmno','pmtitle','pmqty']
                                        ),
         items:[{
-            columnWidth:0.5,
+            columnWidth:0.4,
             layout:"form",
             labelWidth:60,
             items:[{
@@ -148,7 +148,16 @@ Ext.onReady(function(){
                         listeners: {
                             specialkey: function(t, e){
                                 if(e.getKey() == 13){
-                                    
+                                    sku_form.getForm().load({
+                                        url:'warehouse.php?action=getSkuInfo', 
+                                        method:'GET', 
+                                        params: {sku: sku_form.getForm().findField('sku').getValue()}, 
+                                        waitMsg:'Please wait...',
+                                        success: function(f, a){
+                                            document.getElementById("sku_image").src = a.result.data.image;
+                                            document.getElementById("sku_image_link").href = a.result.data.image;
+                                        }
+                                    })
                                 }
                             }
                         }
@@ -178,7 +187,7 @@ Ext.onReady(function(){
                 fieldLabel:lang.Title,
                 id:"title",
                 name:"title",
-                disabled:true,
+                //disabled:true,
                 width:250
               },{
                 layout:"column",
@@ -189,7 +198,7 @@ Ext.onReady(function(){
                     items:[{
                         xtype:"textfield",
                         fieldLabel:lang.Status,
-                        disabled:true,
+                        //disabled:true,
                         id:"status",
                         name:"status"
                       }]
@@ -200,27 +209,11 @@ Ext.onReady(function(){
                     items:[{
                         xtype:"numberfield",
                         fieldLabel:lang.Weight,
-                        disabled:true,
+                        //disabled:true,
                         id:"weight",
                         name:"weight"
                       }]
                   }]
-              },{
-                xtype:"textarea",
-                fieldLabel:lang.Accessories,
-                disabled:true,
-                id:"accessories",
-                name:"accessories",
-                width:250
-                }]
-          },{
-            columnWidth:0.5,
-            layout:"form",
-            items:[{
-                xtype:"panel",
-                title:lang.Image,
-                //id:"image",
-                html:"<a id='sku_image_link' target='_blank' href=''><img id='sku_image' width='200' height='100' src=''/></a>"
               },{
                 layout:"column",
                 items:[{
@@ -230,7 +223,7 @@ Ext.onReady(function(){
                     items:[{
                         xtype:"numberfield",
                         fieldLabel:lang.Stock,
-                        disabled:true,
+                        //disabled:true,
                         id:"stock",
                         name:"stock"
                       }]
@@ -241,11 +234,27 @@ Ext.onReady(function(){
                     items:[{
                         xtype:"textfield",
                         fieldLabel:lang.Position,
-                        disabled:true,
+                        //disabled:true,
                         name:"position"
                       }]
                   }]
               },{
+                xtype:"textarea",
+                fieldLabel:lang.Accessories,
+                //disabled:true,
+                id:"accessories",
+                name:"accessories",
+                width:250
+                }]
+          },{
+            columnWidth:0.6,
+            layout:"form",
+            items:[{
+                xtype:"panel",
+                title:lang.Image,
+                //id:"image",
+                html:"<img id='sku_image' width='500' height='375' src=''/>"
+              }/*,{
                 layout:"column",
                 title:lang.Packaging_Materials,
                 items:[{
@@ -285,7 +294,7 @@ Ext.onReady(function(){
                         width:60
                       }]
                   }]
-              }]
+              }*/]
         }],
         hidden: true,
         renderTo: 'sku-management-panel'    
@@ -295,7 +304,7 @@ Ext.onReady(function(){
             root: 'records',
             totalProperty: 'totalCount',
             idProperty: 'id',
-            autoLoad:true,
+            //autoLoad:true,
             fields: ['sku', 'title', 'locator', 'stock', 'virtual_stock', 'good_products_warehouse', 'bad_products_warehouse', 'repair_warehouse', 'sample_warehouse'],
             url:'warehouse.php?action=getSkuWarehouseStock'
     });
