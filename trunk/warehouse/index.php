@@ -43,7 +43,7 @@ if(!in_array($currency_user_role, $role_1)){
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<link rel="stylesheet" type="text/css" href="/inventory/css/tracmor.css"></link>
 		<link rel="stylesheet" type="text/css" href="../resources/css/ext-all.css" />
-		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-gray.css" />
+		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-blue.css" />
                 <!-- GC -->
 	 	<!-- LIBS -->
 	 	<script type="text/javascript" src="../adapter/ext/ext-base.js"></script>
