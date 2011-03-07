@@ -82,40 +82,45 @@ Ext.onReady(function(){
         			return 0;
         		}
         		
-        		if(sm.getCount() > 0){
-        			//console.log(sm.getSelections());
-        			//console.log(Ext.getCmp("availableStatusCombo").getValue());
-        			var ids = "";
-        			var skus = "";
-        			var selections = skuStatusGrid.selModel.getSelections();
-        			for(var i = 0; i< skuStatusGrid.selModel.getCount(); i++){
-                         ids += selections[i].data.inventory_model_id + ","
-                         skus += selections[i].data.inventory_model_code + ","
-                    }
-                    ids = ids.slice(0,-1);
-                    skus = skus.slice(0,-1);
-        			Ext.Ajax.request({
-					   url: '../service.php?action=changeStatus',
-					   success: function(r, o){
-					   		skuStatusStore.load({params: {start: 0, limit: 20}});
-					   		Ext.Ajax.request({
-						    	url: '../service.php?action=getSkuStatusCount',
-						    	success: function(response){
-						    		Ext.each(Ext.decode(response.responseText), function(i){
-						    			//console.log(i);
-						    			Ext.Element.get(i.status).update(" ("+i.total+")");
-						    		})
-						    	}
-						   	});
-					   },
-					   //failure: otherFn,
-					   params: { ids: ids, skus: skus, status: Ext.getCmp("availableStatusCombo").getValue() }
-					});
-
-        		}else{
-        			Ext.Msg.alert('Warning', 'Please select SKU.');
+			if(sm.getCount() == 0){
+				Ext.Msg.alert('Warning', 'Please select SKU.');
         			return 0;
-        		}
+			}
+			
+			Ext.Msg.prompt('Reason', 'Please enter reason:', function(btn, text){
+				if (btn == 'ok'){
+					var ids = "";
+					var skus = "";
+					var selections = skuStatusGrid.selModel.getSelections();
+					for(var i = 0; i< skuStatusGrid.selModel.getCount(); i++){
+						ids += selections[i].data.inventory_model_id + ","
+						skus += selections[i].data.inventory_model_code + ","
+					}
+					ids = ids.slice(0,-1);
+					skus = skus.slice(0,-1);
+					Ext.Ajax.request({
+						url: '../service.php?action=changeStatus',
+						success: function(r, o){
+							skuStatusStore.load({params: {start: 0, limit: 20}});
+							Ext.Ajax.request({
+							url: '../service.php?action=getSkuStatusCount',
+							success: function(response){
+								Ext.each(Ext.decode(response.responseText), function(i){
+									//console.log(i);
+									Ext.Element.get(i.status).update(" ("+i.total+")");
+								})
+							}
+							});
+						},
+						//failure: otherFn,
+						params: { ids: ids, skus: skus, status: Ext.getCmp("availableStatusCombo").getValue(), reason: text}
+					});
+					return 1;
+				}else{
+					return 0;
+				}
+			});
+			return 1;
         	}
         }],
         bbar: new Ext.PagingToolbar({
