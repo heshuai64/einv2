@@ -19,6 +19,7 @@
                            array('id'=>'status_manage','label'=>QApplication::Translate('Sku Status Manage'),'link'=>'../admin/status_manage.php','role'=>array('Administrator'))
                            );
     if(strpos($_SERVER['SCRIPT_NAME'], '.php')){
+        $_SERVER['SCRIPT_NAME'] = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME']);
         $temp = explode("/", $_SERVER['SCRIPT_NAME']);
         $current_module = str_replace('.php', '', $temp[count($temp)-1]);
     }else{

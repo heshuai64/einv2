@@ -151,6 +151,7 @@ if(!empty($_GET['intInventoryModelId'])){
 	}
 	
 	$role_1 = array('Administrator', 'PPMC');
+	$role_2 = array('Administrator');
 	
 	$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
 	$result = mysql_query($sql);
@@ -549,7 +550,9 @@ $row = mysql_fetch_assoc($result);
 	$row_2 = mysql_fetch_assoc($result_2);
 	$active = $row_2['num'];
 	
-	if($active == 0){?>
+	//var_dump($currency_user_role);
+	//var_dump($role_2);
+	if($active == 0 || in_array($currency_user_role, $role_2)){?>
 	<button onclick="return updateDescription();"><?=QApplication::Translate('Save')?></button>
 	<?php }?>
 	
