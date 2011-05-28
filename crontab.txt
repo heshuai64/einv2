@@ -1,0 +1,9 @@
+#Inventory
+#*/5 * * * * php -q /export/inventory/service.php syncAppertainStock
+#0 23 * * * php -q /export/inventory/service.php calculateWeekFlow
+0 7  * * * php -q /export/inventory/Cron.php calculateWeekFlow
+#0 8  * * * php -q /export/inventory/Cron.php generatePurchaseOrder
+0 8  * * * php -q /export/inventory/Cron.php generatePurchaseOrderExcel
+20 9  * * * php -q /export/inventory/Cron.php calculateVirtualStock
+30 9  * * * php -q /export/inventory/Cron.php generatePurchasePlanned > /export/inventory/log/purchasePlanned/`date +\%Y\%m\%d`.log
+*/10 * * * * (cd /export/inventory; php -q Cron.php dealSkuStock > /export/inventory/log/dealSkuStock/`date +\%Y\%m\%d`.log)

@@ -1,4 +1,7 @@
 <?php
+define ('__DOCROOT__', '/export/inventory');
+set_include_path(get_include_path() . PATH_SEPARATOR . __DOCROOT__);
+
 class Base{
     protected $conn;
     public $conf;
@@ -310,7 +313,7 @@ class Base{
         }
     }
     
-    public function getStock($inventory_model_id="", $sku=""){
+    public function getStock($inventory_model_id="", $sku="", $warehouse_id=6){
 	if(!empty($sku)){
 	    $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
 	    $result_1 = mysql_query($sql_1, $this->conn);
@@ -318,22 +321,23 @@ class Base{
 	    $inventory_model_id = $row_1['inventory_model_id'];
 	}
 	
-	$sql_2 = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."' and location_id = '".$this->conf['location']['warehouse']."'";
+	$sql_2 = "select quantity from inventory_location where inventory_model_id = '".$inventory_model_id."' and location_id = '".$warehouse_id."'";
 	$result_2 = mysql_query($sql_2, $this->conn);
 	$row_2 = mysql_fetch_assoc($result_2);
 	return $row_2['quantity'];
     }
     
-    public function updateStock($inventory_model_id="", $quantity="", $operate="", $note=""){
+    public function updateStock($inventory_model_id="", $quantity="", $operate="", $note="", $user_id="", $warehouse_id=6){
 	session_start();
-	if(empty($inventory_model_id) && empty($stock) && empty($operate)){
+	if(empty($inventory_model_id) && empty($quantity) && empty($operate)){
 	    $inventory_model_id = $_POST['inventory_model_id'];
-	    $stock = $_POST['$stock'];
+	    $quantity = $_POST['quantity'];
 	    $operate = $_POST['operate'];
 	}
 	
-	$warehouse = $this->conf['location']['warehouse'];
-	$user_id = $_SESSION['intUserAccountId'];
+	if(empty($user_id)){
+	    $user_id = $_SESSION['intUserAccountId'];
+	}
 	
 	$sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
         $this->log("updateStock", $sql."<br>");
@@ -343,7 +347,7 @@ class Base{
         $inventory_location_id = $row['inventory_location_id'];
 	
 	if(empty($source_location_id)){
-	    $source_location_id = $warehouse;
+	    $source_location_id = $warehouse_id;
 	    $sql = "insert into inventory_location (inventory_model_id,location_id,quantity,created_by,creation_date) 
 	    values ('".$inventory_model_id."','".$source_location_id."','0','".$user_id."','".date("Y-m-d H:i:s")."')";
 	    $this->log("updateStock", $sql."<br>");
@@ -377,25 +381,32 @@ class Base{
 	    $sql = "update inventory_location set quantity = quantity ".$operate." ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
 	    $this->log("updateStock", $sql."<br>");
 	    $result = mysql_query($sql, $this->conn);
+	    
+	    $this->updateVirtualStock($inventory_model_id, $quantity, $operate);
 	    /*
 	    $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
 	    $this->log("skuPurchaseStoring", $sql."<br>");
 	    $result = mysql_query($sql, $this->conn);
 	    $this->log("skuPurchaseStoring", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
-	    
-	    $this->sendMessageToAM("/topic/SkuInToLibrary",
-		    array("sku"=> $inventory_model,
-			  "quantity"=> $quantity,
-			  "shipment_id"=> $shipment_id,
-			  "shipment_method"=> $shipment_method));
 	    */
+	    $sql = "select inventory_model_code from inventory_model where inventory_model_id = ".$inventory_model_id;
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
 	    
-	    $this->updateVirtualStock($inventory_model_id, $quantity, $operate);
+	    $this->sendMessageToAM($this->conf['topic']['skuStock'],
+		    array("sku"=> $row['inventory_model_code'],
+			  "stock"=> $this->getStock($inventory_model_id),
+			  "operate"=> $operate,
+			  "quantity"=> $quantity
+			  ));
+
 	    if($result){
 		return true;
 	    }else{
 		return false;
 	    }
+	}else{
+	    return false;
 	}
     }
     

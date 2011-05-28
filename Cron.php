@@ -494,7 +494,7 @@ class Cron extends Base{
 	    $buffer_day = 2;
 	    $purchase_rate = 1;
 	    $flow = $row_1['week_flow_1'] / 6;
-	    $stock_day = 30;
+	    //$stock_day = 30;
 	    $suggest_purchase_num = ($flow * ($stock_day + $buffer_day) - $purchase_in_transit - $virtual_stock) * $purchase_rate;
 	    
 	    if($suggest_purchase_num > $stock){
@@ -521,6 +521,13 @@ class Cron extends Base{
     //ALTER TABLE `purchase_planned` ADD `type` INT( 1 ) NOT NULL DEFAULT '0';
     public function calculateVirtualStock(){
 	$this->log("calculateVirtualStock", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++  Start  +++++++++++++++++++++++++++++++</font><br>");
+	$sql_0 = "select inventory_model_id from inventory_model";
+	$result_0 = mysql_query($sql_0, $this->conn);
+        while($row_0 = mysql_fetch_assoc($result_0)){
+	    $stock = (int) $this->getStock($row_0['inventory_model_id']);
+	    $this->updateCustomFieldValue($row_0['inventory_model_id'], $this->conf['fieldArray']['virtualStock'], $stock);
+	}
+	
 	//get virtual stock field
         $sql = "select custom_field_id from custom_field where short_description = '".$this->conf['fieldArray']['virtualStock']."'";
         $result = mysql_query($sql, $this->conn);
@@ -577,8 +584,8 @@ class Cron extends Base{
     }
     
     public function generateComplaints(){
-        require_once '/export/inventory/class/PHPExcel.php';
-        require_once '/export/inventory/class/PHPExcel/IOFactory.php';
+        require '/export/inventory/class/PHPExcel.php';
+        require '/export/inventory/class/PHPExcel/IOFactory.php';
         $php_excel = new PHPExcel();
         
         mysql_query("SET NAMES 'latin1'", $this->conn);
@@ -596,8 +603,58 @@ class Cron extends Base{
         $row = mysql_fetch_assoc($result);
     }
     
-    public function dealSkuOutOfLibrary(){
+    public function dealSkuStock(){
+        require __DOCROOT__ . '/Stomp.php';
+        require __DOCROOT__ . '/Stomp/Message/Map.php';
         
+        $consumer = new Stomp($this->conf['service']['activeMq']);
+        $consumer->clientId = "inventorySkuStock";
+        $consumer->connect();
+        $consumer->subscribe($this->conf['topic']['skuStock'], array('transformation' => 'jms-map-json'));
+        $msg = $consumer->readFrame();
+	if ( $msg != null) {
+	    $consumer->ack($msg);
+	    if($msg->map['stock'] <= 0 && $msg->map['operate'] == "+"){
+		$sql = "select status from sku_status_history where sku = '".$msg->map['sku']."' order by id desc limit 0,1";
+		$result = mysql_query($sql, $this->conn);
+		$row = mysql_fetch_assoc($result);
+		
+		$this->log("dealSkuStock", print_r($msg->map, true)."<br>");
+		
+		$this->updateCustomFieldValueBySku($msg->map['sku'], $this->conf['fieldArray']['skuStatus'], $this->conf['skuStatus'][str_replace(" ", "_", $row['status'])]);
+	    }
+	}else{
+	    echo date("Y-m-d H:i:s")." no message\n";
+	}
+	$consumer->disconnect();
+    }
+    
+    public function syncStock(){
+	$service_result = $this->get($this->conf['service']['ebayBO'], 'getNeedSyncStock');
+	$service_result = json_decode($service_result);
+	$this->log("syncStock", print_r($service_result, true)."<br>");
+	for($i = 0; $i < count($service_result); $i++){
+	    $shipmentId = $service_result[$i]->shipmentId;
+	    $sku = $service_result[$i]->skuId;
+	    $qty = $service_result[$i]->quantity;
+	    
+	    $sql = "select inventory_model_id from inventory_model where inventory_model_code = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
+	    $inventory_model_id = $row['inventory_model_id'];
+	    echo $shipmentId."|".$sku."|".$inventory_model_id."|".$qty."\n";
+	    /*
+	    $result = $this->updateStock($inventory_model_id, $qty, "-", "", 1);
+	    if($result){
+		$service_result = $this->get($this->conf['service']['ebayBO'], 'updateShipmentSyncStockStatus', array('shipmentId'=>$shipmentId));
+		if(strpos($service_result, "success"){
+		    $this->log("syncStock", "success: ".$shipmentId."|".$sku."|".$inventory_model_id"|".$qty."<br>");
+		}else{
+		    $this->log("syncStock", "<font color='red'>failure: ".$shipmentId."|".$sku."|".$qty."</font><br>");
+		}
+	    }
+	    */
+	}
     }
     
     public function __destruct(){

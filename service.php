@@ -81,7 +81,7 @@ class Service extends Base{
 	}
     }
     
-    private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method=''){
+    private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method='',$warehouse=6){
         $this->log("skuTakeOut", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
 	
 	if($this->checkSkuCombo($inventory_model)){
@@ -106,7 +106,7 @@ class Service extends Base{
             
         }
         
-        $sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."'";// and quantity > ".$quantity."";
+        $sql = "select inventory_location_id,location_id from inventory_location where inventory_model_id = '".$inventory_model_id."' and location_id = '".$warehouse."'";// and quantity > ".$quantity."";
         $this->log("skuTakeOut", $sql."<br>");
         //echo $sql;
         //echo "<br>";
@@ -127,7 +127,8 @@ class Service extends Base{
             //-------------------------------------------   Weight   -----------------------------------------------
             //get weight field id
             //echo "<font color='red'><br>Weight Start<br></font>";
-            $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
+            /*
+	    $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
             $this->log("skuTakeOut", $weight_field_sql."<br>");
             //echo $weight_field_sql;
             //echo "<br>";
@@ -146,8 +147,8 @@ class Service extends Base{
             $weight_value_row = mysql_fetch_assoc($weight_value_result);
             $weight = (float)$weight_value_row['short_description'];
             //echo "<font color='red'><br>Weight End<br></font>";
-            
-            
+	    */
+            $weight = (float)$this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']);
             //---------------------------------------  Envelope  ---------------------------------------------------
             /*
             //get envelope field id
@@ -2099,173 +2100,14 @@ class Service extends Base{
 	    $this->log = false;
 	}else{
 	    //echo $_GET['data'];
-	    //file_put_contents("/tmp/1.log", print_r($data, true), FILE_APPEND);
 	    $sku_array = $data->sku_array;
-	    //$sku_array = explode(",", $_GET['skuString']);
 	}
-       
-        //var_dump($sku_array);
-        //$shippingMethod = array();
         $total_weight = 0;
         $total_cost = 0;
-        
+        $total_quantiry = 0;
+	
         $this->log("getShippingMethodBySku", "<font color='black'><br>======================================   ".$data->id." Start  ======================================<br></font>");
-        /*
         foreach($sku_array as $sku){
-            //var_dump($sku);
-            $this->log("getShippingMethodBySku", "<font color='green'><br>Loop Start--------------------------------------------------------<br></font>");
-            //get sku model id
-            $sql = "select inventory_model_id,category_id from inventory_model where inventory_model_code='".$sku->skuId."'";
-            $this->log("getShippingMethodBySku", $sql."<br>");
-            $result = mysql_query($sql, $this->conn);
-            $row = mysql_fetch_assoc($result);
-            $category = $row['category_id'];
-            $inventory_model_id = $row['inventory_model_id'];
-            $this->log("getShippingMethodBySku", "category: ".$category."<br>inventory_model_id: ".$inventory_model_id."<br>");
-
-            //-------------------------------------------   Weight   -----------------------------------------------
-            //get weight field id
-            $this->log("getShippingMethodBySku", "<font color='red'><br>Weight Start<br></font>");
-            $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
-            $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
-            
-            $weight_field_result = mysql_query($weight_field_sql, $this->conn);
-            $weight_field_row = mysql_fetch_assoc($weight_field_result);
-            
-            
-            //get weight value
-            $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-            on cfs.custom_field_value_id=cfv.custom_field_value_id
-            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
-            $this->log("getShippingMethodBySku", $weight_value_sql."<br>");
-            
-            $weight_value_result = mysql_query($weight_value_sql, $this->conn);
-            $weight_value_row = mysql_fetch_assoc($weight_value_result);
-            $weight = (float) $weight_value_row['short_description'] * $sku->quantity;
-            $total_weight += $weight;
-            $this->log("getShippingMethodBySku", "weight: ".$weight."<br><font color='red'>Weight End<br></font>");
-            
-            //-------------------------------------------    Cost    -----------------------------------------------
-            //get cost field id
-            $this->log("getShippingMethodBySku", "<font color='red'><br>Cost Start<br></font>");
-            $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
-            $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
-
-            $cost_field_result = mysql_query($cost_field_sql, $this->conn);
-            $cost_field_row = mysql_fetch_assoc($cost_field_result);
-            
-            
-            //get cost value
-            $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-            on cfs.custom_field_value_id=cfv.custom_field_value_id
-            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
-            $this->log("getShippingMethodBySku", $cost_value_sql."<br>");
-
-            $cost_value_result = mysql_query($cost_value_sql, $this->conn);
-            $cost_value_row = mysql_fetch_assoc($cost_value_result);
-            $cost = $cost_value_row['short_description'] * $sku->quantity;
-            $this->log("getShippingMethodBySku", "cost: ".$cost."<br><font color='red'>Cost End<br></font>");
-            
-            //-----------------------------------------    Paper tube  ----------------------------------------------
-            //get Paper tube field id
-            $this->log("getShippingMethodBySku", "<font color='red'><br>Paper Start<br></font>");
-            $paper_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['paperTube']."'";
-            $this->log("getShippingMethodBySku", $paper_field_sql."<br>");
- 
-            $paper_field_result = mysql_query($paper_field_sql, $this->conn);
-            $paper_field_row = mysql_fetch_assoc($paper_field_result);
-            
-            
-            //get Paper tube value
-            $paper_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-            on cfs.custom_field_value_id=cfv.custom_field_value_id
-            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$paper_field_row['custom_field_id']."'";
-            $this->log("getShippingMethodBySku", $paper_value_sql."<br>");
-            
-            $paper_value_result = mysql_query($paper_value_sql, $this->conn);
-            $paper_value_row = mysql_fetch_assoc($paper_value_result);
-            $paper = $paper_value_row['short_description'];
-            $this->log("getShippingMethodBySku", "Paper: ".$paper."<br><font color='red'>Paper End<br></font>");
-            
-            
-            if($weight > 1.4){
-                $shippingMethod[3] = "S";
-                $currently = "S";
-                break;
-            }else{
-                switch($category){
-                    case "1":
-                        //Battery
-                        if($cost < 100 || ($cost >= 100 && $cost < 200 && in_array($data->country, $AEA))){
-                            $shippingMethod[1] = "B";
-                            $currently = "B";
-                        }else{
-                            $shippingMethod[2] = "R";
-                            $currently = "R";
-                            break;
-                        }
-                    break;
-                
-                    case "2":
-                        //Game
-                        if($cost < 150){
-                            $shippingMethod[1] = "B";
-                            $currently = "B";
-                        }else{
-                            $shippingMethod[2] = "R";
-                            $currently = "R";
-                            break;
-                        }
-                    break;
-                
-                    case "3":
-                        //Security
-                        if($cost < 99){
-                            $shippingMethod[1] = "B";
-                            $currently = "B";
-                        }else{
-                            $shippingMethod[2] = "R";
-                            $currently = "R";
-                            break;
-                        }
-                    break;
-                
-                    case "4":
-                        //Case
-                        $shippingMethod[1] = "B";
-                        $currently = "B";
-                    break;
-                
-                    case "5":
-                        //Oil Painting
-                        if($sku->quantity < 3){
-                            $shippingMethod[1] = "B";
-                            $currently = "B";
-                        }else{
-                            $shippingMethod[3] = "S";
-                            $currently = "S";
-                        }
-                        
-                        if($paper != "S"){
-                            $shippingMethod[3] = "S";
-                            $currently = "S";
-                        }
-                    break;
-                }
-            }
-            $this->log("getShippingMethodBySku", "currently: ".$currently);
-            $this->log("getShippingMethodBySku", "<font color='green'><br>Loop End--------------------------------------------------------<br></font>");
-        }
-        
-        if($total_weight > 1.4){
-            $shippingMethod[3] = "S";
-        }
-        */
-        
-        foreach($sku_array as $sku){
-            //var_dump($sku);
-            $this->log("getShippingMethodBySku", "<font color='green'><br>******************************************  SKU Loop Start  ******************************************<br></font>");
-            //get sku model id
             $sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku->skuId."'";
             $this->log("getShippingMethodBySku", $sql."<br>");
             $result = mysql_query($sql, $this->conn);
@@ -2274,53 +2116,23 @@ class Service extends Base{
             $this->log("getShippingMethodBySku", "Inventory Model Id: ".$inventory_model_id."<br>");
             if(!empty($inventory_model_id)){
                 //-------------------------------------------   Weight   -----------------------------------------------
-                //get weight field id
-                $this->log("getShippingMethodBySku", "<font color='red'><br>******************************************  Weight Start  ******************************************<br></font>");
-                $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
-                $this->log("getShippingMethodBySku", $weight_field_sql."<br>");
-                
-                $weight_field_result = mysql_query($weight_field_sql, $this->conn);
-                $weight_field_row = mysql_fetch_assoc($weight_field_result);
-                
-                
-                //get weight value
-                $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-                on cfs.custom_field_value_id=cfv.custom_field_value_id
-                where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
-                $this->log("getShippingMethodBySku", $weight_value_sql."<br>");
-                
-                $weight_value_result = mysql_query($weight_value_sql, $this->conn);
-                $weight_value_row = mysql_fetch_assoc($weight_value_result);
-                $weight = (float) $weight_value_row['short_description'] * $sku->quantity;
-                $total_weight += $weight;
-                $this->log("getShippingMethodBySku", "Weight: ".$weight."<br>******************************************  <font color='red'>Weight End  ******************************************<br></font>");
-            
+		$weight = $this->getCustomFieldValue($inventory_model_id, Service::$field_array['weight']);
+                $total_weight += $weight * $sku->quantity;
+                $this->log("getShippingMethodBySku", "Weight: ".$weight." * ".$sku->quantity."<br>");
                 //-------------------------------------------    Cost    -----------------------------------------------
-                //get cost field id
-                $this->log("getShippingMethodBySku", "<font color='red'><br>****************************************** Cost Start  ******************************************<br></font>");
-                $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
-                $this->log("getShippingMethodBySku", $cost_field_sql."<br>");
-    
-                $cost_field_result = mysql_query($cost_field_sql, $this->conn);
-                $cost_field_row = mysql_fetch_assoc($cost_field_result);
-                
-                
-                //get cost value
-                $cost_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-                on cfs.custom_field_value_id=cfv.custom_field_value_id
-                where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
-                $this->log("getShippingMethodBySku", $cost_value_sql."<br>");
-    
-                $cost_value_result = mysql_query($cost_value_sql, $this->conn);
-                $cost_value_row = mysql_fetch_assoc($cost_value_result);
-                $total_cost += $cost_value_row['short_description'] * $sku->quantity;
-                $this->log("getShippingMethodBySku", "Cost: ".$cost."<br><font color='red'>******************************************  Cost End  ******************************************<br></font>");
+		$cost = $this->getCustomFieldValue($inventory_model_id, Service::$field_array['cost']);
+		$total_cost += $cost * $sku->quantity;
+		$this->log("getShippingMethodBySku", "Cost: ".$cost." * ".$sku->quantity."<br>");
+		
+		$total_quantiry += $sku->quantity;
             }else{
                 break;
             }
         }
         
-        if($total_weight > 2){
+	if($total_quantiry > 20){
+	    $shippingMethod = "R";
+	}elseif($total_weight > 2){
             $shippingMethod = "U";
         }elseif($total_weight > 1.4){
             $shippingMethod = "S";
@@ -2339,10 +2151,7 @@ class Service extends Base{
                 }
             }
         }
-        $this->log("getShippingMethodBySku", "Total Weight: ".$total_weight."<br>");
-        $this->log("getShippingMethodBySku", "Total Cost: ".$total_cost."<br>");
-        //$this->log("getShippingMethodBySku", print_r($shippingMethod, true));
-        $this->log("getShippingMethodBySku", "Shipping Method: ".$shippingMethod."<br>");
+        $this->log("getShippingMethodBySku", $total_quantiry."|".$total_cost."|".$total_weight."|".$shippingMethod."<br>");
         $this->log("getShippingMethodBySku", "<font color='black'><br>======================================  ".$data->id." End   ======================================<br><br><br><br></font>");
         //$shippingMethod = (!empty($shippingMethod[3])?$shippingMethod[3]:(!empty($shippingMethod[2])?$shippingMethod[2]:$shippingMethod[1]));
         if(empty($sku_json)){
@@ -2357,111 +2166,214 @@ class Service extends Base{
 	    $sku = $argv[2];
 	}else{
 	    $sku = $_GET['sku'];
-	}
-	$sku_shipping_fee = $this->getShippingFeeBySku($sku, $this->getShippingMethodBySku(json_encode(array('skuId'=>$sku, 'quantity'=>1))));
-	$envelope = $this->getEnvelopeBySku($sku);
-	switch($envelope){
-	    case "S":
-		$envelope_cost = 0.8;
-	    break;
-	
-	    case "M":
-		$envelope_cost = 1.2;
-	    break;
-	
-	    case "L":
-		$envelope_cost = 4.6;
-	    break;
-	
-	    case "XL":
-		$envelope_cost = 6;
-	    break;
-	}
-	$category = $this->getCategoryBySku($sku);
-	switch($category){
-	    case "Battery":
-		$category_cost = 1.3;
-	    break;
-	
-	    case "Power Tools":
-		$category_cost = 1.3;
-	    break;
-	
-	    case "Game":
-		$category_cost = 1.4;
-	    break;
-	
-	    case "Security":
-		$category_cost = 1.3;
-	    break;
-	
-	    default:
-		$category_cost = 1.5;
-	    break;
+	    $location = $_GET['location'];
 	}
 	
-	$epe_cost = $this->getEPEBySku($sku);
-	switch($epe_cost){
-	    case "2TX500mmX130mmX1":
-		$epe_cost = 1;
-	    break;
-	
-	    case "4TX500mmX130mmX2":
-		$epe_cost = 2;
-	    break;
-	
-	    case "4TX500mmX130mmX1":
-		$epe_cost = 1;
-	    break;
-	
-	    default:
-		$epe_cost = 1;
-	    break;
-	}
-	
-	$productGrade = $this->getProductGradeBySku($sku);
-	switch($productGrade){
-	    case "A":
-		$product_grade_cost = 1.28;
-	    break;
-	
-	    case "B":
-		$product_grade_cost = 1.30;
-	    break;
-	
-	    case "C":
-		$product_grade_cost = 1.35;
-	    break;
-	
-	    case "D":
-		$product_grade_cost = 1.4;
-	    break;
-	
-	    case "E":
-		$product_grade_cost = 1.45;
-	    break;
-	
-	    case "F":
-		$product_grade_cost = 1.5;
-	    break;
-	
-	    default :
-		$product_grade_cost = 1;
-	    break;
-	}
-	
-	$sku_cost = $this->getSkuCost($sku, true);
-	$sku_weight = $this->getWeightBySku($sku);
-	//echo $sku_cost."\n";
-	//echo $sku_shipping_fee."\n";
-	$lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $product_grade_cost;
-	//echo $lowestPrice."\n";
-	$formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$product_grade_cost;
-	
-	if($internal){
-	    return $lowestPrice;
+	if(!empty($location)){
+	    $epe = $this->getCustomFieldValueBySku($sku, Service::$field_array['EPE']);
+	    switch($epe){
+		case "2TX500mmX130mmX1":
+		    $epe_cost = 1;
+		break;
+	    
+		case "4TX500mmX130mmX1":
+		    $epe_cost = 1;
+		break;
+	    
+		case "4TX500mmX130mmX2":
+		    $epe_cost = 2;
+		break;
+	    
+		default:
+		    $epe_cost = 1;
+		break;
+	    }
+	    
+	    $envelope = $this->getCustomFieldValueBySku($sku, Service::$field_array['envelope']);
+	    switch($envelope){
+		case "S":
+		    $envelope_cost = 0.8;
+		break;
+	    
+		case "M":
+		    $envelope_cost = 1.2;
+		break;
+	    
+		case "L":
+		    $envelope_cost = 2.5;
+		break;
+	    
+		case "X":
+		    $envelope_cost = 4;
+		break;
+	    }
+	    
+	    $sku_cost = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['cost']);
+	    $sku_weight = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['weight']);
+	    $sku_weight_g = $sku_weight * 1000;
+	    $pack_volume = $this->getCustomFieldValueBySku($sku, Service::$field_array['packVolume']);
+	    if(empty($pack_volume)){
+		$pack_volume = "over353*250*25";
+	    }
+	    switch($pack_volume){
+		case "max240*165*5mm":
+		    if($sku_weight_g < 80){
+			$shipping_fee = 0.36;
+		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
+			$shipping_fee = 0.92;
+		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+			$shipping_fee = 1.23;
+		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+			$shipping_fee = 1.76;
+		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+			$shipping_fee = 3.15;
+		    }
+		    
+		break;
+	    
+		case "max353*250*25":
+		    if($sku_weight_g < 80){
+			$shipping_fee = 0.58;
+		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
+			$shipping_fee = 0.92;
+		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+			$shipping_fee = 1.23;
+		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+			$shipping_fee = 1.76;
+		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+			$shipping_fee = 3.15;
+		    }
+		break;
+	    
+		case "over353*250*25":
+		    if($sku_weight_g < 80){
+			$shipping_fee = 1.33;
+		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
+			$shipping_fee = 1.76;
+		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+			$shipping_fee = 2.16;
+		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+			$shipping_fee = 2.61;
+		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+			$shipping_fee = 3.15;
+		    }
+		break;
+	    }
+	    $lowestPrice = 1.45 * ($sku_cost + $epe_cost + $envelope_cost + 0.09 * $sku_weight_g + (0.9 + $shipping_fee) * 10);
+	    //echo $lowestPrice."\n";
+	    $formula = "1.45 * (".$sku_cost." + ".$epe_cost." + ".$envelope_cost." + 0.09 * ".$sku_weight_g." + (0.9 + ".$shipping_fee.") * 10)";
+	    if($internal){
+		return $lowestPrice;
+	    }else{
+		echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
+	    }
+	//---------------------------------------------------------------------------------------------------    
 	}else{
-	    echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
+	    $sku_shipping_fee = $this->getShippingFeeBySku($sku, $this->getShippingMethodBySku(json_encode(array('skuId'=>$sku, 'quantity'=>1))));
+	    $envelope = $this->getEnvelopeBySku($sku);
+	    switch($envelope){
+		case "S":
+		    $envelope_cost = 0.8;
+		break;
+	    
+		case "M":
+		    $envelope_cost = 1.2;
+		break;
+	    
+		case "L":
+		    $envelope_cost = 4.6;
+		break;
+	    
+		case "XL":
+		    $envelope_cost = 6;
+		break;
+	    }
+	    $category = $this->getCategoryBySku($sku);
+	    switch($category){
+		case "Battery":
+		    $category_cost = 1.3;
+		break;
+	    
+		case "Power Tools":
+		    $category_cost = 1.3;
+		break;
+	    
+		case "Game":
+		    $category_cost = 1.4;
+		break;
+	    
+		case "Security":
+		    $category_cost = 1.3;
+		break;
+	    
+		default:
+		    $category_cost = 1.5;
+		break;
+	    }
+	    
+	    $epe_cost = $this->getEPEBySku($sku);
+	    switch($epe_cost){
+		case "2TX500mmX130mmX1":
+		    $epe_cost = 1;
+		break;
+	    
+		case "4TX500mmX130mmX2":
+		    $epe_cost = 2;
+		break;
+	    
+		case "4TX500mmX130mmX1":
+		    $epe_cost = 1;
+		break;
+	    
+		default:
+		    $epe_cost = 1;
+		break;
+	    }
+	    
+	    $productGrade = $this->getProductGradeBySku($sku);
+	    switch($productGrade){
+		case "A":
+		    $product_grade_cost = 1.28;
+		break;
+	    
+		case "B":
+		    $product_grade_cost = 1.30;
+		break;
+	    
+		case "C":
+		    $product_grade_cost = 1.35;
+		break;
+	    
+		case "D":
+		    $product_grade_cost = 1.4;
+		break;
+	    
+		case "E":
+		    $product_grade_cost = 1.45;
+		break;
+	    
+		case "F":
+		    $product_grade_cost = 1.5;
+		break;
+	    
+		default :
+		    $product_grade_cost = 1;
+		break;
+	    }
+	    
+	    $sku_cost = $this->getSkuCost($sku, true);
+	    $sku_weight = $this->getWeightBySku($sku);
+	    //echo $sku_cost."\n";
+	    //echo $sku_shipping_fee."\n";
+	    $lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $product_grade_cost;
+	    //echo $lowestPrice."\n";
+	    $formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$product_grade_cost;
+	    
+	    if($internal){
+		return $lowestPrice;
+	    }else{
+		echo json_encode(array('C'=> $sku_cost, 'W'=> $sku_weight, 'S'=> $sku_shipping_fee, 'L'=>$lowestPrice, 'F'=> $formula));
+	    }
 	}
     }
     
@@ -2952,7 +2864,8 @@ class Service extends Base{
 	$long_description = $row['long_description'];
         //-------------------------------------------    Cost    -----------------------------------------------
         //get cost field id
-        $cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
+        /*
+	$cost_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['cost']."'";
         $this->log("getSkuInfo", $cost_field_sql."<br>");
 
         $cost_field_result = mysql_query($cost_field_sql, $this->conn);
@@ -2965,9 +2878,16 @@ class Service extends Base{
         where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$cost_field_row['custom_field_id']."'";
         $this->log("getSkuInfo", $cost_value_sql."<br>");
 		
+	$cost_value_result = mysql_query($cost_value_sql, $this->conn);
+        $cost_value_row = mysql_fetch_assoc($cost_value_result);
+        $cost = $cost_value_row['short_description'];
+	*/
+	$cost = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['cost']);
+	
         //------------------------------------------- Weight -----------------------------------------
         //get weight field id
-        $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
+        /*
+	$weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
         $this->log("getSkuInfo", $weight_field_sql."<br>");
                 
         $weight_field_result = mysql_query($weight_field_sql, $this->conn);
@@ -2983,17 +2903,18 @@ class Service extends Base{
         $weight_value_result = mysql_query($weight_value_sql, $this->conn);
         $weight_value_row = mysql_fetch_assoc($weight_value_result);
         $weight = (float) $weight_value_row['short_description'];
-                
-        $cost_value_result = mysql_query($cost_value_sql, $this->conn);
-        $cost_value_row = mysql_fetch_assoc($cost_value_result);
-        $cost = $cost_value_row['short_description'];
+        */
+	$weight = (float) $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']);
         
         //----------------------------------------- Stock --------------------------------------------
-        $stock_sql = "select sum(quantity) as quantity from inventory_location where inventory_model_id = ".$inventory_model_id." group by inventory_model_id";
+        /*
+	$stock_sql = "select sum(quantity) as quantity from inventory_location where inventory_model_id = ".$inventory_model_id." group by inventory_model_id";
         $stock_result = mysql_query($stock_sql, $this->conn);
         $stock_row = mysql_fetch_assoc($stock_result);
         $stock = $stock_row['quantity'];
-        
+	*/
+	$stock = $this->getStock($inventory_model_id);
+	
 	//-----------------------------------------  Lowest Price  ------------------------------------
 	$sku_lowest_price = $this->getSkuLowestPrice($_GET['data'], true);
 	
@@ -3456,11 +3377,23 @@ class Service extends Base{
                 $result = mysql_query($sql);
                 echo $sql."\n";
             }
+	    
+	    $sku_array = explode(",", $_POST['skus']);
+	    foreach($sku_array as $sku){
+		$sql = "insert into sku_status_history (sku,status,reason) values ('".$sku."','".$_POST['status']."','".mysql_real_escape_string($_POST['reason'])."')";
+		$result = mysql_query($sql);
+                echo $sql."\n";
+	    }
         }else{
             $id = $_POST['ids'];
             $sql = "update custom_field_selection set custom_field_value_id = ".$status_array_2[$_POST['status']]." where entity_qtype_id = 2 and custom_field_value_id in (".$status_string.") and entity_id = ".$id;
             $result = mysql_query($sql);
             echo $sql."\n";
+	    
+	    $sku = $_POST['skus'];
+	    $sql = "insert into sku_status_history (sku,status,reason) values ('".$sku."','".$_POST['status']."','".mysql_real_escape_string($_POST['reason'])."')";
+	    $result = mysql_query($sql);
+	    echo $sql."\n";
         }
     }
     
