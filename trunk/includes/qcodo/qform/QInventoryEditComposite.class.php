@@ -867,6 +867,10 @@ class QInventoryEditComposite extends QControl {
 				$this->btnTakeOut->Enabled = true;
 			}
 			$this->btnRestock->Enabled = true;
+			
+			$this->btnMove->Enabled = false;
+			$this->btnTakeOut->Enabled = false;
+			$this->btnRestock->Enabled = false;
 		}
 	}
 

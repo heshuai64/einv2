@@ -338,7 +338,7 @@ Ext.onReady(function(){
             totalProperty: 'totalCount',
             idProperty: 'id',
             autoLoad:true,
-            fields: ['id', 'purchase_type','purchaser', 'vendors', 'vendors_phone', 'vendors_fax', 'purchase_status', 'generate_date', 'approval_pass_date', 'sku', 'sku_status', 'sku_title', 'sku_accessories', 'sku_stock', 'sku_virtual_stock', 'sku_purchase_in_transit', 'sku_purchase_qty', 'sku_old_purchase_qty', 'sku_price', 'sku_old_price', 'sku_total_price', 'sku_defective_qty', 'sku_rework_qty', 'sku_purchase_cycle', 'sku_three_day_flow', 'sku_week_flow', 'expected_arrival_date', 'created_by', 'created_on'],
+            fields: ['id', 'purchase_type','purchaser', 'vendors', 'vendors_phone', 'vendors_fax', 'purchase_status', 'generate_date', 'approval_pass_date', 'sku', 'sku_status', 'sku_title', 'sku_accessories', 'sku_stock', 'sku_virtual_stock', 'sku_purchase_in_transit', 'sku_arrival_qty', 'sku_no_arrival_qty', 'sku_purchase_qty', 'sku_old_purchase_qty', 'sku_price', 'sku_old_price', 'sku_total_price', 'sku_defective_qty', 'sku_rework_qty', 'sku_purchase_cycle', 'sku_three_day_flow', 'sku_week_flow', 'expected_arrival_date', 'created_by', 'created_on'],
             url:'purchase.php?action=getPurchaseOrders'
     });
     
@@ -445,41 +445,53 @@ Ext.onReady(function(){
         },{
             header: lang.Sku_Purchase_In_Transit,
             dataIndex: 'sku_purchase_in_transit',
-            width: 75,
+            width: 50,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_Arrival_Qty,
+            dataIndex: 'sku_arrival_qty',
+            width: 45,
+            align: 'center',
+            sortable: true
+        },{
+            header: lang.Sku_No_Arrival_Qty,
+            dataIndex: 'sku_no_arrival_qty',
+            width: 50,
             align: 'center',
             sortable: true
         },{
             header: lang.Sku_Old_Price,
             dataIndex: 'sku_old_price',
-            width: 65,
+            width: 45,
             align: 'center',
             renderer: renderPurchaseOrdersOldPurchasePrice,
             sortable: true
         },{
             header: lang.Sku_Price,
             dataIndex: 'sku_price',
-            width: 60,
+            width: 45,
             align: 'center',
             renderer: renderPurchaseOrdersPurchasePrice,
             sortable: true
         },{
             header: lang.Sku_Old_Purchase_Qty,
             dataIndex: 'sku_old_purchase_qty',
-            width: 85,
+            width: 63,
             align: 'center',
             renderer: renderPurchaseOrdersOldPurchaseQty,
             sortable: true
         },{
             header: lang.Sku_Purchase_Qty,
             dataIndex: 'sku_purchase_qty',
-            width: 75,
+            width: 53,
             align: 'center',
             renderer: renderPurchaseOrdersPurchaseQty,
             sortable: true
         },{
             header: lang.Sku_Total_Price,
             dataIndex: 'sku_total_price',
-            width: 60,
+            width: 40,
             align: 'center',
             sortable: true
         },{
