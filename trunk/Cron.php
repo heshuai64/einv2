@@ -39,7 +39,7 @@ class Cron extends Base{
 	    
 	    foreach($value as $sku){
 		$sku_combo = $this->getSkuCombo($sku->skuId);
-		if(count($sku_combo) > 1){
+		if(count($sku_combo) > 0){
 		    $this->log("calculateComboWeekFlow", "<br>-------------------".$sku->skuId."-------------------<br>");
 		    foreach($sku_combo as $sku_c){
 			$sql_1 = "update inventory_model set ".$flow_field." = ".($sku->flow * $sku_c['quantity'])." where inventory_model_code = '".$sku_c['attachment']."'";
