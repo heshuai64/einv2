@@ -2,7 +2,7 @@ MsgId "Weight"
 MsgStr "重量"	
 
 MsgId "Weight(kg)"
-MsgStr "重量(千克)"
+MsgStr "净重(千克)"
 
 MsgId "Pack Volume"
 MsgStr "包装体积:(mm)"
@@ -51,6 +51,24 @@ MsgStr "配件"
 
 MsgId "Product Parameters"
 MsgStr "产品参数"
+
+MsgId "Bar Cotton"
+MsgStr "条形棉"
+
+MsgId "Bar Cotton Number"
+MsgStr "条形棉个数"
+
+MsgId "Domestic Shipping Fee"
+MsgStr "国内运费"
+
+MsgId "Gross Weight(kg)"
+MsgStr "毛重(千克)"
+
+MsgId "Massive Cotton"
+MsgStr "块状棉"
+
+MsgId "Massive Cotton Number"
+MsgStr "块状棉个数"
 
 #
 MsgId "Image Manage"

@@ -2167,6 +2167,7 @@ class Service extends Base{
 	}else{
 	    $sku = $_GET['sku'];
 	    $location = $_GET['location'];
+	    $site = $_GET['site'];
 	}
 	
 	if(!empty($location)){
@@ -2259,9 +2260,9 @@ class Service extends Base{
 		    }
 		break;
 	    }
-	    $lowestPrice = 1.45 * ($sku_cost + $epe_cost + $envelope_cost + 0.09 * $sku_weight_g + (0.9 + $shipping_fee) * 10);
+	    $lowestPrice = 1.42 * ($sku_cost + $epe_cost + $envelope_cost + 0.05 * $sku_weight_g + (0.6 + $shipping_fee) * 10.6);
 	    //echo $lowestPrice."\n";
-	    $formula = "1.45 * (".$sku_cost." + ".$epe_cost." + ".$envelope_cost." + 0.09 * ".$sku_weight_g." + (0.9 + ".$shipping_fee.") * 10)";
+	    $formula = "1.42 * (".$sku_cost." + ".$epe_cost." + ".$envelope_cost." + 0.05 * ".$sku_weight_g." + (0.6 + ".$shipping_fee.") * 10.6)";
 	    if($internal){
 		return $lowestPrice;
 	    }else{
@@ -2365,9 +2366,26 @@ class Service extends Base{
 	    $sku_weight = $this->getWeightBySku($sku);
 	    //echo $sku_cost."\n";
 	    //echo $sku_shipping_fee."\n";
-	    $lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $product_grade_cost;
+	    switch($site){
+		case "US":
+		    $site_rate = 0.9;
+		break;
+	    
+		case "UK":
+		    $site_rate = 1;
+		break;
+	    
+		case "Australia":
+		    $site_rate = 1.13;
+		break;
+	    
+		case "Germany":
+		    $site_rate = 1.08;
+		break;
+	    }
+	    $lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $site_rate * $product_grade_cost;
 	    //echo $lowestPrice."\n";
-	    $formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$product_grade_cost;
+	    $formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$site_rate." * ".$product_grade_cost;
 	    
 	    if($internal){
 		return $lowestPrice;
