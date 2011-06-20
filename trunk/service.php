@@ -124,96 +124,8 @@ class Service extends Base{
             $result = mysql_query($sql, $this->conn);
             $transaction_id = mysql_insert_id($this->conn);
             
-            //-------------------------------------------   Weight   -----------------------------------------------
-            //get weight field id
-            //echo "<font color='red'><br>Weight Start<br></font>";
-            /*
-	    $weight_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['weight']."'";
-            $this->log("skuTakeOut", $weight_field_sql."<br>");
-            //echo $weight_field_sql;
-            //echo "<br>";
-            $weight_field_result = mysql_query($weight_field_sql, $this->conn);
-            $weight_field_row = mysql_fetch_assoc($weight_field_result);
-            
-            
-            //get weight value
-            $weight_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-            on cfs.custom_field_value_id=cfv.custom_field_value_id
-            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$weight_field_row['custom_field_id']."'";
-            $this->log("skuTakeOut", $weight_value_sql."<br>");
-            //echo $weight_value_sql;
-            //echo "<br>";
-            $weight_value_result = mysql_query($weight_value_sql, $this->conn);
-            $weight_value_row = mysql_fetch_assoc($weight_value_result);
-            $weight = (float)$weight_value_row['short_description'];
-            //echo "<font color='red'><br>Weight End<br></font>";
-	    */
             $weight = (float)$this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']);
-            //---------------------------------------  Envelope  ---------------------------------------------------
-            /*
-            //get envelope field id
-            echo "<font color='red'><br>Envelope Start<br></font>";
-            $envelope_field_sql = "select custom_field_id from custom_field where short_description = '".Service::$field_array['envelope']."'";
-            echo $envelope_field_sql;
-            echo "<br>";
-            $envelope_field_result = mysql_query($envelope_field_sql, $this->conn);
-            $envelope_field_row = mysql_fetch_assoc($envelope_field_result);
-            
-            
-            //get envelope value
-            $envelope_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
-            on cfs.custom_field_value_id=cfv.custom_field_value_id
-            where cfs.entity_qtype_id='2' and cfs.entity_id='".$inventory_model_id."' and cfv.custom_field_id = '".$envelope_field_row['custom_field_id']."'";
-            echo $envelope_value_sql;
-            echo "<br>";
-            $envelope_value_result = mysql_query($envelope_value_sql, $this->conn);
-            $envelope_value_row = mysql_fetch_assoc($envelope_value_result);
-            $envelope = $envelope_value_row['short_description'];
-            
-            //get envelope model id
-            $envelope_model_sql = "select inventory_model_id from inventory_model where short_description ='Envelope-".$envelope."'";
-            echo $envelope_model_sql;
-            echo "<br>";
-            $envelope_model_result = mysql_query($envelope_model_sql, $this->conn);
-            $envelope_model_row = mysql_fetch_assoc($envelope_model_result);
-            $envelope_model_id = $envelope_model_row['inventory_model_id'];
-            
-            //get envelope location
-            $envelope_location_sql = "select location_id from inventory_location where inventory_model_id = '".$envelope_model_id."'";// and quantity > ".$quantity."";
-            echo $envelope_location_sql;
-            echo "<br>";
-            $envelope_location_result = mysql_query($envelope_location_sql, $this->conn);
-            $envelope_location_row = mysql_fetch_assoc($envelope_location_result);
-            $envelope_location_id = $envelope_location_row['location_id'];
-            
-            if(!empty($envelope_location_id)){
-                //envelope add stock out transaction
-                $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','5','stock out for ".$inventory_model."','".$created_by."','".date("Y-m-d H:i:s")."')";
-                echo $sql;
-                echo "<br>";
-                $result = mysql_query($sql, $this->conn);
-                $envelope_transaction_id = mysql_insert_id($this->conn);
-                
-                //envelope stock out
-                $envelope_stock_out_sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
-                values ('".$envelope_model_id."','".$envelope_transaction_id."','".$quantity."','".$envelope_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."')";
-                echo $envelope_stock_out_sql;
-                echo "<br>";
-                $envelope_stock_out_result = mysql_query($envelope_stock_out_sql, $this->conn);
-                if($envelope_stock_out_result){
-                    //envelope update stock quantity
-                    $envelope_update_stock_sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$envelope_model_id."' and location_id = '".$envelope_location_id."'";
-                    echo $envelope_update_stock_sql;
-                    echo "<br>";
-                    $envelope_update_stock_result = mysql_query($envelope_update_stock_sql, $this->conn);
-                }
-            }else{
-                echo "Envelope Not In Location!<br>";
-            }
-            echo "<font color='red'><br>Envelope End<br></font>";
-            */
-            //----------------------------------------------------------------------------------------------------
-            
+ 
             switch($shipment_method){
                 case "B":
                     $shipment_fee = 90 * $weight;
@@ -249,6 +161,7 @@ class Service extends Base{
                 $result = mysql_query($sql, $this->conn);
                 $this->log("skuTakeOut", $sql."<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
                 echo $inventory_model." 出库成功(success).<br>";
+		return true;
                 flush();
                 $this->sendMessageToAM("/topic/SkuOutOfLibrary",
                         array("sku"=> $inventory_model,
@@ -258,7 +171,29 @@ class Service extends Base{
             }
         }else{
             echo "<font color=\'red\' size=\'7\'>SKU 不在仓库!</font>";
+	    return false;
         }
+    }
+    
+    public function clientSkuTackOut(){
+	$sku = $_GET['sku'];
+	$sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
+	//echo $sql;
+	//echo "<br>";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	$inventory_model_id = $row['inventory_model_id'];
+	$quantity = $_GET['quantity'];
+	$shipment_id = $_GET['shipment_id'];
+	$shipment_method = $_GET['shipment_method'];
+	
+	$this->log("clientSkuTackOut", print_r($_GET, true)."<br>");
+	$result = $this->skuTakeOut($sku, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
+	if($result){
+	    echo "HS:success";
+	}else{
+	    echo "HS:failure";
+	}
     }
     
     public function inventoryTakeOut($inventory_model='', $quantity='',$shipment_id='',$shipment_method=''){
@@ -2164,105 +2099,132 @@ class Service extends Base{
 	global $argv;
 	if(!empty($argv[2])){
 	    $sku = $argv[2];
+	    $location = $argv[3];
+	    $site = $argv[4];
 	}else{
 	    $sku = $_GET['sku'];
 	    $location = $_GET['location'];
 	    $site = $_GET['site'];
 	}
 	
+	$sku_shipping_fee = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['domesticShippingFee']);
+	$envelope = $this->getEnvelopeBySku($sku);
+	switch($envelope){
+	    case "XF01":
+		$envelope_cost = 0.6;
+	    break;
+	
+	    case "XF02":
+		$envelope_cost = 0.8;
+	    break;
+	
+	    case "XF03":
+		$envelope_cost = 1;
+	    break;
+	
+	    case "XF11":
+		$envelope_cost = 4.6;
+	    break;
+	
+	    case "XF12":
+		$envelope_cost = 6;
+	    break;
+	}
+
+	$bar_cotton = trim($this->getCustomFieldValueBySku($sku, Service::$field_array['barCotton']));
+	$bar_cotton_num = (int) $this->getCustomFieldValueBySku($sku, Service::$field_array['barCottonNumber']);
+	switch($bar_cotton){
+	    case "ZM01":
+		$bar_cotton_cost = 0.4;
+	    break;
+	
+	    case "ZM02":
+		$bar_cotton_cost = 0.5;
+	    break;
+	
+	    case "ZM03":
+		$bar_cotton_cost = 0.7;
+	    break;
+	
+	    default:
+		$bar_cotton_cost = 0;
+	    break;
+	}
+	
+	$massive_cotton = trim($this->getCustomFieldValueBySku($sku, Service::$field_array['massiveCotton']));
+	$massive_cotton_num = (int) $this->getCustomFieldValueBySku($sku, Service::$field_array['massiveCottonNumber']);
+	 switch($massive_cotton){
+	    case "ZM11":
+		$massive_cotton_cost = 0.75;
+	    break;
+	
+	    default:
+		$massive_cotton_cost = 0;
+	    break;
+	}
+	
+	$sku_cost = (float) $this->getSkuCost($sku, true);
+	$sku_weight = (float) $this->getWeightBySku($sku);
+	
+	//---------------------------------------------------------------------------------------------------    
 	if(!empty($location)){
-	    $epe = $this->getCustomFieldValueBySku($sku, Service::$field_array['EPE']);
-	    switch($epe){
-		case "2TX500mmX130mmX1":
-		    $epe_cost = 1;
-		break;
-	    
-		case "4TX500mmX130mmX1":
-		    $epe_cost = 1;
-		break;
-	    
-		case "4TX500mmX130mmX2":
-		    $epe_cost = 2;
-		break;
-	    
-		default:
-		    $epe_cost = 1;
-		break;
-	    }
-	    
-	    $envelope = $this->getCustomFieldValueBySku($sku, Service::$field_array['envelope']);
-	    switch($envelope){
-		case "S":
-		    $envelope_cost = 0.8;
-		break;
-	    
-		case "M":
-		    $envelope_cost = 1.2;
-		break;
-	    
-		case "L":
-		    $envelope_cost = 2.5;
-		break;
-	    
-		case "X":
-		    $envelope_cost = 4;
-		break;
-	    }
-	    
-	    $sku_cost = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['cost']);
-	    $sku_weight = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['weight']);
-	    $sku_weight_g = $sku_weight * 1000;
 	    $pack_volume = $this->getCustomFieldValueBySku($sku, Service::$field_array['packVolume']);
+	    //echo $pack_volume;
 	    if(empty($pack_volume)){
 		$pack_volume = "over353*250*25";
 	    }
 	    switch($pack_volume){
 		case "max240*165*5mm":
-		    if($sku_weight_g < 80){
+		    if($sku_weight < 0.08){
 			$shipping_fee = 0.36;
-		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
+		    }elseif($sku_weight >= 0.08 && $sku_weight < 0.2){
 			$shipping_fee = 0.92;
-		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+		    }elseif($sku_weight >= 0.2 && $sku_weight < 0.4){
 			$shipping_fee = 1.23;
-		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+		    }elseif($sku_weight >= 0.4 && $sku_weight < 0.6){
 			$shipping_fee = 1.76;
-		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+		    }elseif($sku_weight >= 0.6 && $sku_weight < 0.8){
 			$shipping_fee = 3.15;
+		    }else{
+			$shipping_fee = 4.41;
 		    }
-		    
 		break;
 	    
 		case "max353*250*25":
-		    if($sku_weight_g < 80){
+		    if($sku_weight < 0.08){
 			$shipping_fee = 0.58;
-		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
+		    }elseif($sku_weight >= 0.08 && $sku_weight < 0.2){
 			$shipping_fee = 0.92;
-		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+		    }elseif($sku_weight >= 0.2 && $sku_weight < 0.4){
 			$shipping_fee = 1.23;
-		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+		    }elseif($sku_weight >= 0.4 && $sku_weight < 0.6){
 			$shipping_fee = 1.76;
-		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+		    }elseif($sku_weight >= 0.6 && $sku_weight < 0.8){
 			$shipping_fee = 3.15;
+		    }else{
+			$shipping_fee = 4.41;
 		    }
 		break;
 	    
 		case "over353*250*25":
-		    if($sku_weight_g < 80){
+		    if($sku_weight < 0.08){
 			$shipping_fee = 1.33;
-		    }elseif($sku_weight_g >= 80 && $sku_weight_g < 200){
-			$shipping_fee = 1.76;
-		    }elseif($sku_weight_g >= 200 && $sku_weight_g < 400){
+		    }elseif($sku_weight >= 0.08 && $sku_weight < 0.2){
+			$shipping_fee = 1.72;
+		    }elseif($sku_weight >= 0.2 && $sku_weight < 0.4){
 			$shipping_fee = 2.16;
-		    }elseif($sku_weight_g >= 400 && $sku_weight_g < 600){
+		    }elseif($sku_weight >= 0.4 && $sku_weight < 0.6){
 			$shipping_fee = 2.61;
-		    }elseif($sku_weight_g >= 600 && $sku_weight_g < 800){
+		    }elseif($sku_weight >= 0.6 && $sku_weight < 0.8){
 			$shipping_fee = 3.15;
+		    }else{
+			$shipping_fee = 4.41;
 		    }
 		break;
 	    }
-	    $lowestPrice = 1.42 * ($sku_cost + $epe_cost + $envelope_cost + 0.05 * $sku_weight_g + (0.6 + $shipping_fee) * 10.6);
+	    $lowestPrice = ($sku_cost + 50 * $sku_weight + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num + (0.6 + $shipping_fee) * 10.6) * 1.16 * 1.18;
 	    //echo $lowestPrice."\n";
-	    $formula = "1.42 * (".$sku_cost." + ".$epe_cost." + ".$envelope_cost." + 0.05 * ".$sku_weight_g." + (0.6 + ".$shipping_fee.") * 10.6)";
+	    $formula = "(".$sku_cost." + 50 * ".$sku_weight." + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num." + (0.6 + ".$shipping_fee.") * 10.6) * 1.16 * 1.18";
 	    if($internal){
 		return $lowestPrice;
 	    }else{
@@ -2270,122 +2232,36 @@ class Service extends Base{
 	    }
 	//---------------------------------------------------------------------------------------------------    
 	}else{
-	    $sku_shipping_fee = $this->getShippingFeeBySku($sku, $this->getShippingMethodBySku(json_encode(array('skuId'=>$sku, 'quantity'=>1))));
-	    $envelope = $this->getEnvelopeBySku($sku);
-	    switch($envelope){
-		case "S":
-		    $envelope_cost = 0.8;
-		break;
-	    
-		case "M":
-		    $envelope_cost = 1.2;
-		break;
-	    
-		case "L":
-		    $envelope_cost = 4.6;
-		break;
-	    
-		case "XL":
-		    $envelope_cost = 6;
-		break;
-	    }
-	    $category = $this->getCategoryBySku($sku);
-	    switch($category){
-		case "Battery":
-		    $category_cost = 1.3;
-		break;
-	    
-		case "Power Tools":
-		    $category_cost = 1.3;
-		break;
-	    
-		case "Game":
-		    $category_cost = 1.4;
-		break;
-	    
-		case "Security":
-		    $category_cost = 1.3;
-		break;
-	    
-		default:
-		    $category_cost = 1.5;
-		break;
-	    }
-	    
-	    $epe_cost = $this->getEPEBySku($sku);
-	    switch($epe_cost){
-		case "2TX500mmX130mmX1":
-		    $epe_cost = 1;
-		break;
-	    
-		case "4TX500mmX130mmX2":
-		    $epe_cost = 2;
-		break;
-	    
-		case "4TX500mmX130mmX1":
-		    $epe_cost = 1;
-		break;
-	    
-		default:
-		    $epe_cost = 1;
-		break;
-	    }
-	    
-	    $productGrade = $this->getProductGradeBySku($sku);
-	    switch($productGrade){
-		case "A":
-		    $product_grade_cost = 1.28;
-		break;
-	    
-		case "B":
-		    $product_grade_cost = 1.30;
-		break;
-	    
-		case "C":
-		    $product_grade_cost = 1.35;
-		break;
-	    
-		case "D":
-		    $product_grade_cost = 1.4;
-		break;
-	    
-		case "E":
-		    $product_grade_cost = 1.45;
-		break;
-	    
-		case "F":
-		    $product_grade_cost = 1.5;
-		break;
-	    
-		default :
-		    $product_grade_cost = 1;
-		break;
-	    }
-	    
-	    $sku_cost = $this->getSkuCost($sku, true);
-	    $sku_weight = $this->getWeightBySku($sku);
-	    //echo $sku_cost."\n";
-	    //echo $sku_shipping_fee."\n";
+
 	    switch($site){
 		case "US":
-		    $site_rate = 0.9;
+		    $site_arg_1 = 0.7;
+		    $site_arg_2 = 1.15;
 		break;
 	    
 		case "UK":
-		    $site_rate = 1;
+		    $site_arg_1 = 1;
+		    $site_arg_2 = 1.2;
 		break;
 	    
 		case "Australia":
-		    $site_rate = 1.13;
+		    $site_arg_1 = 2.4;
+		    $site_arg_2 = 1.28;
 		break;
 	    
 		case "Germany":
-		    $site_rate = 1.08;
+		    $site_arg_1 = 1;
+		    $site_arg_2 = 1.35;
 		break;
 	    }
-	    $lowestPrice = ($sku_cost * 1.06 + $envelope_cost + $epe_cost + $sku_shipping_fee + 2.4) * $site_rate * $product_grade_cost;
+
+	    $lowestPrice = (($sku_cost + $sku_weight * 90 + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num) * 1.05 + $site_arg_1) * 1.2 * $site_arg_2;
 	    //echo $lowestPrice."\n";
-	    $formula = "(".$sku_cost." * 1.06 + ".$envelope_cost." + ".$epe_cost." + ".$sku_shipping_fee." + 2.4) * ".$site_rate." * ".$product_grade_cost;
+	    $formula = "((".$sku_cost." + ".$sku_weight." * 90 + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num.") * 1.05 + ".$site_arg_1.") * 1.2 * ".$site_arg_2;
+	    
+	    if($lowestPrice < 9.5){
+		$lowestPrice = 9.5;
+	    }
 	    
 	    if($internal){
 		return $lowestPrice;
