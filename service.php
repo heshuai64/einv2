@@ -2132,7 +2132,7 @@ class Service extends Base{
 	}
 
 	$bar_cotton = trim($this->getCustomFieldValueBySku($sku, Service::$field_array['barCotton']));
-	$bar_cotton_num = (int) $this->getCustomFieldValueBySku($sku, Service::$field_array['barCottonNumber']);
+	$bar_cotton_num = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['barCottonNumber']);
 	switch($bar_cotton){
 	    case "ZM01":
 		$bar_cotton_cost = 0.4;
@@ -2152,7 +2152,7 @@ class Service extends Base{
 	}
 	
 	$massive_cotton = trim($this->getCustomFieldValueBySku($sku, Service::$field_array['massiveCotton']));
-	$massive_cotton_num = (int) $this->getCustomFieldValueBySku($sku, Service::$field_array['massiveCottonNumber']);
+	$massive_cotton_num = (float) $this->getCustomFieldValueBySku($sku, Service::$field_array['massiveCottonNumber']);
 	 switch($massive_cotton){
 	    case "ZM11":
 		$massive_cotton_cost = 0.75;
@@ -2234,9 +2234,11 @@ class Service extends Base{
 	}else{
 
 	    switch($site){
+		case "eBayMotors":
+		
 		case "US":
 		    $site_arg_1 = 0.7;
-		    $site_arg_2 = 1.15;
+		    $site_arg_2 = 1.18;
 		break;
 	    
 		case "UK":
@@ -2245,8 +2247,8 @@ class Service extends Base{
 		break;
 	    
 		case "Australia":
-		    $site_arg_1 = 2.4;
-		    $site_arg_2 = 1.28;
+		    $site_arg_1 = 2;
+		    $site_arg_2 = 1.3;
 		break;
 	    
 		case "Germany":
@@ -2254,10 +2256,21 @@ class Service extends Base{
 		    $site_arg_2 = 1.35;
 		break;
 	    }
+            
+	    $tmp = $sku_cost + $sku_weight * 90;
+            if($tmp <= 5){
+            	$arg_3 = 1;
+            }elseif($tmp <= 10){
+                $arg_3 = 0.97;
+	    }elseif($tmp <= 20){
+            	$arg_3 = 0.95;
+            }else{
+ 		$arg_3 = 0.93;
+            }
 
-	    $lowestPrice = (($sku_cost + $sku_weight * 90 + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num) * 1.05 + $site_arg_1) * 1.2 * $site_arg_2;
+	    $lowestPrice = (($sku_cost * 1.05 + $sku_weight * 90 + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num) + 1.2 + $site_arg_1) * 1.2 * $site_arg_2 * $arg_3;
 	    //echo $lowestPrice."\n";
-	    $formula = "((".$sku_cost." + ".$sku_weight." * 90 + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num.") * 1.05 + ".$site_arg_1.") * 1.2 * ".$site_arg_2;
+	    $formula = "((".$sku_cost." * 1.05 + ".$sku_weight." * 90 + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num.") + 1.2 + ".$site_arg_1.") * 1.2 * ".$site_arg_2." * ".$arg_3;
 	    
 	    if($lowestPrice < 9.5){
 		$lowestPrice = 9.5;
@@ -3376,10 +3389,17 @@ class Service extends Base{
     }
     
     public function setDefaultSkuCompanyContact(){
-	$sql = "update sku_company_contact_price set `default` = 1 where id = ".$_POST['id'];
-	//echo $sql;
+	$sql = "select count(*) as num from sku_company_contact_price where `default` = 1 and sku = '".$_POST['sku']."'";
 	$result = mysql_query($sql, $this->conn);
-        echo $result;
+	$row = mysql_fetch_assoc($result);
+	if($row['num'] > 0){
+	    echo "2";
+	}else{
+	    $sql = "update sku_company_contact_price set `default` = 1 where id = ".$_POST['id'];
+	    //echo $sql;
+	    $result = mysql_query($sql, $this->conn);
+	    echo $result;
+	}
     }
     
     public function caclCost(){
