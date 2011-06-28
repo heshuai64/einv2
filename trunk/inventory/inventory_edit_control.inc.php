@@ -391,10 +391,15 @@ if(in_array($currency_user_role, $role_1)){
 			});
 		}
 		
-		function set_default_sku_company_contact(id){
-			$.post("/inventory/service.php?action=setDefaultSkuCompanyContact", { id: id},
+		function set_default_sku_company_contact(id, sku){
+			$.post("/inventory/service.php?action=setDefaultSkuCompanyContact", { id: id, sku: sku},
 				function(data){
-				//window.location.reload();	
+					if(data == 2){
+						alert("已经设置默认供应商,请先删除默认供应商!");
+					}else{
+						window.location.reload();	
+					}
+				
 				//$('#combo-list-panel').load('/inventory/service.php?action=getSKuComboList&sku=<?=$sku?>');		
 			});
 		}
@@ -467,7 +472,7 @@ if(in_array($currency_user_role, $role_1)){
 		$vendors_table .= $row['created_by'];
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
-		$vendors_table .= "<input type='button' value='".QApplication::Translate('Set Default')."' onClick='set_default_sku_company_contact(".$row['id'].")'><input type='button' value='".QApplication::Translate('Delete')."' onClick='delete_sku_company_contact_price(".$row['id'].")'>";
+		$vendors_table .= "<input type='button' value='".QApplication::Translate('Set Default')."' onClick='set_default_sku_company_contact(".$row['id'].", \"".$row['sku']."\")'><input type='button' value='".QApplication::Translate('Delete')."' onClick='delete_sku_company_contact_price(".$row['id'].")'>";
 		$vendors_table .= "</td>";
 		$vendors_table .= "</tr>";
 	}
@@ -665,6 +670,7 @@ $row = mysql_fetch_assoc($result);
 </div>
 <br><br>
 
+<!--
 <div id="purchase-panel" class="manage-block">
 	<h2><?=QApplication::Translate('Purchase In The Way')?></h2>
 	<div id="add-purchase-panel">
@@ -768,6 +774,7 @@ $row = mysql_fetch_assoc($result);
 		</script>
 	</div>
 </div>
+-->
 <?php
 }
 $this->pnlAttachments->Render();
