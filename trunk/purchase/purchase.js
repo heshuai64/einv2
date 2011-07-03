@@ -287,8 +287,22 @@ Ext.onReady(function(){
     
     */
     function renderPurchaseOrdersId(v, p, r){
+        var today = new Date();
+        var tmp1 = today.getMonth() + 1;
+        if(tmp1 < 10){
+            tmp1 = "0" + tmp1;
+        }
+        var tmp2 = today.getDate();
+        if(tmp2 < 10){
+            tmp2 = "0" + tmp2;
+        }
+        
+        var today_string = today.getFullYear().toString() + "-" + tmp1 + "-" + tmp2;
+        
         if(r.data.purchase_status == 4){
             v = "<font color='blue'>"+v+"</font>";
+        }else if(r.data.purchase_status == 5 && r.data.expected_arrival_date != "0000-00-00" && r.data.expected_arrival_date <= today_string){
+            v = "<font color='red'>"+v+"</font>";
         }
         return v;
     }
@@ -540,6 +554,7 @@ Ext.onReady(function(){
         listeners: {'dblclick': function(e){
                 var selections = purchaseOrdersGrid.selModel.getSelections();
                 var purchase_orders_id = selections[0].data.id;
+                var sku = selections[0].data.sku;
                 
                 var vendorsForm = new Ext.FormPanel({
                     autoScroll:true,
@@ -557,7 +572,7 @@ Ext.onReady(function(){
                                 store: new Ext.data.JsonStore({
                                     autoLoad: true,
                                     fields: ['id', 'name'],
-                                    url: "purchase.php?action=getVendors"
+                                    url: "purchase.php?action=getVendors&sku="+sku
                                 }),
                                 valueField:'id',
                                 displayField:'name',
@@ -589,7 +604,17 @@ Ext.onReady(function(){
                                 selectOnFocus:true,
                                 fieldLabel:lang.Contacts,
                                 name:"contact_id",
-                                hiddenName:"contact_id"
+                                hiddenName:"contact_id",
+                                listeners: {
+                                    select: function(c, r, i){
+                                        //alert(r.id);
+                                        vendorsForm.getForm().load({url:'purchase.php?action=getPurchaseOrdersVendors', 
+                                            method:'GET', 
+                                            params: {contact_id: r.id}, 
+                                            waitMsg:'Please wait...'
+                                        });
+                                    }
+                                }
                               },{
                                 xtype:"textfield",
                                 fieldLabel:lang.Office_Phone,
