@@ -91,6 +91,7 @@ class Purchase extends Base{
     }
     
     public function getPurchaseOrders(){
+	session_start();
 	if(empty($_POST['limit']) && empty($_POST['start'])){
 	    $limit = 20;
 	    $start = 0;
@@ -141,6 +142,14 @@ class Purchase extends Base{
 	$i = 0;
 	$array = "";
         while($row = mysql_fetch_assoc($result)){
+	    if(!empty($_SESSION['po_sku_real_time'])){
+		$row['sku_stock'] = $this->getStock("", $row['sku']);
+		$row['sku_virtual_stock'] = $this->getVirtualStock("", $row['sku']);
+		$row['sku_purchase_in_transit'] = $this->getSkuPurchaseInTransit($row['sku']);
+		$flow = $this->getFlow("", $row['sku']);
+		$row['sku_three_day_flow'] = $flow['three_day_flow'];
+		$row['sku_week_flow'] = $flow['week_flow_1'];
+	    }
 	    $row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
             $array[] = $row;
             $i++;
@@ -233,9 +242,15 @@ class Purchase extends Base{
     }
     
     public function getPurchaseOrdersVendors(){
-	$sql = "select vendors_id,contact_id,sku from purchase_orders where id = '".$_GET['id']."'";
-	$result = mysql_query($sql);
-	$row = mysql_fetch_assoc($result);
+	if(!empty($_GET['contact_id'])){
+	    $sql = "select company_id as vendors_id,contact_id from contact where contact_id = '".$_GET['contact_id']."'";
+	    $result = mysql_query($sql);
+	    $row = mysql_fetch_assoc($result);
+	}else{
+	    $sql = "select vendors_id,contact_id from purchase_orders where id = '".$_GET['id']."'";
+	    $result = mysql_query($sql);
+	    $row = mysql_fetch_assoc($result);
+	}
 	$contact = $this->getContactById($row['contact_id']);
 	$company = $this->getCompanyById($row['vendors_id']);
 	$address = $this->getAddressById($company['address_id']);
@@ -252,7 +267,7 @@ class Purchase extends Base{
     public function deletePurchaseOrders(){
 	$ids = explode(",", $_POST['ids']);
 	foreach($ids as $id){
-	    $sql = "update purchase_orders set purchase_status = 8 where id = '".$id."'";
+	    $sql = "update purchase_orders set modified_by = '".$this->getCurrentUserName()."',purchase_status = 8 where id = '".$id."'";
 	    $result = mysql_query($sql, $this->conn);
 	}
 	echo "1";
@@ -393,7 +408,7 @@ class Purchase extends Base{
 		if(!empty($remark)){
 		    $remark = ",remark='".mysql_real_escape_string($remark)."'";
 		}
-		$sql_1 = "update purchase_orders set purchase_status = ".$status.$remark." where id = '".$id."'";
+		$sql_1 = "update purchase_orders set modified_by = '".$this->getCurrentUserName()."',purchase_status = ".$status.$remark." where id = '".$id."'";
 		$result_1 = mysql_query($sql_1, $this->conn);
 	    }
 	    echo "1";
@@ -472,7 +487,7 @@ class Purchase extends Base{
 	$array['sku_purchase_cycle'] = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['purchaseCycle']);
 	$array['sku_defective_qty'] = "";
 	$array['sku_rework_qty'] = "";
-	$array['created_by'] = "system";
+	$array['created_by'] = $this->getCurrentUserName();
 	$array['created_on'] = date("Y-m-d h:i:s");
 	
 	$result = $this->_C("purchase_orders", $array);
@@ -623,10 +638,21 @@ class Purchase extends Base{
     
     public function getVendors(){
 	$array = array();
-	$sql = "select company_id as id,short_description as name from company";
-	$result = mysql_query($sql);
-	while($row = mysql_fetch_assoc($result)){
-	    $array[] = $row;
+	if(!empty($_GET['sku'])){
+	    $sql = "select company_id from sku_company_contact_price where sku = '".$_GET['sku']."'";
+	    $result = mysql_query($sql);
+	    while($row = mysql_fetch_assoc($result)){
+		$sql_1 = "select company_id as id,short_description as name from company where company_id = ".$row['company_id'];
+		$result_1 = mysql_query($sql_1);
+		$row_1 = mysql_fetch_assoc($result_1);
+		$array[] = $row_1;
+	    }
+	}else{
+	    $sql = "select company_id as id,short_description as name from company";
+	    $result = mysql_query($sql);
+	    while($row = mysql_fetch_assoc($result)){
+		$array[] = $row;
+	    }
 	}
 	echo json_encode($array);
     }

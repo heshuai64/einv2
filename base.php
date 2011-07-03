@@ -455,5 +455,16 @@ class Base{
 	}
 	return $array;
     }
+    
+    public function getFlow($inventory_model_id="", $sku=""){
+	if(!empty($inventory_model_id)){
+	    $sql = "select three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model where inventory_model_id = ".$inventory_model_id;
+	}else{
+	    $sql = "select three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model where inventory_model_code = '".$sku."'";
+	}
+	$result = mysql_query($sql, $this->conn);
+        $row = mysql_fetch_assoc($result);
+	return $row;
+    }
 }
 ?>
