@@ -2122,6 +2122,10 @@ class Service extends Base{
 		$envelope_cost = 1;
 	    break;
 	
+	    case "XF04":
+		$envelope_cost = 1.8;
+	    break;
+	
 	    case "XF11":
 		$envelope_cost = 4.6;
 	    break;
@@ -2222,9 +2226,9 @@ class Service extends Base{
 		    }
 		break;
 	    }
-	    $lowestPrice = ($sku_cost + 50 * $sku_weight + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num + (0.6 + $shipping_fee) * 10.6) * 1.16 * 1.18;
+	    $lowestPrice = ($sku_cost + 50 * $sku_weight + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num + (0.3 + $shipping_fee) * 10.1) * 1.16 * 1.18;
 	    //echo $lowestPrice."\n";
-	    $formula = "(".$sku_cost." + 50 * ".$sku_weight." + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num." + (0.6 + ".$shipping_fee.") * 10.6) * 1.16 * 1.18";
+	    $formula = "(".$sku_cost." + 50 * ".$sku_weight." + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num." + (0.3 + ".$shipping_fee.") * 10.1) * 1.16 * 1.18";
 	    if($internal){
 		return $lowestPrice;
 	    }else{
@@ -2238,7 +2242,7 @@ class Service extends Base{
 		
 		case "US":
 		    $site_arg_1 = 0.7;
-		    $site_arg_2 = 1.18;
+		    $site_arg_2 = 1.15;
 		break;
 	    
 		case "UK":
@@ -2248,12 +2252,12 @@ class Service extends Base{
 	    
 		case "Australia":
 		    $site_arg_1 = 2;
-		    $site_arg_2 = 1.3;
+		    $site_arg_2 = 1.28;
 		break;
 	    
 		case "Germany":
-		    $site_arg_1 = 1;
-		    $site_arg_2 = 1.35;
+		    $site_arg_1 = 1.5;
+		    $site_arg_2 = 1.4;
 		break;
 	    }
             
@@ -2267,10 +2271,11 @@ class Service extends Base{
             }else{
  		$arg_3 = 0.93;
             }
-
-	    $lowestPrice = (($sku_cost * 1.05 + $sku_weight * 90 + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num) + 1.2 + $site_arg_1) * 1.2 * $site_arg_2 * $arg_3;
+	    $operation_fee = 0.5;
+	    
+	    $lowestPrice = (($sku_cost * 1.05 + $sku_weight * 90 + $sku_shipping_fee + $envelope_cost + $bar_cotton_cost * $bar_cotton_num + $massive_cotton_cost * $massive_cotton_num) + $operation_fee + $site_arg_1) * 1.2 * $site_arg_2 * $arg_3;
 	    //echo $lowestPrice."\n";
-	    $formula = "((".$sku_cost." * 1.05 + ".$sku_weight." * 90 + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num.") + 1.2 + ".$site_arg_1.") * 1.2 * ".$site_arg_2." * ".$arg_3;
+	    $formula = "((".$sku_cost." * 1.05 + ".$sku_weight." * 90 + ".$sku_shipping_fee." + ".$envelope_cost." + ".$bar_cotton_cost." * ".$bar_cotton_num." + ".$massive_cotton_cost." * ".$massive_cotton_num.") + ".$operation_fee." + ".$site_arg_1.") * 1.2 * ".$site_arg_2." * ".$arg_3;
 	    
 	    if($lowestPrice < 9.5){
 		$lowestPrice = 9.5;

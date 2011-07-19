@@ -12,6 +12,8 @@ lang = {
     One_Week_Flow: '第一周流量',
     Two_Week_Flow: '第二周流量',
     Three_Week_Flow: '第三周流量',
+    Purchase_Cycle: '采购周期',
+    Sku_Min_Purchase_count: '最小采购数',
     Status: '状态',
     Type: '类型',
     Purchase_Planned_Type: '采购计划类型',
@@ -37,6 +39,7 @@ lang = {
     Payment_Method: '付款方法',
     Receive_Accounts: '收款账户',
     Address: '地址',
+    WebSite: '站点',
     
     Purchase_Status: '采购状态',
     Generate_Purchase_Orders_Date: '下采购订单',
@@ -106,5 +109,6 @@ lang = {
     Success: '成功',
     Failure: '错误',
     Network_Error: '网络错误,请稍后再试.',
-    Total_Record: '总记录'
+    Total_Record: '总记录',
+    Result: '结果'
 }

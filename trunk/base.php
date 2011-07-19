@@ -448,6 +448,7 @@ class Base{
     }
     
     public function getSkuCombo($sku){
+	$array = array();
 	$sql = "select attachment,quantity from combo where sku = '".$sku."'";
 	$result = mysql_query($sql, $this->conn);
 	while($row = mysql_fetch_assoc($result)){
