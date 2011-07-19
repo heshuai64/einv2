@@ -162,6 +162,7 @@ class Purchase extends Base{
 	$sql = "select * from purchase_orders where id = '".$_GET['id']."'";
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
+	$row['sku_img'] = "/inventory/inventory_images/".substr($row['sku'], 0, 2)."/".$row['sku'].".jpg";
 	echo '['.json_encode($row).']';
 	mysql_free_result($result);
     }
@@ -170,6 +171,13 @@ class Purchase extends Base{
 	$sql = "select * from purchase_orders where id = '".$_POST['id']."'";
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
+	
+	if($_POST['expected_arrival_date'] > $row['expected_arrival_date']){
+	    echo '{success: false,
+		      errors: {message: "请设置小于预计到货日期!"}
+		}';
+	    return 0;
+	}
 	
 	if($row['sku_price'] != $_POST['sku_price']){
 	    $sql_1 = "update sku_company_contact_price set purchase_price = '".$_POST['sku_price']."' 
@@ -202,7 +210,7 @@ class Purchase extends Base{
 	    $result = mysql_query($sql);
 	}
 	
-	$sql = "update purchase_orders set remark='".mysql_real_escape_string($_POST['remark'])."',sku_total_price = sku_price * sku_purchase_qty 
+	$sql = "update purchase_orders set remark='".mysql_real_escape_string($_POST['remark'])."',sku_total_price = sku_price * sku_purchase_qty,expected_arrival_date='".$_POST['expected_arrival_date']."'  
 	where id = '".$_POST['id']."'";
 	//echo $sql."\n";
 	$result = mysql_query($sql);
@@ -258,6 +266,7 @@ class Purchase extends Base{
 	$row['phone_office'] = $contact['phone_office'];
 	$row['phone_mobile'] = $contact['phone_mobile'];
 	$row['address'] = $address['short_description'];
+	$row['website'] = $company['website'];
 	$row['payment_method'] = str_replace(" ", "_", strtolower($this->getCustomFieldValue($row['vendors_id'], $this->conf['fieldArray']['paymentMethod'], $this->conf['entityQtype']['Company'])));
 	$row['receive_account'] = $this->getCustomFieldValue($row['vendors_id'], $this->conf['fieldArray']['receiveAccounts'], $this->conf['entityQtype']['Company']);
 	echo '['.json_encode($row).']';
@@ -419,18 +428,21 @@ class Purchase extends Base{
     
     public function createPurchaseOrders($sku = "", $sku_price = "", $sku_purchase_qty = "", $internal = false){
 	$array = array();
-	if(!empty($_POST)){
+	if(empty($sku)){
 	    $sku = $_POST['sku'];
 	    $sku_price = $_POST['sku_price'];
 	    $sku_purchase_qty = $_POST['sku_purchase_qty'];
 	    $vendors_id = $_POST['vendors_id'];
 	    $contact_id = $_POST['contact_id'];
 	}else{
-	    $sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."'";
+	    $sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."' and `default` = 1";
 	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
 	    $vendors_id = $row['company_id'];
 	    $contact_id = $row['contact_id'];
+	    if(empty($sku_price)){
+		$sku_price = $row['purchase_price'];
+	    }
 	    $array['sku_old_price'] = $row['purchase_price'];
 	}
 	
@@ -602,6 +614,10 @@ class Purchase extends Base{
 	    $where .= " and purchase_status = 1";
 	}
 	
+	if(!empty($_POST['go_inventory_date'])){
+	    $where .= " and go_inventory_on like '".substr($_POST['go_inventory_date'], 0, 10)."%'";
+	}
+	
 	$sql = "select * from go_inventory_orders".$where;
 	$result = mysql_query($sql, $this->conn);
 	$i = 0;
@@ -679,6 +695,47 @@ class Purchase extends Base{
 	    $array[] = $row;
 	}
 	echo json_encode($array);
+    }
+    
+    public function getVendorsSkuFlow(){
+	$vendors_id = $_POST['vendors_id'];
+	$i = 0;
+	$sql = "select sku from sku_company_contact_price where company_id = ".$vendors_id;
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+	    $sql_1 = "select inventory_model_id,long_description as sku_title,three_day_flow as sku_three_day_flow,week_flow_1 as sku_week_flow_1,week_flow_2 as sku_week_flow_2,week_flow_3 as sku_week_flow_3 from inventory_model where inventory_model_code = '".$row['sku']."'";
+	    $result_1 = mysql_query($sql_1);
+	    $row_1 = mysql_fetch_assoc($result_1);
+	    if($row['sku'] == $_POST['exclude_sku']){
+		continue;
+	    }
+	    $row_1['sku'] = $row['sku'];
+	    $row_1['sku_status'] = $this->getCustomFieldValue($row_1['inventory_model_id'], $this->conf['fieldArray']['skuStatus']);
+	    $row_1['sku_stock'] = $this->getStock($row_1['inventory_model_id']);
+	    $row_1['sku_virtual_stock'] = $this->getVirtualStock($row_1['inventory_model_id']);
+	    $row_1['sku_min_purchase_count'] = $this->getCustomFieldValue($row_1['inventory_model_id'], $this->conf['fieldArray']['MOQ']);
+	    $row_1['sku_purchase_in_transit'] = $this->getPurchaseInTransit($row_1['inventory_model_id']);
+	    $row_1['sku_purchase_cycle'] = $this->getCustomFieldValue($row_1['inventory_model_id'], $this->conf['fieldArray']['purchaseCycle']);
+	    $array[] = $row_1;
+	    $i++;
+	}
+	echo json_encode(array('totalCount'=>$i, 'records'=>$array));
+    }
+    
+    public function createPOFromSku(){
+	$po_id = "";
+	if(strpos($_POST['skus'], ",")){
+	    $sku_array = explode(",", $_POST['skus']);
+	    foreach($sku_array as $sku){
+		$quantity = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['MOQ']);
+		$po_id .= $this->createPurchaseOrders($sku, "", $quantity, true).",";
+	    }
+	    $po_id = substr($po_id, 0, -1);
+	}else{
+	    $quantity = $this->getCustomFieldValueBySku($_POST['skus'], $this->conf['fieldArray']['MOQ']);
+	    $po_id = $this->createPurchaseOrders($_POST['skus'], "", $quantity, true);
+	}
+	echo $po_id;
     }
 }
 

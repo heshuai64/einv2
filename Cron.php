@@ -40,14 +40,15 @@ class Cron extends Base{
 	    foreach($value as $sku){
 		$sku_combo = $this->getSkuCombo($sku->skuId);
 		if(count($sku_combo) > 0){
-		    $this->log("calculateComboWeekFlow", "<br>-------------------".$sku->skuId."-------------------<br>");
+		    $this->log("calculateWeekFlow", "-------------------".$sku->skuId." combo -------------------<br>");
 		    foreach($sku_combo as $sku_c){
-			$sql_1 = "update inventory_model set ".$flow_field." = ".($sku->flow * $sku_c['quantity'])." where inventory_model_code = '".$sku_c['attachment']."'";
-			$this->log("calculateComboWeekFlow", $sql_1."<br>");
+			$sql_1 = "update inventory_model set ".$flow_field." = ".$flow_field." + ".($sku->flow * $sku_c['quantity'])." where inventory_model_code = '".$sku_c['attachment']."'";
+			$this->log("calculateWeekFlow", $sql_1."<br>");
 			$result_1 = mysql_query($sql_1, $this->conn);
 		    }
+		    $this->log("calculateWeekFlow", "-------------------".$sku->skuId." combo -------------------<br>");
 		}else{
-		    $sql_1 = "update inventory_model set ".$flow_field." = ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
+		    $sql_1 = "update inventory_model set ".$flow_field." = ".$flow_field." + ".$sku->flow." where inventory_model_code = '".$sku->skuId."'";
 		    $this->log("calculateWeekFlow", $sql_1."<br>");
 		    $result_1 = mysql_query($sql_1, $this->conn);
 		}
@@ -409,6 +410,12 @@ class Cron extends Base{
 	$sql_1 = "select inventory_model_id,inventory_model_code,short_description,long_description,three_day_flow,week_flow_1,week_flow_2,week_flow_3 from inventory_model order by inventory_model_code";
 	$result_1 = mysql_query($sql_1, $this->conn);
         while($row_1 = mysql_fetch_assoc($result_1)){
+	    //check combo
+	    if(count($this->getSkuCombo($row_1['inventory_model_code'])) > 0){
+		echo $row_1['inventory_model_code']." is combo.\n";
+		continue;
+	    }
+	    
             //get status value
             $status_value_sql = "select cfv.short_description from custom_field_selection as cfs left join custom_field_value as cfv 
             on cfs.custom_field_value_id=cfv.custom_field_value_id 
@@ -418,7 +425,7 @@ class Cron extends Base{
             $status_value_row = mysql_fetch_assoc($status_value_result);
             $status = $status_value_row['short_description'];
             if($status == 'new' || $status == 'waiting for approve' || $status == 'under review' || $status == 'inactive'){
-                //echo $row_1['inventory_model_code']."\n";
+                echo $row_1['inventory_model_code']." status is ".$status.".\n";
                 continue;
             }
 	    
@@ -488,7 +495,7 @@ class Cron extends Base{
 	    $purchase_in_transit = $row_8['purchase_in_transit'];
 	    */
 	    $purchase_in_transit = $this->getSkuPurchaseInTransit($row_1['inventory_model_code']);
-	    echo $row_1['inventory_model_code'].":".$stock."|".$virtual_stock."|".$purchase_in_transit."\n";
+	    echo $row_1['inventory_model_code']."|".$stock."|".$virtual_stock."|".$purchase_in_transit."\n";
 	    //continue;
 	    
 	    $buffer_day = 2;
