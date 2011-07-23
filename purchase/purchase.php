@@ -172,9 +172,9 @@ class Purchase extends Base{
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
 	
-	if($_POST['expected_arrival_date'] > $row['expected_arrival_date']){
+	if($row['expected_arrival_date'] != "0000-00-00" && ($_POST['expected_arrival_date'] > $row['expected_arrival_date'] || $row['expected_arrival_date_edited'] == 1)){
 	    echo '{success: false,
-		      errors: {message: "请设置小于预计到货日期!"}
+		      errors: {message: "预计到货日期大于原预计到货日期或预计到货日期以被设置过!"}
 		}';
 	    return 0;
 	}
@@ -210,7 +210,14 @@ class Purchase extends Base{
 	    $result = mysql_query($sql);
 	}
 	
-	$sql = "update purchase_orders set remark='".mysql_real_escape_string($_POST['remark'])."',sku_total_price = sku_price * sku_purchase_qty,expected_arrival_date='".$_POST['expected_arrival_date']."'  
+	if(!empty($_POST['expected_arrival_date'])){
+	    $sql = "update purchase_orders set expected_arrival_date='".$_POST['expected_arrival_date']."',expected_arrival_date_edited=1   
+	    where id = '".$_POST['id']."'";
+	    //echo $sql."\n";
+	    $result = mysql_query($sql);
+	}
+	
+	$sql = "update purchase_orders set remark='".mysql_real_escape_string($_POST['remark'])."',sku_total_price = sku_price * sku_purchase_qty 
 	where id = '".$_POST['id']."'";
 	//echo $sql."\n";
 	$result = mysql_query($sql);
@@ -435,7 +442,15 @@ class Purchase extends Base{
 	    $vendors_id = $_POST['vendors_id'];
 	    $contact_id = $_POST['contact_id'];
 	}else{
-	    $sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."' and `default` = 1";
+	    $sql = "select count(*) as num from sku_company_contact_price where sku = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
+	    
+	    if($row['num'] == 1){
+		$sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."'";
+	    }else{
+		$sql = "select company_id,contact_id,purchase_price from sku_company_contact_price where sku = '".$sku."' and `default` = 1";
+	    }
 	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
 	    $vendors_id = $row['company_id'];
@@ -486,6 +501,7 @@ class Purchase extends Base{
 	$result_6 = mysql_query($sql_6, $this->conn);
 	$row_6 = mysql_fetch_assoc($result_6);
 	$array['sku_title'] = $row_6['long_description'];
+	$array['sku_accessories'] = $this->getCustomFieldValueBySku($sku, $this->conf['fieldArray']['accessories']);
 	$array['sku_three_day_flow'] = $row_6['three_day_flow'];
 	$array['sku_week_flow'] = $row_6['week_flow_1'];
 	
@@ -614,11 +630,16 @@ class Purchase extends Base{
 	    $where .= " and purchase_status = 1";
 	}
 	
-	if(!empty($_POST['go_inventory_date'])){
-	    $where .= " and go_inventory_on like '".substr($_POST['go_inventory_date'], 0, 10)."%'";
+	if(!empty($_POST['go_inventory_start_date'])){
+	    $where .= " and go_inventory_on > '".substr($_POST['go_inventory_start_date'], 0, 10)."'";
+	}
+	
+	if(!empty($_POST['go_inventory_end_date'])){
+	    $where .= " and go_inventory_on < '".substr($_POST['go_inventory_end_date'], 0, 10)."'";
 	}
 	
 	$sql = "select * from go_inventory_orders".$where;
+	//echo $sql."\n";
 	$result = mysql_query($sql, $this->conn);
 	$i = 0;
 	$array = "";
@@ -662,6 +683,12 @@ class Purchase extends Base{
 		$result_1 = mysql_query($sql_1);
 		$row_1 = mysql_fetch_assoc($result_1);
 		$array[] = $row_1;
+	    }
+	}elseif(!empty($_POST['query'])){
+	    $sql = "select company_id as id,short_description as name from company where short_description like '%".$_POST['query']."%'";
+	    $result = mysql_query($sql);
+	    while($row = mysql_fetch_assoc($result)){
+		$array[] = $row;
 	    }
 	}else{
 	    $sql = "select company_id as id,short_description as name from company";

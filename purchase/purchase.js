@@ -783,9 +783,13 @@ Ext.onReady(function(){
                                 name:"address"
                               }]
                         }]
-                    },VendorsSkuFlowGrid]
+                    }]
                 })
-                                                
+                
+                if(selections[0].data.purchase_status == 1){
+                    vendorsForm.add(VendorsSkuFlowGrid);
+                }
+                
                 var vendorsWindow = new Ext.Window({
                         title: purchase_orders_id + "[<font color='red'>" + sku + "</font>]",
                         closable:true,
@@ -1661,21 +1665,32 @@ Ext.onReady(function(){
                     },
                     items:[{
                         xtype:"combo",
-                        mode: 'local',
+                        //mode: 'local',
                         store: new Ext.data.JsonStore({
-                            autoLoad: true,
+                            //autoLoad: true,
                             fields: ['id', 'name'],
                             url: "purchase.php?action=getVendors"
                         }),
                         valueField:'id',
                         displayField:'name',
                         fieldLabel: lang.Vendors,
-                        triggerAction: 'all',
-                        editable: false,
+                        //triggerAction: 'all',
+                        //editable: false,
                         listWidth: 200,
-                        selectOnFocus:true,
+                        //selectOnFocus:true,
                         name:"combovalue",
-                        hiddenName:"combovalue"
+                        hiddenName:"combovalue",
+                        
+                        displayField:'name',
+                        //typeAhead: false,
+                        minChars: 3,
+                        loadingText: 'Searching...',
+                        //pageSize:20,
+                        listeners:{
+                            select: function(c, r, i){
+                                //document.getElementById("PrimaryCategoryCategoryID").value = r.data.id;
+                            }
+                        }
                       },{
                         xtype:"textfield",
                         fieldLabel: lang.Sku,
@@ -2102,7 +2117,12 @@ Ext.onReady(function(){
                     },
                     items:[{
                         xtype:"datefield",
-                        fieldLabel: lang.Go_Inventory__Date,
+                        fieldLabel: lang.Go_Inventory_Start_Date,
+                        name:"textvalue",
+                        format:"Y-m-d"
+                    },{
+                        xtype:"datefield",
+                        fieldLabel: lang.Go_Inventory_End_Date,
                         name:"textvalue",
                         format:"Y-m-d"
                     }]
@@ -2118,7 +2138,8 @@ Ext.onReady(function(){
                         sku: Ext.getCmp("go-inventory-orders-form").getForm().items.items[1].getValue(),
                         purchase_type: Ext.getCmp("go-inventory-orders-form").getForm().items.items[2].getValue(),
                         go_inventory_orders_status: Ext.getCmp("go-inventory-orders-form").getForm().items.items[3].getValue(),
-                        go_inventory_date: Ext.getCmp("go-inventory-orders-form").getForm().items.items[4].getValue()
+                        go_inventory_start_date: Ext.getCmp("go-inventory-orders-form").getForm().items.items[4].getValue(),
+                        go_inventory_end_date: Ext.getCmp("go-inventory-orders-form").getForm().items.items[5].getValue()
                     };
                     goInventoryOrdersStore.load();
                 }
