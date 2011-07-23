@@ -3407,6 +3407,13 @@ class Service extends Base{
 	}
     }
     
+    public function cancelDefaultSkuCompanyContact(){
+	$sql = "update sku_company_contact_price set `default` = 0 where id = ".$_POST['id'];
+	//echo $sql;
+	$result = mysql_query($sql, $this->conn);
+	echo $result;
+    }
+    
     public function caclCost(){
 	//echo "3.68 * ".$_GET['price']." - 79.65 * ".$_GET['weight']." - 4.07";
 	echo 3.95 * $_GET['price'] - 81.8 * $_GET['weight'] - 4.2;
