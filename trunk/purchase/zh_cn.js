@@ -87,6 +87,8 @@ lang = {
     Go_Inventory_Orders:'采购入库单',
     Go_Inventory_Orders_Status:'入库单状态',
     Go_Inventory__Date:'入库时间',
+    Go_Inventory_Start_Date:'入库起始时间',
+    Go_Inventory_End_Date:'入库结束时间',
     Purchase_Orders_To_Go_Inventory_Orders:'采购订单转入库单',
     Go_Inventory_Orders_To_Inventory:'采购入库单入库',
     Go_Inventory_Orders_Status_Enum: {waiting: '等待入库', to_inventory: '已入库'},
