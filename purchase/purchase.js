@@ -1683,7 +1683,7 @@ Ext.onReady(function(){
                         
                         displayField:'name',
                         //typeAhead: false,
-                        minChars: 3,
+                        minChars: 2,
                         loadingText: 'Searching...',
                         //pageSize:20,
                         listeners:{

@@ -86,6 +86,9 @@ MsgStr "法文"
 MsgId "Germany"
 MsgStr "德文"
 
+MsgId "Chinese"
+MsgStr "中文"
+
 MsgId "Combo"
 MsgStr "组合"
 
