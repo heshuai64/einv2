@@ -2839,11 +2839,12 @@ class Service extends Base{
     }
     
     public function updateSkuDescription(){
+	//mysql_query("CHARACTER SET 'latin1'", $this->conn);
         $sql = "select count(*) as num from description where sku = '".$_POST['sku']."'";
         $result = mysql_query($sql, $this->conn);
         $row = mysql_fetch_assoc($result);
         if($row['num'] == 0){
-            $sql = "insert into description (sku,english,french,germany) values ('".$_POST['sku']."','".htmlentities($_POST['english'], ENT_QUOTES)."','".htmlentities($_POST['french'], ENT_QUOTES)."','".htmlentities($_POST['germany'], ENT_QUOTES)."')";
+            $sql = "insert into description (sku,english,french,germany,chinese) values ('".$_POST['sku']."','".htmlentities($_POST['english'], ENT_QUOTES)."','".htmlentities($_POST['french'], ENT_QUOTES)."','".htmlentities($_POST['germany'], ENT_QUOTES)."','".mysql_real_escape_string($_POST['chinese'])."')";
             $result = mysql_query($sql, $this->conn);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"add description success."));
@@ -2851,7 +2852,7 @@ class Service extends Base{
                 echo json_encode(array("sucess"=> false, "msg"=>"add description failure."));
             }
         }else{
-            $sql = "update description set english = '".htmlentities($_POST['english'], ENT_QUOTES)."',french = '".htmlentities($_POST['french'], ENT_QUOTES)."',germany = '".htmlentities($_POST['germany'], ENT_QUOTES)."' where sku = '".$_POST['sku']."'";
+            $sql = "update description set english = '".htmlentities($_POST['english'], ENT_QUOTES)."',french = '".htmlentities($_POST['french'], ENT_QUOTES)."',germany = '".htmlentities($_POST['germany'], ENT_QUOTES)."',chinese = '".mysql_real_escape_string($_POST['chinese'])."' where sku = '".$_POST['sku']."'";
             $result = mysql_query($sql, $this->conn);
             if($result){
                 echo json_encode(array("sucess"=> true,  "msg"=>"update description success."));
@@ -2859,6 +2860,7 @@ class Service extends Base{
                 echo json_encode(array("sucess"=> false, "msg"=>"update description failure."));
             }
         }
+	//echo $sql."\n";
     }
     
     public function updateSuppliers(){

@@ -510,7 +510,8 @@ $row = mysql_fetch_assoc($result);
 					sku     : $("#c19").val(),
 					english : e.getData(),
 					french  : f.getData(),
-					germany : g.getData()
+					germany : g.getData(),
+					chinese : h.getData()
 			       },
 				function(data){
 			    	//console.log(data);
@@ -542,6 +543,7 @@ $row = mysql_fetch_assoc($result);
 	    <li><a href="#fragment-1"><span><?=QApplication::Translate('English')?></span></a></li>
 	    <li><a href="#fragment-2"><span><?=QApplication::Translate('French')?></span></a></li>
 	    <li><a href="#fragment-3"><span><?=QApplication::Translate('Germany')?></span></a></li>
+	    <li><a href="#fragment-4"><span><?=QApplication::Translate('Chinese')?></span></a></li>
 	</ul>
 	<div id="fragment-1">
 		<textarea id="english" rows="40" cols="120"><?=html_entity_decode($row['english'], ENT_QUOTES)?></textarea>
@@ -551,6 +553,9 @@ $row = mysql_fetch_assoc($result);
 	</div>
 	<div id="fragment-3">
 		<textarea id="germany" rows="40" cols="120"><?=html_entity_decode($row['germany'], ENT_QUOTES)?></textarea>
+	</div>
+	<div id="fragment-4">
+		<textarea id="chinese" rows="40" cols="120"><?=$row['chinese']?></textarea>
 	</div>
 	<?php
 	$sql_1 = "select custom_field_value_id from custom_field_value where custom_field_id = 10 and short_description = 'active'";
@@ -573,6 +578,7 @@ $row = mysql_fetch_assoc($result);
 		var e = CKEDITOR.replace( 'english' );
 		var f = CKEDITOR.replace( 'french' );
 		var g = CKEDITOR.replace( 'germany' );
+		var h = CKEDITOR.replace( 'chinese' );
 		$('#description-tabs').tabs();
 	</script>
 </div>
