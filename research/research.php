@@ -68,6 +68,33 @@ class Research{
         echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
         mysql_free_result($result);
     }
+    
+    public function getPurchaseInfoList(){
+        if(empty($_POST['limit']) && empty($_POST['start'])){
+	    $limit = 20;
+	    $start = 0;
+	}else{
+	    $limit = $_POST['limit'];
+	    $start = $_POST['start'];
+	}
+        
+        $where = " where 1 = 1 ";
+        
+        $sql_0 = "select count(*) as totalCount from purchase_info ".$where;
+	$result_0 = mysql_query($sql_0, $this->conn);
+	$row_0 = mysql_fetch_assoc($result_0);
+	$totalCount = $row_0['totalCount'];
+	
+	$sql = "select * from purchase_info ".$where." limit $start,$limit";
+        $result = mysql_query($sql, $this->conn);
+	$i = 0;
+	$array = array();
+        while($row = mysql_fetch_assoc($result)){
+            $array[] = $row;
+        }
+        echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
+        mysql_free_result($result);
+    }
 }
 
 $service = new Research();
