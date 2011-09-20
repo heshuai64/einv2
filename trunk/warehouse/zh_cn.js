@@ -4,6 +4,13 @@ lang = {
     Status: '状态',
     Weight: '重量',
     Accessories: '配件',
+    Envelope:'信封',
+    Bar_Cotton:'条形棉',
+    Bar_Cotton_Number:'条形棉个数',
+    Massive_Cotton:'块状棉',
+    Massive_Cotton_Number:'块状棉个数',
+    Product_Parameters:'产品参数',
+    
     Image: '图片',
     Stock: '库存',
     Position_Management: '仓位管理',

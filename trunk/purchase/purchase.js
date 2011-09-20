@@ -2047,21 +2047,32 @@ Ext.onReady(function(){
                     },
                     items:[{
                         xtype:"combo",
-                        mode: 'local',
+                        //mode: 'local',
                         store: new Ext.data.JsonStore({
-                            autoLoad: true,
+                            //autoLoad: true,
                             fields: ['id', 'name'],
                             url: "purchase.php?action=getVendors"
                         }),
                         valueField:'id',
                         displayField:'name',
                         fieldLabel: lang.Vendors,
-                        triggerAction: 'all',
-                        editable: false,
+                        //triggerAction: 'all',
+                        //editable: false,
                         listWidth: 200,
-                        selectOnFocus:true,
+                        //selectOnFocus:true,
                         name:"combovalue",
-                        hiddenName:"combovalue"
+                        hiddenName:"combovalue",
+                        
+                        displayField:'name',
+                        //typeAhead: false,
+                        minChars: 2,
+                        loadingText: 'Searching...',
+                        //pageSize:20,
+                        listeners:{
+                            select: function(c, r, i){
+                                //document.getElementById("PrimaryCategoryCategoryID").value = r.data.id;
+                            }
+                        }
                       },{
                         xtype:"textfield",
                         fieldLabel: lang.Sku,
