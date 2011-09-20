@@ -30,6 +30,13 @@ class Warehouse extends Base{
 	$array['accessories'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['accessories']);
 	$array['stock'] = $this->getStock($row['id']);
 	$array['position'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['LocatorNumber']);
+	$array['product_parameters'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['productParameters']);
+	$array['envelope'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['envelope']);
+	$array['bar_cotton'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['barCotton']);
+	$array['bar_cotton_number'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['barCottonNumber']);
+	$array['massive_cotton'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['massiveCotton']);
+	$array['massive_cotton_number'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['massiveCottonNumber']);
+	
 	//$array['image'] = "http://127.0.0.1:6666/inventory/inventory_images/".substr($_GET['sku'], 0, 2)."/".$_GET['sku'].".jpg";
 	$array['image'] = "http://rich2010.3322.org:8080/inventory/inventory_images/".substr($_GET['sku'], 0, 2)."/".$_GET['sku'].".jpg";
 	echo '['.json_encode($array).']';

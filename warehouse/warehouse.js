@@ -127,7 +127,8 @@ Ext.onReady(function(){
         width: 900,
         layout:"column",
         reader:new Ext.data.JsonReader({},
-                                       ['title','status','weight','accessories','image','stock','position','pmno','pmtitle','pmqty']
+                                       ['title','status','weight','accessories','image','stock','position','pmno','pmtitle','pmqty',
+                                        'product_parameters','envelope','bar_cotton','bar_cotton_number','massive_cotton','massive_cotton_number']
                                        ),
         items:[{
             columnWidth:0.4,
@@ -190,6 +191,13 @@ Ext.onReady(function(){
                 //disabled:true,
                 width:250
               },{
+                xtype:"textfield",
+                fieldLabel:lang.Envelope,
+                id:"envelope",
+                name:"envelope",
+                //disabled:true,
+                width:250
+              },{
                 layout:"column",
                 items:[{
                     columnWidth:0.5,
@@ -239,6 +247,59 @@ Ext.onReady(function(){
                       }]
                   }]
               },{
+                layout:"column",
+                items:[{
+                    columnWidth:0.5,
+                    layout:"form",
+                    labelWidth:60,
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel:lang.Bar_Cotton,
+                        //disabled:true,
+                        name:"bar_cotton"
+                      }]
+                  },{
+                    columnWidth:0.5,
+                    layout:"form",
+                    labelWidth:70,
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel:lang.Bar_Cotton_Number,
+                        //disabled:true,
+                        name:"bar_cotton_number"
+                      }]
+                  }]
+              },{
+                layout:"column",
+                items:[{
+                    columnWidth:0.5,
+                    layout:"form",
+                    labelWidth:60,
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel:lang.Massive_Cotton,
+                        //disabled:true,
+                        name:"massive_cotton"
+                      }]
+                  },{
+                    columnWidth:0.5,
+                    layout:"form",
+                    labelWidth:70,
+                    items:[{
+                        xtype:"textfield",
+                        fieldLabel:lang.Massive_Cotton_Number,
+                        //disabled:true,
+                        name:"massive_cotton_number"
+                      }]
+                  }]
+              },{
+                xtype:"textarea",
+                fieldLabel:lang.Product_Parameters,
+                //disabled:true,
+                id:"product_parameters",
+                name:"product_parameters",
+                width:250
+                },{
                 xtype:"textarea",
                 fieldLabel:lang.Accessories,
                 //disabled:true,

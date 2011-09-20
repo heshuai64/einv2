@@ -150,7 +150,7 @@ if(!empty($_GET['intInventoryModelId'])){
 		$role[$row['role_id']] = $row['short_description'];
 	}
 	
-	$role_1 = array('Administrator', 'PPMC');
+	$role_1 = array('Administrator');
 	$role_2 = array('Administrator');
 	
 	$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];

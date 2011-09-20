@@ -172,6 +172,24 @@ class Purchase extends Base{
 	$result = mysql_query($sql);
 	$row = mysql_fetch_assoc($result);
 	
+	if($row['sku_price'] != $_POST['sku_price']){
+	    $sql_1 = "update sku_company_contact_price set purchase_price = '".$_POST['sku_price']."' 
+	    where sku = '".$row['sku']."' and company_id = '".$row['vendors_id']."' and contact_id = '".$row['contact_id']."'";    
+	    $result_1 = mysql_query($sql_1);
+	    
+	    $sql_2 = "update purchase_orders set sku_old_price = sku_price,sku_price = '".$_POST['sku_price']."',sku_price_remark = '".mysql_real_escape_string($_POST['sku_price_remark'])."' 
+	    where id = '".$_POST['id']."'";
+	    //echo $sql."\n";
+	    $result_2 = mysql_query($sql_2);
+	    
+	    $sql_3 = "update purchase_orders set sku_total_price = sku_price * sku_purchase_qty 
+	    where id = '".$_POST['id']."'";
+	    $result_3 = mysql_query($sql_3);
+	    
+	    echo '{success: true}';
+	    return 1;
+	}
+	
 	if($row['expected_arrival_date'] != "0000-00-00" && ($_POST['expected_arrival_date'] > $row['expected_arrival_date'] || $row['expected_arrival_date_edited'] == 1)){
 	    echo '{success: false,
 		      errors: {message: "预计到货日期大于原预计到货日期或预计到货日期以被设置过!"}
@@ -179,11 +197,6 @@ class Purchase extends Base{
 	    return 0;
 	}
 	
-	if($row['sku_price'] != $_POST['sku_price']){
-	    $sql_1 = "update sku_company_contact_price set purchase_price = '".$_POST['sku_price']."' 
-	    where sku = '".$row['sku']."' and company_id = '".$row['vendors_id']."' and contact_id = '".$row['contact_id']."'";    
-	    $result_1 = mysql_query($sql_1);
-	}
 	/*
 	$sql = "update purchase_orders set sku_old_purchase_qty = sku_purchase_qty,sku_purchase_qty = '".$_POST['sku_purchase_qty']."',sku_purchase_qty_remark = '".mysql_real_escape_string($_POST['sku_purchase_qty_remark'])."',
 	sku_old_price = sku_price,sku_price = '".$_POST['sku_price']."',sku_price_remark = '".mysql_real_escape_string($_POST['sku_price_remark'])."',sku_total_price = '".($_POST['sku_purchase_qty'] * $_POST['sku_price'])."' 
