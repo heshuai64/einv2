@@ -54,14 +54,12 @@ class Research{
 	    $start = $_POST['start'];
 	}
         
-        if($_SESSION['role'] == 1){
-            $where = " where 1 = 1 ";
-        }else{
-            $where = " where sales = ".$_SESSION['user_id']." ";
-        }
+        $where = " where 1 = 1 ";
         
         if(!empty($_POST['status'])){
             $where .= " and status = ".$_POST['status'];
+        }elseif(!empty($_POST['type']) && $_POST['type'] == "search"){
+            
         }else{
             $where .= " and status = 0";
         }
@@ -188,7 +186,7 @@ class Research{
         $images_values = substr($_POST['images-values'], 1);
         $images_values = explode(",", $images_values);
         foreach($images_values as $image){
-            if(strpos($image, "?") == false){
+            if(strpos($image, "?") == false && strpos(substr($image, 1), "/") != false){
                 $sql_0 = "insert into research_images (research_id,path) values ('".$_GET['id']."','".mysql_real_escape_string($image)."')";
                 $result_0 = mysql_query($sql_0);
             }
@@ -200,6 +198,7 @@ class Research{
         }
         $sql = substr($sql, 0, -1);
         $sql .= " where id = '".$_GET['id']."'";
+        //echo $sql."\n";
         $result = mysql_query($sql);
         if($result){
             echo "{success: true}";
@@ -231,6 +230,8 @@ class Research{
         $where = " where 1 = 1 ";
         if(!empty($_POST['status'])){
             $where .= " and status = ".$_POST['status'];
+        }elseif(!empty($_POST['type']) && $_POST['type'] == "search"){
+            
         }else{
             $where .= " and status = 2";
         }
@@ -244,7 +245,7 @@ class Research{
         }
         
         if(!empty($_POST['createdOn'])){
-            $where .= " and createdOn like '".$_POST['chinese_title']."%'";
+            $where .= " and createdOn like '".$_POST['createdOn']."%'";
         }
         
         
@@ -254,6 +255,7 @@ class Research{
 	$totalCount = $row_0['totalCount'];
 	
 	$sql = "select * from research_info ".$where." limit $start,$limit";
+        //echo $sql."\n";
         $result = mysql_query($sql, $this->conn);
 	$i = 0;
 	$array = array();
@@ -301,6 +303,17 @@ class Research{
 	mysql_free_result($result);
     }
     
+    public function updatePurchaseInofBySales(){
+        $sql = "update purchase_info set sales_judge = ".$_POST['sales_judge'].", continue_develop = ".$_POST['continue_develop'].",
+        rejected_reason = '".mysql_real_escape_string($_POST['rejected_reason'])."' where id = '".$_GET['id']."'";
+        $result = mysql_query($sql, $this->conn);
+        if($result){
+            echo "{success: true}";
+        }else{
+            echo "{success: false}";
+        }
+    }
+    
     public function updatePurchseInfo(){
         session_start();
         //$sql_0 = "select count(*) as num from purchase_info where research_id = '".$_GET['research_id']."' and purchaser = ".$_SESSION['user_id'];
@@ -340,11 +353,27 @@ class Research{
             mkdir($targetPath);
         }
         
+        //file_put_contents("logs/xx.log", $targetPath);
 	$targetFile =  str_replace('//','/',$targetPath) . $_FILES['Filedata']['name'];
 	
         move_uploaded_file($tempFile, $targetFile);
         $image_name = str_replace($_SERVER['DOCUMENT_ROOT'], '', $targetFile);
-        echo $image_name;
+        //file_put_contents("logs/xx.log", print_r(array($_SERVER['DOCUMENT_ROOT'], $_REQUEST['folder'], $targetFile, $image_name), true), FILE_APPEND);
+        if($image_name[0] != "/"){
+            echo "/".$image_name;
+        }else{
+            echo $image_name;
+        }
+    }
+    
+    public function deleteImages(){
+        $sql = "delete from research_images where id = ".$_GET['id'];
+        $result = mysql_query($sql, $this->conn);
+        if($result){
+            echo "{success: true}";
+        }else{
+            echo "{success: false}";
+        }
     }
     
     private function getLO($type, $status){
@@ -365,7 +394,8 @@ class Research{
                 switch($status){
                     case "1":
                         $array = array(0=>array('id'=>'1', 'name'=>$status_array[1]),
-                                       1=>array('id'=>'2', 'name'=>$status_array[2]));
+                                       1=>array('id'=>'2', 'name'=>$status_array[2]),
+                                       2=>array('id'=>'8', 'name'=>$status_array[8]));
                     break;
                 
                     case "7":
@@ -455,6 +485,7 @@ class Research{
 	    }
 	}
         
+        session_set_cookie_params(24 * 60 * 60);
         session_start();
         $sql = "select id,name,role from user where name = '".$_POST['name']."' and password = '".$_POST['password']."'";
         $result = mysql_query($sql, $this->conn);
@@ -463,6 +494,7 @@ class Research{
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['user_name'] = $row['name'];
             $_SESSION['role'] = $row['role'];
+            setcookie("user_name", $row['name'], time() + (60 * 60 * 24), '/');
             setcookie("user_role", $row['role'], time() + (60 * 60 * 24), '/');
             echo "{success: true}";
         }else{
