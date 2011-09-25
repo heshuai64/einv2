@@ -101,15 +101,19 @@ Ext.onReady(function(){
             
             var purchaseDesForm = new Ext.form.FormPanel({
                 reader:new Ext.data.JsonReader({
-                    }, ['chinese_title','product_cost','min_purchase_num','product_net_weight','product_arrival_days','remark','suppliers_info','target_purchase_cost','estimated_weight','product_parameter_information','images','status']
+                    }, ['chinese_title','product_cost','min_purchase_num','product_net_weight','product_arrival_days','remark','suppliers_info','target_purchase_cost','estimated_weight','product_parameter_information','images','status','sales_judge','continue_develop','rejected_reason']
                 ),
                 labelWidth: 100,
+                autoScroll:true,
                 items:[{
                     xtype:"textfield",
                     fieldLabel:lang.Chinese_Title,
                     name:"chinese_title",
                     width: 380,
-                    disabled:true
+                    //disabled:true
+                    listeners: {change: function(t, n, o){
+                        this.setValue(o);
+                    }}
                   },{
                     xtype:"combo",
                     mode: 'local',
@@ -158,12 +162,14 @@ Ext.onReady(function(){
                     xtype:"textarea",
                     fieldLabel:lang.Suppliers_Info,
                     name:"suppliers_info",
-                    width: 380
+                    width: 380,
+                    height: 50
                   },{
                     xtype:"textarea",
                     fieldLabel:lang.Remark,
                     name:"remark",
-                    width: 380
+                    width: 380,
+                    height: 50
                   },{
                     layout:"column",
                     items:[{
@@ -174,7 +180,23 @@ Ext.onReady(function(){
                             fieldLabel:lang.Target_Purchase_Cost,
                             name:"target_purchase_cost",
                             disabled:true
-                          }]
+                          },{
+                            xtype:"combo",
+                            mode: 'local',
+                            store: new Ext.data.ArrayStore({
+                                fields: ['id', 'name'],
+                                data: [[0, lang.No], [1, lang.Yes]]
+                            }),
+                            valueField: 'id',
+                            displayField: 'name',
+                            triggerAction: 'all',
+                            editable: false,
+                            selectOnFocus:true,
+                            fieldLabel:lang.Sales_Judge,
+                            name:"sales_judge",
+                            hiddenName:"sales_judge",
+                            disabled:true
+                        }]
                       },{
                         columnWidth:0.5,
                         layout:"form",
@@ -183,14 +205,41 @@ Ext.onReady(function(){
                             fieldLabel:lang.Estimated_Weight,
                             name:"estimated_weight",
                             disabled:true
-                          }]
+                          },{
+                            xtype:"combo",
+                            mode: 'local',
+                            store: new Ext.data.ArrayStore({
+                                fields: ['id', 'name'],
+                                data: [[0, lang.No], [1, lang.Yes]]
+                            }),
+                            valueField: 'id',
+                            displayField: 'name',
+                            triggerAction: 'all',
+                            editable: false,
+                            selectOnFocus:true,
+                            fieldLabel:lang.Continue_Develop,
+                            name:"continue_develop",
+                            hiddenName:"continue_develop",
+                            disabled:true
+                        }]
                       }]
                   },{
                     xtype:"textarea",
                     fieldLabel:lang.Product_Parameter_Information,
                     name:"product_parameter_information",
+                    //disabled:true,
+                    width: 380,
+                    height: 50,
+                    listeners: {change: function(t, n, o){
+                        this.setValue(o);
+                    }}
+                  },{
+                    xtype:"textarea",
+                    fieldLabel:lang.Rejected_Reason,
+                    name:"rejected_reason",
                     disabled:true,
-                    width: 380
+                    width: 380,
+                    height: 50
                   },{
                     id:'images-list',
                     xtype:"panel",
@@ -215,7 +264,7 @@ Ext.onReady(function(){
                 title: research_id,
                 closable:true,
                 width: 600,
-                height: 600,
+                height: 500,
                 plain:true,
                 layout: 'fit',
                 items: purchaseDesForm,
@@ -286,7 +335,8 @@ Ext.onReady(function(){
                     purchaseStore.baseParams = {
                         id: purchase_search.getForm().items.items[0].getValue(),
                         chinese_title: purchase_search.getForm().items.items[1].getValue(),
-                        createdOn: purchase_search.getForm().items.items[2].getValue()
+                        createdOn: purchase_search.getForm().items.items[2].getValue(),
+                        type: "search"
                     };
                     purchaseStore.load();
                 }
@@ -336,6 +386,12 @@ Ext.onReady(function(){
                 text: lang.Inquiry_Complete,
                 handler: function(b, e){
                     showResearchByStatus(4);
+                }
+            },{
+                xtype:'button',
+                text: "<font color='red'>"+lang.Exit+"</font>",
+                handler: function(b, e){
+                    window.location = "login.php";
                 }
             }]
         },{
