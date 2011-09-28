@@ -141,9 +141,27 @@ class Service extends Base{
                 
             }
             
+            $local_warehouse_stock = $this->getStock($inventory_model_id, '', 6);
+            if(empty($local_warehouse_stock)){
+            	$local_warehouse_stock = 0;
+            }
+            $bad_products_warehouse_stock = $this->getStock($inventory_model_id, '', 7);
+            if(empty($bad_products_warehouse_stock)){
+            	$bad_products_warehouse_stock = 0;
+            }
+            $sample_warehouse_stock = $this->getStock($inventory_model_id, '', 8);
+            if(empty($sample_warehouse_stock)){
+            	$sample_warehouse_stock = 0;
+            }
+            $repair_warehouse_stock = $this->getStock($inventory_model_id, '', 9);
+            if(empty($repair_warehouse_stock)){
+            	$repair_warehouse_stock = 0;
+            }
             //sku stock out
-            $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,shipment_id,shipment_method,shipment_fee) 
-            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."','".$shipment_fee."')";
+            $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,shipment_id,shipment_method,shipment_fee,
+            local_warehouse_stock,bad_products_warehouse_stock,sample_warehouse_stock,repair_warehouse_stock) 
+            values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."','3','".$created_by."','".date("Y-m-d H:i:s")."','".$shipment_id."','".$shipment_method."','".$shipment_fee."',
+            $local_warehouse_stock,$bad_products_warehouse_stock,$sample_warehouse_stock,$repair_warehouse_stock)";
             $this->log("skuTakeOut", $sql."<br>");
             //echo $sql;
             //echo "<br>";

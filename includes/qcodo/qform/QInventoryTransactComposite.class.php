@@ -420,7 +420,30 @@ class QInventoryTransactComposite extends QControl {
 					
 					// Assign different source and destinations depending on transaction type
 					foreach ($this->objInventoryLocationArray as $objInventoryLocation) {
-						
+						$xx = InventoryLocation::LoadByLocationIdInventoryModelId(6, $objInventoryLocation->InventoryModelId);
+						if($xx){
+							$local_warehouse_stock = $xx->Quantity;
+						}else{
+							$local_warehouse_stock = 0;
+						}
+						$xx = InventoryLocation::LoadByLocationIdInventoryModelId(7, $objInventoryLocation->InventoryModelId);
+						if($xx){
+							$bad_products_warehouse_stock = $xx->Quantity;
+						}else{
+							$bad_products_warehouse_stock = 0;
+						}
+						$xx = InventoryLocation::LoadByLocationIdInventoryModelId(8, $objInventoryLocation->InventoryModelId);
+						if($xx){
+							$sample_warehouse_stock = $xx->Quantity;
+						}else{
+							$sample_warehouse_stock = 0;
+						}
+						$xx = InventoryLocation::LoadByLocationIdInventoryModelId(9, $objInventoryLocation->InventoryModelId);
+						if($xx){
+							$repair_warehouse_stock = $xx->Quantity;
+						}else{
+							$repair_warehouse_stock = 0;
+						}
 						// Move
 						if ($this->intTransactionTypeId == 1) {
 							$SourceLocationId = $objInventoryLocation->LocationId;
@@ -472,8 +495,15 @@ class QInventoryTransactComposite extends QControl {
 						$this->objInventoryTransaction->Quantity = $objInventoryLocation->intTransactionQuantity;
 						$this->objInventoryTransaction->SourceLocationId = $SourceLocationId;
 						$this->objInventoryTransaction->DestinationLocationId = $DestinationLocationId;
+						
+						$this->objInventoryTransaction->LocalWarehouseStock = $local_warehouse_stock;
+						$this->objInventoryTransaction->BadProductsWarehouseStock = $bad_products_warehouse_stock;
+						$this->objInventoryTransaction->SampleWarehouseStock = $sample_warehouse_stock;
+						$this->objInventoryTransaction->RepairWarehouseStock = $repair_warehouse_stock;
+						
 						$this->objInventoryTransaction->Save();
-		
+						
+						/*
 						$this->http_post("http://127.0.0.1:8080/inventory/service.php", 'updateVirtualStock', array(
 							//'byName' => '',
 							'inventory_model_id' => $objInventoryLocation->InventoryModelId,
@@ -481,6 +511,7 @@ class QInventoryTransactComposite extends QControl {
 							'operate' => '+'
 							)
 						);
+						*/
 					}
 					
 					// Commit the above transactions to the database

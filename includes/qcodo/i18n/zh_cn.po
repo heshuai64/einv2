@@ -270,3 +270,14 @@ MsgStr "取消默认"
 MsgId "Sku Status Manage"
 MsgStr "SKU状态管理"
 
+MsgId "Local Warehouse"
+MsgStr "布吉仓(结存)"
+
+MsgId "Bad Products Warehouse"
+MsgStr "不良品仓(结存)"
+
+MsgId "Sample Warehouse"
+MsgStr "样品仓(结存)"
+
+MsgId "Repair Warehouse"
+MsgStr "返修仓(结存)"

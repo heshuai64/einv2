@@ -361,8 +361,18 @@
 
 			if ($strInventoryModelCode) {
   			// Properly Escape All Input Parameters using Database->SqlVariable()		
-				$strInventoryModelCode = QApplication::$Database[1]->SqlVariable("%" . $strInventoryModelCode . "%", false);
-				$arrSearchSql['strInventoryModelCodeSql'] = "AND `inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode";
+  				if(strpos($strInventoryModelCode, ",") != false){
+  					$tmp = explode(",", $strInventoryModelCode);
+  					$tmp2 = "";
+  					foreach($tmp as $tmp1){
+  						$strInventoryModelCode = QApplication::$Database[1]->SqlVariable("%" . $tmp1 . "%", false);
+  						$tmp2 .= "`inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode OR ";
+  					}
+  					$arrSearchSql['strInventoryModelCodeSql'] = "AND (".substr($tmp2, 0, -4).")";
+  				}else{
+					$strInventoryModelCode = QApplication::$Database[1]->SqlVariable("%" . $strInventoryModelCode . "%", false);
+					$arrSearchSql['strInventoryModelCodeSql'] = "AND `inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode";
+				}
 			}
 			if ($intLocationId) {
 				$intLocationId = QApplication::$Database[1]->SqlVariable($intLocationId, true);
@@ -415,7 +425,7 @@
 			
 			// Generate Authorization SQL based on the QApplication::$objRoleModule
 			$arrSearchSql['strAuthorizationSql'] = QApplication::AuthorizationSql('inventory_model');
-			
+			//print_r($arrSearchSql);
 			return $arrSearchSql;
 	  }
 	}
