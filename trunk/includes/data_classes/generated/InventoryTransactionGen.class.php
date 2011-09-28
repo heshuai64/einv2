@@ -278,6 +278,11 @@
 			$objBuilder->AddSelectItem($strTableName . '.`creation_date` AS ' . $strAliasPrefix . 'creation_date`');
 			$objBuilder->AddSelectItem($strTableName . '.`modified_by` AS ' . $strAliasPrefix . 'modified_by`');
 			$objBuilder->AddSelectItem($strTableName . '.`modified_date` AS ' . $strAliasPrefix . 'modified_date`');
+			
+			$objBuilder->AddSelectItem($strTableName . '.`local_warehouse_stock` AS ' . $strAliasPrefix . 'local_warehouse_stock`');
+			$objBuilder->AddSelectItem($strTableName . '.`bad_products_warehouse_stock` AS ' . $strAliasPrefix . 'bad_products_warehouse_stock`');
+			$objBuilder->AddSelectItem($strTableName . '.`sample_warehouse_stock` AS ' . $strAliasPrefix . 'sample_warehouse_stock`');
+			$objBuilder->AddSelectItem($strTableName . '.`repair_warehouse_stock` AS ' . $strAliasPrefix . 'repair_warehouse_stock`');
 		}
 
 
@@ -315,7 +320,12 @@
 			$objToReturn->dttCreationDate = $objDbRow->GetColumn($strAliasPrefix . 'creation_date', 'DateTime');
 			$objToReturn->intModifiedBy = $objDbRow->GetColumn($strAliasPrefix . 'modified_by', 'Integer');
 			$objToReturn->strModifiedDate = $objDbRow->GetColumn($strAliasPrefix . 'modified_date', 'VarChar');
-
+			
+			$objToReturn->intLocalWarehouseStock = $objDbRow->GetColumn($strAliasPrefix . 'local_warehouse_stock', 'Integer');
+			$objToReturn->intBadProductsWarehouseStock = $objDbRow->GetColumn($strAliasPrefix . 'bad_products_warehouse_stock', 'Integer');
+			$objToReturn->intSampleWarehouseStock = $objDbRow->GetColumn($strAliasPrefix . 'sample_warehouse_stock', 'Integer');
+			$objToReturn->intRepairWarehouseStock = $objDbRow->GetColumn($strAliasPrefix . 'repair_warehouse_stock', 'Integer');
+			
 			// Instantiate Virtual Attributes
 			foreach ($objDbRow->GetColumnNameArray() as $strColumnName => $mixValue) {
 				$strVirtualPrefix = $strAliasPrefix . '__';
@@ -634,7 +644,11 @@
 							`destination_location_id`,
 							`created_by`,
 							`creation_date`,
-							`modified_by`
+							`modified_by`,
+							`local_warehouse_stock`,
+							`bad_products_warehouse_stock`,
+							`sample_warehouse_stock`,
+							`repair_warehouse_stock`
 						) VALUES (
 							' . $objDatabase->SqlVariable($this->intInventoryLocationId) . ',
 							' . $objDatabase->SqlVariable($this->intTransactionId) . ',
@@ -643,7 +657,11 @@
 							' . $objDatabase->SqlVariable($this->intDestinationLocationId) . ',
 							' . $objDatabase->SqlVariable($this->intCreatedBy) . ',
 							' . $objDatabase->SqlVariable($this->dttCreationDate) . ',
-							' . $objDatabase->SqlVariable($this->intModifiedBy) . '
+							' . $objDatabase->SqlVariable($this->intModifiedBy) . ',
+							' . $objDatabase->SqlVariable($this->intLocalWarehouseStock) . ',
+							' . $objDatabase->SqlVariable($this->intBadProductsWarehouseStock) . ',
+							' . $objDatabase->SqlVariable($this->intSampleWarehouseStock) . ',
+							' . $objDatabase->SqlVariable($this->intRepairWarehouseStock) . '
 						)
 					');
 
@@ -681,7 +699,11 @@
 							`destination_location_id` = ' . $objDatabase->SqlVariable($this->intDestinationLocationId) . ',
 							`created_by` = ' . $objDatabase->SqlVariable($this->intCreatedBy) . ',
 							`creation_date` = ' . $objDatabase->SqlVariable($this->dttCreationDate) . ',
-							`modified_by` = ' . $objDatabase->SqlVariable($this->intModifiedBy) . '
+							`modified_by` = ' . $objDatabase->SqlVariable($this->intModifiedBy) . ',
+							`local_warehouse_stock` = ' . $objDatabase->SqlVariable($this->intLocalWarehouseStock) . ',
+							`bad_products_warehouse_stock` = ' . $objDatabase->SqlVariable($this->intBadProductsWarehouseStock) . ',
+							`sample_warehouse_stock` = ' . $objDatabase->SqlVariable($this->intSampleWarehouseStock) . ',
+							`repair_warehouse_stock` = ' . $objDatabase->SqlVariable($this->intRepairWarehouseStock) . '
 						WHERE
 							`inventory_transaction_id` = ' . $objDatabase->SqlVariable($this->intInventoryTransactionId) . '
 					');
@@ -847,7 +869,34 @@
 					 */
 					return $this->strModifiedDate;
 
-
+				case 'LocalWarehouseStock':
+					/**
+					 * Gets the value for Local_warehouse_stock 
+					 * @return integer
+					 */
+					return $this->intLocalWarehouseStock;
+					
+				case 'BadProductsWarehouseStock':
+					/**
+					 * Gets the value for bad_products_warehouse_stock 
+					 * @return integer
+					 */
+					return $this->intBadProductsWarehouseStock;
+					
+				case 'SampleWarehouseStock':
+					/**
+					 * Gets the value for sample_warehouse_stock 
+					 * @return integer
+					 */
+					return $this->intSampleWarehouseStock;
+					
+				case 'RepairWarehouseStock':
+					/**
+					 * Gets the value for repair_warehouse_stock 
+					 * @return integer
+					 */
+					return $this->intRepairWarehouseStock;
+					
 				///////////////////
 				// Member Objects
 				///////////////////
@@ -1004,7 +1053,39 @@
 						$objExc->IncrementOffset();
 						throw $objExc;
 					}
+				
+				case 'LocalWarehouseStock':
+					try {
+						return ($this->intLocalWarehouseStock = QType::Cast($mixValue, QType::Integer));
+					} catch (QCallerException $objExc) {
+						$objExc->IncrementOffset();
+						throw $objExc;
+					}
 
+				case 'BadProductsWarehouseStock':
+					try {
+						return ($this->intBadProductsWarehouseStock = QType::Cast($mixValue, QType::Integer));
+					} catch (QCallerException $objExc) {
+						$objExc->IncrementOffset();
+						throw $objExc;
+					}
+					
+				case 'SampleWarehouseStock':
+					try {
+						return ($this->intSampleWarehouseStock = QType::Cast($mixValue, QType::Integer));
+					} catch (QCallerException $objExc) {
+						$objExc->IncrementOffset();
+						throw $objExc;
+					}
+					
+				case 'RepairWarehouseStock':
+					try {
+						return ($this->intRepairWarehouseStock = QType::Cast($mixValue, QType::Integer));
+					} catch (QCallerException $objExc) {
+						$objExc->IncrementOffset();
+						throw $objExc;
+					}
+					
 				case 'SourceLocationId':
 					/**
 					 * Sets the value for intSourceLocationId 
@@ -1383,7 +1464,11 @@
 		protected $strModifiedDate;
 		const ModifiedDateDefault = null;
 
-
+		protected $intLocalWarehouseStock;
+		protected $intBadProductsWarehouseStock;
+		protected $intSampleWarehouseStock;
+		protected $intRepairWarehouseStock;
+		
 		/**
 		 * Protected array of virtual attributes for this object (e.g. extra/other calculated and/or non-object bound
 		 * columns from the run-time database query result for this object).  Used by InstantiateDbRow and
@@ -1785,7 +1870,19 @@
 					return new QQNodeUserAccount('modified_by', 'integer', $this);
 				case 'ModifiedDate':
 					return new QQNode('modified_date', 'string', $this);
-
+				
+				case 'LocalWarehouseStock':
+					return new QQNode('local_warehouse_stock', 'integer', $this);
+					
+				case 'BadProductsWarehouseStock':
+					return new QQNode('bad_products_warehouse_stock', 'integer', $this);
+					
+				case 'SampleWarehouseStock':
+					return new QQNode('sample_warehouse_stock', 'integer', $this);
+					
+				case 'RepairWarehouseStock':
+					return new QQNode('repair_warehouse_stock', 'integer', $this);
+					
 				case '_PrimaryKeyNode':
 					return new QQNode('inventory_transaction_id', 'integer', $this);
 				default:
@@ -1837,7 +1934,19 @@
 					return new QQNodeUserAccount('modified_by', 'integer', $this);
 				case 'ModifiedDate':
 					return new QQNode('modified_date', 'string', $this);
-
+				
+				case 'LocalWarehouseStock':
+					return new QQNode('local_warehouse_stock', 'integer', $this);
+					
+				case 'BadProductsWarehouseStock':
+					return new QQNode('bad_products_warehouse_stock', 'integer', $this);
+					
+				case 'SampleWarehouseStock':
+					return new QQNode('sample_warehouse_stock', 'integer', $this);
+					
+				case 'RepairWarehouseStock':
+					return new QQNode('repair_warehouse_stock', 'integer', $this);
+					
 				case '_PrimaryKeyNode':
 					return new QQNode('inventory_transaction_id', 'integer', $this);
 				default:

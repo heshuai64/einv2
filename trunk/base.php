@@ -355,14 +355,33 @@ class Base{
 	    $inventory_location_id = mysql_insert_id($this->conn);
 	}
 	
+	$local_warehouse_stock = $this->getStock($inventory_model_id, '', 6);
+	if(empty($local_warehouse_stock)){
+		$local_warehouse_stock = 0;
+	}
+	$bad_products_warehouse_stock = $this->getStock($inventory_model_id, '', 7);
+	if(empty($bad_products_warehouse_stock)){
+		$bad_products_warehouse_stock = 0;
+	}
+	$sample_warehouse_stock = $this->getStock($inventory_model_id, '', 8);
+	if(empty($sample_warehouse_stock)){
+		$sample_warehouse_stock = 0;
+	}
+	$repair_warehouse_stock = $this->getStock($inventory_model_id, '', 9);
+	if(empty($repair_warehouse_stock)){
+		$repair_warehouse_stock = 0;
+	}
+	    
 	if($operate == "+"){
 	    $sql = "insert into transaction (entity_qtype_id,transaction_type_id,note,created_by,creation_date) values ('2','4','".$note."','".$user_id."','".date("Y-m-d H:i:s")."')";
 	    $this->log("updateStock", $sql."<br>");
 	    $result_1 = mysql_query($sql, $this->conn);
 	    $transaction_id = mysql_insert_id($this->conn);
 	
-	    $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
-	    values ('".$inventory_location_id."','".$transaction_id."','".$quantity."',4,'".$source_location_id."','".$user_id."','".date("Y-m-d H:i:s")."')";
+	    $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,
+	    local_warehouse_stock,bad_products_warehouse_stock,sample_warehouse_stock,repair_warehouse_stock) 
+	    values ('".$inventory_location_id."','".$transaction_id."','".$quantity."',4,'".$source_location_id."','".$user_id."','".date("Y-m-d H:i:s")."',
+	    $local_warehouse_stock,$bad_products_warehouse_stock,$sample_warehouse_stock,$repair_warehouse_stock)";
 	    $this->log("updateStock", $sql."<br>");
 	    $result_2 = mysql_query($sql, $this->conn);
 	}elseif($operate == "-"){
@@ -371,8 +390,10 @@ class Base{
 	    $result_1 = mysql_query($sql, $this->conn);
 	    $transaction_id = mysql_insert_id($this->conn);
 	
-	    $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date) 
-	    values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."',5,'".$user_id."','".date("Y-m-d H:i:s")."')";
+	    $sql = "insert into inventory_transaction (inventory_location_id,transaction_id,quantity,source_location_id,destination_location_id,created_by,creation_date,
+	    local_warehouse_stock,bad_products_warehouse_stock,sample_warehouse_stock,repair_warehouse_stock) 
+	    values ('".$inventory_location_id."','".$transaction_id."','".$quantity."','".$source_location_id."',5,'".$user_id."','".date("Y-m-d H:i:s")."',
+	    $local_warehouse_stock,$bad_products_warehouse_stock,$sample_warehouse_stock,$repair_warehouse_stock)";
 	    $this->log("updateStock", $sql."<br>");
 	    $result_2 = mysql_query($sql, $this->conn);
 	}

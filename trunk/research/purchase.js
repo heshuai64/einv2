@@ -101,7 +101,7 @@ Ext.onReady(function(){
             
             var purchaseDesForm = new Ext.form.FormPanel({
                 reader:new Ext.data.JsonReader({
-                    }, ['chinese_title','product_cost','min_purchase_num','product_net_weight','product_arrival_days','remark','suppliers_info','target_purchase_cost','estimated_weight','product_parameter_information','images','status','sales_judge','continue_develop','rejected_reason']
+                    }, ['chinese_title','product_cost','min_purchase_num','product_net_weight','product_arrival_days','remark','suppliers_info','target_purchase_cost','target_total_cost','estimated_weight','product_parameter_information','images','status','sales_judge','continue_develop','rejected_reason']
                 ),
                 labelWidth: 100,
                 autoScroll:true,
@@ -115,27 +115,27 @@ Ext.onReady(function(){
                         this.setValue(o);
                     }}
                   },{
-                    xtype:"combo",
-                    mode: 'local',
-                    store: new Ext.data.JsonStore({
-                        autoLoad: true,
-                        fields: ['id', 'name'],
-                        url: "research.php?action=getRCOStatus&id="+research_id
-                    }),
-                    valueField:'id',
-                    displayField:'name',
-                    triggerAction: 'all',
-                    editable: false,
-                    selectOnFocus:true,
-                    fieldLabel: lang.Status,
-                    name:"status",
-                    hiddenName:"status"
-                  },{
                     layout:"column",
                     items:[{
                         columnWidth:0.5,
                         layout:"form",
                         items:[{
+                            xtype:"combo",
+                            mode: 'local',
+                            store: new Ext.data.JsonStore({
+                                autoLoad: true,
+                                fields: ['id', 'name'],
+                                url: "research.php?action=getRCOStatus&id="+research_id
+                            }),
+                            valueField:'id',
+                            displayField:'name',
+                            triggerAction: 'all',
+                            editable: false,
+                            selectOnFocus:true,
+                            fieldLabel: lang.Status,
+                            name:"status",
+                            hiddenName:"status"
+                        },{
                             xtype:"numberfield",
                             fieldLabel:lang.Product_Cost,
                             name:"product_cost"
@@ -148,6 +148,11 @@ Ext.onReady(function(){
                         columnWidth:0.5,
                         layout:"form",
                         items:[{
+                            xtype:"numberfield",
+                            fieldLabel:lang.Target_Total_Cost,
+                            name:"target_total_cost",
+                            disabled:true
+                        },{
                             xtype:"numberfield",
                             fieldLabel:lang.Product_Net_Weight,
                             name:"product_net_weight"

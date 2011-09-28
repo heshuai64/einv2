@@ -516,12 +516,18 @@ class QInventoryEditComposite extends QControl {
 
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Transaction Type'), '<?= $_ITEM->Transaction->__toStringWithLink() ?>',  array('OrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Transaction->TransactionType->ShortDescription), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Transaction->TransactionType->ShortDescription, false), 'CssClass' => "dtg_column", 'HtmlEntities' => false)));
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Quantity'), '<?= $_ITEM->Quantity ?>', array('OrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Quantity), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Quantity, false), 'CssClass' => "dtg_column")));
+		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Local Warehouse'), '<?= $_ITEM->LocalWarehouseStock ?>', array('CssClass' => "dtg_column")));
+		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Bad Products Warehouse'), '<?= $_ITEM->BadProductsWarehouseStock ?>', array('CssClass' => "dtg_column")));
+		/*
+		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Sample Warehouse'), '<?= $_ITEM->SampleWarehouseStock ?>', array('CssClass' => "dtg_column")));
+		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Repair Warehouse'), '<?= $_ITEM->RepairWarehouseStock ?>', array('CssClass' => "dtg_column")));
+		*/
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('From'), '<?= $_ITEM->__toStringSourceLocation() ?>', array('OrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->SourceLocation->ShortDescription), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->SourceLocation->ShortDescription, false), 'CssClass' => "dtg_column")));
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('To'), '<?= $_ITEM->__toStringDestinationLocation() ?>', array('OrderByClause' => QQ::Orderby(QQN::InventoryTransaction()->DestinationLocation->ShortDescription), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->DestinationLocation->ShortDescription, false), 'CssClass' => "dtg_column")));
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('User'), '<?= $_ITEM->Transaction->CreatedByObject->__toStringFullName() ?>', array('OrderByClause' => QQ::Orderby(QQN::InventoryTransaction()->CreatedByObject->LastName), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->CreatedByObject->LastName, false), 'CssClass' => "dtg_column")));
 		$this->dtgInventoryTransaction->AddColumn(new QDataGridColumn(QApplication::Translate('Date'), '<?= $_ITEM->Transaction->CreationDate->PHPDate("Y-m-d H:i:s"); ?>', array('OrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Transaction->CreationDate), 'ReverseOrderByClause' => QQ::OrderBy(QQN::InventoryTransaction()->Transaction->CreationDate, false), 'CssClass' => "dtg_column")));
 
-		$this->dtgInventoryTransaction->SortColumnIndex = 5;
+		$this->dtgInventoryTransaction->SortColumnIndex = 7;
 		$this->dtgInventoryTransaction->SortDirection = 1;
 
 		$objStyle = $this->dtgInventoryTransaction->RowStyle;
