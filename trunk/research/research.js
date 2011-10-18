@@ -520,9 +520,11 @@ Ext.onReady(function(){
                             fieldLabel:lang.Target_Sales_Price,
                             name:"target_sales_price"
                           },{
+                            id:"target_total_cost_2",
                             xtype:"numberfield",
                             fieldLabel:lang.Target_Total_Cost,
-                            name:"target_total_cost"
+                            name:"target_total_cost",
+                            readOnly:true
                           },{
                             xtype:"combo",
                             mode: 'local',
@@ -565,7 +567,13 @@ Ext.onReady(function(){
                           },{
                             xtype:"numberfield",
                             fieldLabel:lang.MarketPlace_Min_Price,
-                            name:"marketplace_min_price"
+                            name:"marketplace_min_price",
+                            listeners: {
+                                blur: function(t){
+                                    var target_total_cost_2 = t.getValue() /0.226 - 3.5;
+                                    Ext.getCmp("target_total_cost_2").setValue(target_total_cost_2.toFixed(2));
+                                }
+                            }
                           },{
                             xtype:"numberfield",
                             fieldLabel:lang.Target_Month_Sales,
@@ -577,7 +585,8 @@ Ext.onReady(function(){
                           },{
                             xtype:"numberfield",
                             fieldLabel:lang.Estimated_Weight,
-                            name:"estimated_weight"
+                            name:"estimated_weight",
+                            decimalPrecision: 3
                           },{
                             xtype:"textarea",
                             fieldLabel:lang.Product_Parameter_Information,
@@ -669,7 +678,19 @@ Ext.onReady(function(){
                                 }
                             },
                             failure: function(form, action) {
-                                Ext.MessageBox.alert('Error', action.result.errors.message);  
+                                if(action.result.msg == "timeout"){
+                                    Ext.Msg.show({
+                                        title: lang.Warning,
+                                        msg: lang.Login_Timeout,
+                                        buttons: Ext.Msg.OK,
+                                        fn: function(){
+                                            window.location = "login.php";
+                                        },
+                                        icon: Ext.MessageBox.WARNING
+                                    });
+                                }else{
+                                    Ext.MessageBox.alert('Error', action.result.errors.message);
+                                }
                             },
                             waitMsg: lang.Waiting
                         });
@@ -816,9 +837,11 @@ Ext.onReady(function(){
                                     fieldLabel:lang.Target_Sales_Price,
                                     name:"target_sales_price"
                                   },{
+                                    id:"target_total_cost",
                                     xtype:"numberfield",
                                     fieldLabel:lang.Target_Total_Cost,
-                                    name:"target_total_cost"
+                                    name:"target_total_cost",
+                                    readOnly:true
                                   },{
                                     xtype:"combo",
                                     mode: 'local',
@@ -861,7 +884,13 @@ Ext.onReady(function(){
                                   },{
                                     xtype:"numberfield",
                                     fieldLabel:lang.MarketPlace_Min_Price,
-                                    name:"marketplace_min_price"
+                                    name:"marketplace_min_price",
+                                    listeners: {
+                                        blur: function(t){
+                                            var target_total_cost = t.getValue() /0.226 - 3.5;
+                                            Ext.getCmp("target_total_cost").setValue(target_total_cost.toFixed(2));
+                                        }
+                                    }
                                   },{
                                     xtype:"numberfield",
                                     fieldLabel:lang.Target_Month_Sales,
@@ -915,7 +944,19 @@ Ext.onReady(function(){
                                             }
                                         },
                                         failure: function(form, action) {
-                                            Ext.MessageBox.alert('Error', action.result.errors.message);  
+                                            if(action.result.msg == "timeout"){
+                                                Ext.Msg.show({
+                                                    title: lang.Warning,
+                                                    msg: lang.Login_Timeout,
+                                                    buttons: Ext.Msg.OK,
+                                                    fn: function(){
+                                                        window.location = "login.php";
+                                                    },
+                                                    icon: Ext.MessageBox.WARNING
+                                                });
+                                            }else{
+                                                Ext.MessageBox.alert('Error', action.result.errors.message);
+                                            }
                                         },
                                         waitMsg: lang.Waiting
                                     });

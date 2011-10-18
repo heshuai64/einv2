@@ -173,17 +173,20 @@
       // QApplication::$Database[1]->EnableProfiling();
 
       // Expand the Asset object to include the AssetModel, Category, Manufacturer, and Location Objects
-      $objExpansionMap[InventoryModel::ExpandCategory] = true;
-      $objExpansionMap[InventoryModel::ExpandManufacturer] = true;
-
+      //$objExpansionMap[InventoryModel::ExpandCategory] = true;
+      //$objExpansionMap[InventoryModel::ExpandManufacturer] = true;
+	  $objExpansionMap = array();
+	  $mc = new Memcache();	
+	  $mc->connect("127.0.0.1", 11211);
+			
       // If the search form has been posted
-			$this->dtgInventoryModel->TotalItemCount = InventoryModel::CountBySearch($strInventoryModelCode, $intLocationId, $intInventoryModelId, $intCategoryId, $intManufacturerId, $strShortDescription, $arrCustomFields, $strDateModified, $strDateModifiedFirst, $strDateModifiedLast, $blnAttachment, $objExpansionMap);
+			$this->dtgInventoryModel->TotalItemCount = InventoryModel::CountBySearch($strInventoryModelCode, $intLocationId, $intInventoryModelId, $intCategoryId, $intManufacturerId, $strShortDescription, $arrCustomFields, $strDateModified, $strDateModifiedFirst, $strDateModifiedLast, $blnAttachment, $objExpansionMap, $mc);
 			if ($this->dtgInventoryModel->TotalItemCount == 0) {
 				$this->dtgInventoryModel->ShowHeader = false;
 			}
 			else {
 				$this->dtgInventoryModel->ShowHeader = true;
-				$this->dtgInventoryModel->DataSource = InventoryModel::LoadArrayBySearch($strInventoryModelCode, $intLocationId, $intInventoryModelId, $intCategoryId, $intManufacturerId, $strShortDescription, $arrCustomFields, $strDateModified, $strDateModifiedFirst, $strDateModifiedLast, $blnAttachment, $this->dtgInventoryModel->SortInfo, $this->dtgInventoryModel->LimitInfo, $objExpansionMap);
+				$this->dtgInventoryModel->DataSource = InventoryModel::LoadArrayBySearch($strInventoryModelCode, $intLocationId, $intInventoryModelId, $intCategoryId, $intManufacturerId, $strShortDescription, $arrCustomFields, $strDateModified, $strDateModifiedFirst, $strDateModifiedLast, $blnAttachment, $this->dtgInventoryModel->SortInfo, $this->dtgInventoryModel->LimitInfo, $objExpansionMap, $mc);
 			}
 			$this->blnSearch = false;
     }  	

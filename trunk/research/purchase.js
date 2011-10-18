@@ -155,7 +155,8 @@ Ext.onReady(function(){
                         },{
                             xtype:"numberfield",
                             fieldLabel:lang.Product_Net_Weight,
-                            name:"product_net_weight"
+                            name:"product_net_weight",
+                            decimalPrecision: 3
                           },{
                             xtype:"numberfield",
                             fieldLabel:lang.Product_Arrival_Days,
@@ -286,7 +287,19 @@ Ext.onReady(function(){
                                 }
                             },
                             failure: function(form, action) {
-                                Ext.MessageBox.alert('Error', action.result.errors.message);  
+                                if(action.result.msg == "timeout"){
+                                    Ext.Msg.show({
+                                        title: lang.Warning,
+                                        msg: lang.Login_Timeout,
+                                        buttons: Ext.Msg.OK,
+                                        fn: function(){
+                                            window.location = "login.php";
+                                        },
+                                        icon: Ext.MessageBox.WARNING
+                                    });
+                                }else{
+                                    Ext.MessageBox.alert('Error', action.result.errors.message);
+                                }
                             },
                             waitMsg: lang.Waiting
                         });

@@ -281,3 +281,15 @@ MsgStr "样品仓(结存)"
 
 MsgId "Repair Warehouse"
 MsgStr "返修仓(结存)"
+
+MsgId "Status Modified History"
+MsgStr "状态修改历史"
+
+MsgId "Before Status"
+MsgStr "修改前"
+
+MsgId "After Status"
+MsgStr "状态"
+
+MsgId "Reason"
+MsgStr "原因"
