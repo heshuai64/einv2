@@ -3312,7 +3312,9 @@ class Service extends Base{
 	    
 	    $sku_array = explode(",", $_POST['skus']);
 	    foreach($sku_array as $sku){
-		$sql = "insert into sku_status_history (sku,status,reason) values ('".$sku."','".$_POST['status']."','".mysql_real_escape_string($_POST['reason'])."')";
+		$old_status = $this->getCustomFieldValueBySku($sku, Service::$field_array['skuStatus']);
+		
+		$sql = "insert into sku_status_history (sku,old_status,status,reason) values ('".$sku."','".$old_status."','".$_POST['status']."','".mysql_real_escape_string($_POST['reason'])."')";
 		$result = mysql_query($sql);
                 echo $sql."\n";
 	    }

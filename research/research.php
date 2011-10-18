@@ -107,6 +107,11 @@ class Research{
     
     public function addResearchInfo(){
         session_start();
+        if(empty($_SESSION['user_id'])){
+            echo "{success: false, msg: 'timeout'}";
+            exit;
+        }
+        
         $id = $this->getId();
         $images_values = $_POST['images-values'];
         unset($_POST['images-values']);
@@ -182,6 +187,11 @@ class Research{
     }
     
     public function updateResearchInfo(){
+        session_start();
+        if(empty($_SESSION['user_id'])){
+            echo "{success: false, msg: 'timeout'}";
+            exit;
+        }
         //print_r($_POST);
         $images_values = substr($_POST['images-values'], 1);
         $images_values = explode(",", $images_values);
@@ -254,7 +264,7 @@ class Research{
 	$row_0 = mysql_fetch_assoc($result_0);
 	$totalCount = $row_0['totalCount'];
 	
-	$sql = "select * from research_info ".$where." limit $start,$limit";
+	$sql = "select * from research_info ".$where;//." limit $start,$limit";
         //echo $sql."\n";
         $result = mysql_query($sql, $this->conn);
 	$i = 0;
@@ -316,6 +326,10 @@ class Research{
     
     public function updatePurchseInfo(){
         session_start();
+        if(empty($_SESSION['user_id'])){
+            echo "{success: false, msg: 'timeout'}";
+            exit;
+        }
         //$sql_0 = "select count(*) as num from purchase_info where research_id = '".$_GET['research_id']."' and purchaser = ".$_SESSION['user_id'];
         //$result_0 = mysql_query($sql_0, $this->conn);
         //$row_0 = mysql_fetch_assoc($result_0);

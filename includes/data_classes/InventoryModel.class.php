@@ -163,7 +163,7 @@
      * @param array $objExpansionMap
      * @return integer Count
      */
-		public static function CountBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $objExpansionMap = null) {
+		public static function CountBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $objExpansionMap = null, $mc = null) {
 		
 			// Call to QueryHelper to Get the Database Object		
 			InventoryModel::QueryHelper($objDatabase);
@@ -204,13 +204,25 @@
 				  %s
 				  %s
 				  %s
-			', $objQueryExpansion->GetFromSql("", "\n					"), $arrCustomFieldSql['strFrom'], $arrAttachmentSql['strFrom'],
+			', $objQueryExpansion->GetFromSql("", "\n					"), '','',/*$arrCustomFieldSql['strFrom'], $arrAttachmentSql['strFrom'],*/
 			$arrSearchSql['strInventoryModelCodeSql'], $arrSearchSql['strLocationSql'], $arrSearchSql['strInventoryModelSql'], $arrSearchSql['strCategorySql'], $arrSearchSql['strManufacturerSql'], $arrSearchSql['strShortDescriptionSql'], $arrSearchSql['strCustomFieldsSql'], $arrSearchSql['strDateModifiedSql'], $arrSearchSql['strAttachmentSql'],
 			$arrSearchSql['strAuthorizationSql']);
 			
 			$objDbResult = $objDatabase->Query($strQuery);
-			$strDbRow = $objDbResult->FetchRow();
-			return QType::Cast($strDbRow[0], QType::Integer);
+			//file_put_contents("d:/2.log", $strQuery);
+			//$strDbRow = $objDbResult->FetchRow();
+			
+			//$mc = new Memcache();	
+			//$mc->connect("127.0.0.1", 11211);
+			$key = hash("md5", $strQuery);
+			$value = $mc->get($key);
+			if($value == false){
+				$strDbRow = $objDbResult->FetchRow();
+				$value = QType::Cast($strDbRow[0], QType::Integer);
+				$mc->add($key, $value, 600);
+			}
+			return $value;
+			//return QType::Cast($strDbRow[0], QType::Integer);
 			
 		}
 		
@@ -230,7 +242,7 @@
      * @param array $objExpansionMap map of referenced columns to be immediately expanded via early-binding
      * @return InventoryModel[]
      */
-		public static function LoadArrayBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $strOrderBy = null, $strLimit = null, $objExpansionMap = null) {
+		public static function LoadArrayBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $strOrderBy = null, $strLimit = null, $objExpansionMap = null, $mc = null) {
 			
 			InventoryModel::ArrayQueryHelper($strOrderBy, $strLimit, $strLimitPrefix, $strLimitSuffix, $strExpandSelect, $strExpandFrom, $objExpansionMap, $objDatabase);
 			
@@ -290,15 +302,27 @@
 				%s
 				%s
 			', $strLimitPrefix,
-				$objQueryExpansion->GetSelectSql(",\n					", ",\n					"), $arrCustomFieldSql['strSelect'], $arrAttachmentSql['strSelect'],
-				$objQueryExpansion->GetFromSql("", "\n					"), $arrCustomFieldSql['strFrom'], $arrAttachmentSql['strFrom'],
+				$objQueryExpansion->GetSelectSql(",\n					", ",\n					"), $arrCustomFieldSql['strSelect'], '',/*$arrAttachmentSql['strSelect'],*/
+				$objQueryExpansion->GetFromSql("", "\n					"), $arrCustomFieldSql['strFrom'], '',/*$arrAttachmentSql['strFrom'],*/
 				$arrSearchSql['strInventoryModelCodeSql'], $arrSearchSql['strLocationSql'], $arrSearchSql['strInventoryModelSql'], $arrSearchSql['strCategorySql'], $arrSearchSql['strManufacturerSql'], $arrSearchSql['strShortDescriptionSql'], $arrSearchSql['strCustomFieldsSql'], $arrSearchSql['strDateModifiedSql'], $arrSearchSql['strAttachmentSql'],
 				$arrSearchSql['strAuthorizationSql'], $arrAttachmentSql['strGroupBy'],
 				$strOrderBy, $strLimitSuffix);
-				
-			$objDbResult = $objDatabase->Query($strQuery);				
-			return InventoryModel::InstantiateDbResult($objDbResult);			
-		
+				//file_put_contents("d:/1.log", $strQuery);
+			$objDbResult = $objDatabase->Query($strQuery);	
+			//file_put_contents("D:/3.log", serialize(InventoryModel::InstantiateDbResult($objDbResult)));	
+			
+			//$mc = new Memcache();	
+			//$mc->connect("127.0.0.1", 11211);
+			$key = hash("md5", $strQuery);
+			$value = $mc->get($key);
+			if($value == false){
+				$value = InventoryModel::InstantiateDbResult($objDbResult);		
+				$mc->add($key, $value, 600);
+			}
+			return $value;
+			//return $objDbResult = unserialize(file_get_contents("D:/3.log"));	
+			//return InventoryModel::InstantiateDbResult($objDbResult);			
+			
 		}
 		
 		public static function LoadAllWithQuantity($strOrderBy = null, $strLimit = null, $objExpansionMap = null) {

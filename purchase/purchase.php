@@ -189,13 +189,21 @@ class Purchase extends Base{
 	    echo '{success: true}';
 	    return 1;
 	}
-	
+	/*
 	if($row['expected_arrival_date'] != "0000-00-00" && ($_POST['expected_arrival_date'] > $row['expected_arrival_date'] || $row['expected_arrival_date_edited'] == 1)){
 	    echo '{success: false,
 		      errors: {message: "预计到货日期大于原预计到货日期或预计到货日期以被设置过!"}
 		}';
 	    return 0;
 	}
+	*/
+	if(!empty($_POST['expected_arrival_date']) && $row['expected_arrival_date'] == "0000-00-00"){
+	    $sql = "update purchase_orders set expected_arrival_date='".$_POST['expected_arrival_date']."',expected_arrival_date_edited=1   
+	    where id = '".$_POST['id']."'";
+	    //echo $sql."\n";
+	    $result = mysql_query($sql);
+	}
+	
 	
 	/*
 	$sql = "update purchase_orders set sku_old_purchase_qty = sku_purchase_qty,sku_purchase_qty = '".$_POST['sku_purchase_qty']."',sku_purchase_qty_remark = '".mysql_real_escape_string($_POST['sku_purchase_qty_remark'])."',
@@ -218,13 +226,6 @@ class Purchase extends Base{
 	
 	if($_POST['sku_purchase_qty'] != $sku_old_purchase_qty){
 	    $sql = "update purchase_orders set sku_old_purchase_qty = sku_purchase_qty,sku_purchase_qty = '".$_POST['sku_purchase_qty']."',sku_purchase_qty_remark = '".mysql_real_escape_string($_POST['sku_purchase_qty_remark'])."' 
-	    where id = '".$_POST['id']."'";
-	    //echo $sql."\n";
-	    $result = mysql_query($sql);
-	}
-	
-	if(!empty($_POST['expected_arrival_date'])){
-	    $sql = "update purchase_orders set expected_arrival_date='".$_POST['expected_arrival_date']."',expected_arrival_date_edited=1   
 	    where id = '".$_POST['id']."'";
 	    //echo $sql."\n";
 	    $result = mysql_query($sql);

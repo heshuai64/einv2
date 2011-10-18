@@ -684,6 +684,40 @@ $row = mysql_fetch_assoc($result);
 </div>
 <br><br>
 
+<div id="status-history-panel" class="manage-block">
+	<h2><?=QApplication::Translate('Status Modified History')?></h2>
+	<table border=1>
+		<tr>
+			<!--
+			<th>
+				<?=QApplication::Translate('Before Status')?>
+			</th>
+			-->
+			<th>
+				<?=QApplication::Translate('After Status')?>
+			</th>
+			<th>
+				<?=QApplication::Translate('Reason')?>
+			</th>
+			<th>
+				<?=QApplication::Translate('Time')?>
+			</th>
+		</tr>
+	<?php
+		$sql = "select * from sku_status_history where sku = '".@$sku."'";
+		$result = mysql_query($sql);
+		while($row = mysql_fetch_assoc($result)){
+			echo "<tr>";
+			//echo "<td>".$row['old_status']."</td>";
+			echo "<td>".$row['status']."</td>";
+			echo "<td>".$row['reason']."</td>";
+			echo "<td>".$row['time']."</td>";
+			echo "</tr>";
+		}
+	?>
+	</table>
+</div>
+
 <!--
 <div id="purchase-panel" class="manage-block">
 	<h2><?=QApplication::Translate('Purchase In The Way')?></h2>
