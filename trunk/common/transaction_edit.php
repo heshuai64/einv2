@@ -106,7 +106,9 @@
 		protected function lblNote_Create() {
 			$this->lblNote = new QLabel($this);
 			$this->lblNote->Name = 'Note';
-			$this->lblNote->Text = $this->objTransaction->Note;
+			if(QApplication::$objRoleModule->RoleId == 1 || QApplication::$objRoleModule->RoleId == 3){
+				$this->lblNote->Text = $this->objTransaction->Note;
+			}
 		}
 		
 		// Create the datagrid of entities included in the transaction
