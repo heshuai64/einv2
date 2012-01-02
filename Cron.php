@@ -501,7 +501,7 @@ class Cron extends Base{
 	    $buffer_day = 2;
 	    $purchase_rate = 1;
 	    $flow = $row_1['week_flow_1'] / 6;
-	    //$stock_day = 30;
+	    $stock_day = 45;
 	    $suggest_purchase_num = ($flow * ($stock_day + $buffer_day) - $purchase_in_transit - $virtual_stock) * $purchase_rate;
 	    
 	    if($suggest_purchase_num > $stock){
