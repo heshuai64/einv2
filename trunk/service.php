@@ -2856,6 +2856,76 @@ class Service extends Base{
         echo json_encode(array('skuTitle'=>$short_description, 'skuChineseTitle'=>$long_description, 'skuCost'=>$cost, 'skuLowestPrice'=>$sku_lowest_price, 'skuWeight'=>$weight, 'skuStock'=>$stock, 'locatorNumber'=>$locator_number));
     }
     
+    public function getSkuProcessCardInfo(){
+	$sku = $_GET['sku'];
+	mysql_query("SET NAMES 'latin1'");
+    	$this->log("getSkuProcessCardInfo", "<font color='red'><br>****************************************** Start  ******************************************<br></font>");
+	
+	$data = array();
+	$i = 0;
+	if($this->checkSkuCombo($sku) > 0){
+	    $combo_array = $this->getSkuCombo($sku);
+	    $sql = "select inventory_model_id,long_description,week_flow_1 from inventory_model where inventory_model_code = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
+	    $inventory_model_id = $row['inventory_model_id'];
+	    $week_sale = $row['week_flow_1'];
+	    $stock = $this->getStock($inventory_model_id);
+	    
+	    foreach($combo_array as $combo){
+		$combo_sku = $combo['attachment'];
+		$combo_quantity = $combo['quantity'];
+		$sql = "select inventory_model_id,long_description,week_flow_1 from inventory_model where inventory_model_code = '".$combo_sku."'";
+		$result = mysql_query($sql, $this->conn);
+		$row = mysql_fetch_assoc($result);
+		$inventory_model_id = $row['inventory_model_id'];
+		
+		$data[$i]['sku'] = $combo_sku;
+		$data[$i]['quantity'] = $combo_quantity;
+		$data[$i]['china_title'] = $row['long_description'];
+		$data[$i]['week_sale'] = $row['week_flow_1'];
+		
+		$data[$i]['combo_week_sale'] = $week_sale;
+		$data[$i]['combo_stock'] = $stock;
+		
+		$data[$i]['locator_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['LocatorNumber']);
+		$data[$i]['weight'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']) * 1000;
+		$data[$i]['stock'] = $this->getStock($inventory_model_id);
+		$data[$i]['accessories'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['accessories']);
+		
+		$data[$i]['bar_cotton'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCotton']);
+		$data[$i]['bar_cotton_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCottonNumber']);
+		$data[$i]['massive_cotton'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['massiveCotton']);
+		$data[$i]['massive_cotton_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['massiveCottonNumber']);
+		$data[$i]['envelope'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['envelope']);
+		$i++;
+	    }
+	}else{
+	    $sql = "select inventory_model_id,long_description,week_flow_1 from inventory_model where inventory_model_code = '".$sku."'";
+	    $result = mysql_query($sql, $this->conn);
+	    $row = mysql_fetch_assoc($result);
+	    $inventory_model_id = $row['inventory_model_id'];
+	    
+	    $data[$i]['sku'] = $sku;
+	    $data[$i]['quantity'] = 1;
+	    $data[$i]['china_title'] = $row['long_description'];
+	    $data[$i]['week_sale'] = $row['week_flow_1'];
+	    
+	    $data[$i]['locator_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['LocatorNumber']);
+	    $data[$i]['weight'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']) * 1000;
+	    $data[$i]['stock'] = $this->getStock($inventory_model_id);
+	    $data[$i]['accessories'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['accessories']);
+	    
+	    $data[$i]['bar_cotton'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCotton']);
+	    $data[$i]['bar_cotton_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCottonNumber']);
+	    $data[$i]['massive_cotton'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['massiveCotton']);
+	    $data[$i]['massive_cotton_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['massiveCottonNumber']);
+	    $data[$i]['envelope'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['envelope']);
+	}
+	
+	echo json_encode($data);
+    }
+    
     public function updateSkuDescription(){
 	//mysql_query("CHARACTER SET 'latin1'", $this->conn);
         $sql = "select count(*) as num from description where sku = '".$_POST['sku']."'";
@@ -3439,6 +3509,74 @@ class Service extends Base{
     public function caclCost(){
 	//echo "3.68 * ".$_GET['price']." - 79.65 * ".$_GET['weight']." - 4.07";
 	echo 3.95 * $_GET['price'] - 81.8 * $_GET['weight'] - 4.2;
+    }
+    
+    public function searchSkuByTitle_CNTitle_Status(){
+	mysql_query("SET NAMES 'latin1'");
+	$where = "";
+	if(!empty($_REQUEST['status'])){
+	    //get status field id
+	    $status_field_sql = "select custom_field_id from custom_field where short_description = 'Sku Status'";
+	    $status_field_result = mysql_query($status_field_sql);
+	    $status_field_row = mysql_fetch_assoc($status_field_result);
+	    
+	    $status_array_1 = array();
+	    $status_array_2 = array();
+	    $status_string = "";
+	    $sql_1 = "select custom_field_value_id,short_description from custom_field_value where custom_field_id = ".$status_field_row['custom_field_id'];
+	    $result_1 = mysql_query($sql_1);
+	    while($row_1 = mysql_fetch_assoc($result_1)){
+		$status_array_1[$row_1['custom_field_value_id']] = $row_1['short_description'];
+		$status_array_2[$row_1['short_description']] = $row_1['custom_field_value_id'];
+		$status_string .= $row_1['custom_field_value_id'].",";
+	    }
+	    
+	    $where .= " and cfs.custom_field_value_id = ".$status_array_2[$_REQUEST['status']];
+	}
+	
+	if(!empty($_REQUEST['title'])){
+	    $_REQUEST['title'] = urldecode($_REQUEST['title']);
+	    if(strpos($_REQUEST['title'], " ")){
+		$t = explode(" ", $_REQUEST['title']);
+		//print_r($t);
+		foreach($t as $title){
+		    $where .= " and im.short_description like '%".$title."%'";
+		}
+	    }else{
+		$where .= " and im.short_description like '%".$_REQUEST['title']."%'";
+	    }
+	}
+	
+	if(!empty($_REQUEST['cn_title'])){
+	    $where .= " and im.long_description like '%".$_REQUEST['cn_title']."%'";
+	}
+	
+	if(!empty($_REQUEST['sku'])){
+	    $_REQUEST['sku'] = str_replace("\\", "", $_REQUEST['sku']);
+	    $where .= " and im.inventory_model_code in (".$_REQUEST['sku'].")";
+	}
+	
+	$sql = "select count(*) as totalCount from 
+	inventory_model as im,custom_field_selection as cfs where im.inventory_model_id = cfs.entity_id ".$where." group by im.inventory_model_code";
+	//echo $sql."\n";
+	$result = mysql_query($sql);
+	//$row = mysql_fetch_assoc($result);
+	$totalCount = mysql_num_rows($result);
+	
+	$array = array();
+	$sql = "select inventory_model_id as id,inventory_model_code as sku,short_description as title,long_description as cn_title from 
+	inventory_model as im,custom_field_selection as cfs where im.inventory_model_id = cfs.entity_id ".$where." group by im.inventory_model_code";// limit ".$_REQUEST['start'].",".$_REQUEST['limit'];
+	//echo $sql."\n";
+	$result = mysql_query($sql);
+	while ($row = mysql_fetch_assoc($result)) {
+	    $row['status'] = $this->getCustomFieldValue($row['id'], Service::$field_array['skuStatus']);
+	    $row['v_stock'] = $this->getCustomFieldValue($row['id'], Service::$field_array['virtualStock']);
+	    $row['sku_low_price'] = $this->getSkuLowestPrice($row['sku'], true);
+	    $array[] = $row;
+	}
+	
+	echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
+	mysql_free_result($result);
     }
     
     public function getContactByCompany(){

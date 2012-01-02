@@ -41,5 +41,5 @@ lang = {
     Good_Products_Warehouse:'布吉仓',
     Bad_Products_Warehouse:'不良品仓',
     Repair_Warehouse:'返修仓',
-    Sample_Warehouse:'样品仓',
+    Sample_Warehouse:'样品仓'
 }
