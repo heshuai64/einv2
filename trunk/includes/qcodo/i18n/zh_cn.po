@@ -70,6 +70,9 @@ MsgStr "块状棉"
 MsgId "Massive Cotton Number"
 MsgStr "块状棉个数"
 
+MsgId "Test It"
+MsgStr "是否测试"
+
 #
 MsgId "Image Manage"
 MsgStr "图片管理（支持JPG格式）"

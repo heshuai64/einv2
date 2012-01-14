@@ -2869,8 +2869,16 @@ class Service extends Base{
 	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
 	    $inventory_model_id = $row['inventory_model_id'];
-	    $week_sale = $row['week_flow_1'];
-	    $stock = $this->getStock($inventory_model_id);
+	    //$week_sale = $row['week_flow_1'];
+	    //$stock = $this->getStock($inventory_model_id);
+	    
+	    $combo_sku = $sku;
+	    $combo_locator_number = $this->getCustomFieldValue($row['inventory_model_id'], $this->conf['fieldArray']['LocatorNumber']);
+	    $combo_stock = $this->getStock($row['inventory_model_id']);
+	    $combo_accessories = $this->getCustomFieldValue($row['inventory_model_id'], $this->conf['fieldArray']['accessories']);
+	    $combo_weight = $this->getCustomFieldValue($row['inventory_model_id'], $this->conf['fieldArray']['weight']) * 1000;
+	    $combo_week_sale = $row['week_flow_1'];
+	    $combo_test_it = $this->getCustomFieldValue($row['inventory_model_id'], $this->conf['fieldArray']['TestIt']);
 	    
 	    foreach($combo_array as $combo){
 		$combo_sku = $combo['attachment'];
@@ -2880,13 +2888,23 @@ class Service extends Base{
 		$row = mysql_fetch_assoc($result);
 		$inventory_model_id = $row['inventory_model_id'];
 		
+		if($i == 0){
+		    $data[$i]['combo_sku'] = $sku;
+		    $data[$i]['combo_locator_number'] = $combo_locator_number;
+		    $data[$i]['combo_stock'] = $combo_stock;
+		    $data[$i]['combo_accessories'] = $combo_accessories;
+		    $data[$i]['combo_weight'] = $combo_weight;
+		    $data[$i]['combo_week_sale'] = $combo_week_sale;
+		    $data[$i]['combo_test_it'] = $combo_test_it;
+		}
+		
 		$data[$i]['sku'] = $combo_sku;
 		$data[$i]['quantity'] = $combo_quantity;
 		$data[$i]['china_title'] = $row['long_description'];
 		$data[$i]['week_sale'] = $row['week_flow_1'];
 		
-		$data[$i]['combo_week_sale'] = $week_sale;
-		$data[$i]['combo_stock'] = $stock;
+		//$data[$i]['combo_week_sale'] = $week_sale;
+		//$data[$i]['combo_stock'] = $stock;
 		
 		$data[$i]['locator_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['LocatorNumber']);
 		$data[$i]['weight'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']) * 1000;
@@ -2915,6 +2933,7 @@ class Service extends Base{
 	    $data[$i]['weight'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['weight']) * 1000;
 	    $data[$i]['stock'] = $this->getStock($inventory_model_id);
 	    $data[$i]['accessories'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['accessories']);
+	    $data[$i]['test_it'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['TestIt']);
 	    
 	    $data[$i]['bar_cotton'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCotton']);
 	    $data[$i]['bar_cotton_number'] = $this->getCustomFieldValue($inventory_model_id, $this->conf['fieldArray']['barCottonNumber']);

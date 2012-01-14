@@ -142,14 +142,16 @@ class Purchase extends Base{
 	$i = 0;
 	$array = "";
         while($row = mysql_fetch_assoc($result)){
-	    if(!empty($_SESSION['po_sku_real_time'])){
+	    //if(!empty($_SESSION['po_sku_real_time'])){
 		$row['sku_stock'] = $this->getStock("", $row['sku']);
 		$row['sku_virtual_stock'] = $this->getVirtualStock("", $row['sku']);
 		$row['sku_purchase_in_transit'] = $this->getSkuPurchaseInTransit($row['sku']);
 		$flow = $this->getFlow("", $row['sku']);
 		$row['sku_three_day_flow'] = $flow['three_day_flow'];
 		$row['sku_week_flow'] = $flow['week_flow_1'];
-	    }
+		$row['sku_defective_qty'] = $this->getStock("", $row['sku'], $this->conf['location']['bad_products_warehouse']);
+		$row['sku_rework_qty'] = $this->getStock("", $row['sku'], $this->conf['location']['repair_warehouse']);
+	    //}
 	    $row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
             $array[] = $row;
             $i++;
