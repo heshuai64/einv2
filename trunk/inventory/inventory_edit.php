@@ -95,6 +95,18 @@
 					// $this->ctlInventoryEdit->dtgInventoryQuantities->DataSource = InventoryLocation::LoadArrayByInventoryModelId($this->ctlInventoryEdit->objInventoryModel->InventoryModelId, $this->ctlInventoryEdit->dtgInventoryQuantities->SortInfo, $this->ctlInventoryEdit->dtgInventoryQuantities->LimitInfo, $objExpansionMap);
 					$this->ctlInventoryEdit->dtgInventoryQuantities->DataSource = InventoryLocation::LoadArrayByInventoryModelIdLocations($this->ctlInventoryEdit->objInventoryModel->InventoryModelId, $this->ctlInventoryEdit->dtgInventoryQuantities->SortInfo, $this->ctlInventoryEdit->dtgInventoryQuantities->LimitInfo, $objExpansionMap);
 				}
+
+				$this->ctlInventoryEdit->dtgInventoryDateQuantities->TotalItemCount = SkuDateQtyHistory::CountBySku($this->ctlInventoryEdit->objInventoryModel->InventoryModelCode);
+				if ($this->ctlInventoryEdit->dtgInventoryDateQuantities->TotalItemCount == 0) {
+					$this->ctlInventoryEdit->dtgInventoryDateQuantities->ShowHeader = false;
+				}
+				else {
+					$this->ctlInventoryEdit->dtgInventoryDateQuantities->ShowHeader = true;
+					$tmp = explode(",", $this->ctlInventoryEdit->dtgInventoryDateQuantities->LimitInfo);
+					$this->ctlInventoryEdit->dtgInventoryDateQuantities->DataSource = SkuDateQtyHistory::LoadArrayBySku($this->ctlInventoryEdit->objInventoryModel->InventoryModelCode, QQ::Clause(QQ::LimitInfo($tmp[1], $tmp[0])));
+					//print_r($this->ctlInventoryEdit->dtgInventoryDateQuantities->DataSource);
+				}
+				
 				$objExpansionMap = null;
 
 			// Specify the local databind method this datagrid will use

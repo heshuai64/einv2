@@ -152,8 +152,9 @@ class Purchase extends Base{
 		$row['sku_defective_qty'] = $this->getStock("", $row['sku'], $this->conf['location']['bad_products_warehouse']);
 		$row['sku_rework_qty'] = $this->getStock("", $row['sku'], $this->conf['location']['repair_warehouse']);
 	    //}
-	    $row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
-            $array[] = $row;
+	    //$row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
+            $row['vendors'] = ((!empty($row['vendors_id']))?$row['vendors_id']:"")."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
+	    $array[] = $row;
             $i++;
         }
         echo json_encode(array('totalCount'=>$totalCount, 'records'=>$array));
@@ -660,7 +661,7 @@ class Purchase extends Base{
 	$i = 0;
 	$array = "";
         while($row = mysql_fetch_assoc($result)){
-	    $row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
+	    $row['vendors'] = /*$allCompany[$row['vendors_id']]['short_description']*/$row['vendors_id']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
             $array[] = $row;
             $i++;
         }
@@ -695,7 +696,7 @@ class Purchase extends Base{
 	    $sql = "select company_id from sku_company_contact_price where sku = '".$_GET['sku']."'";
 	    $result = mysql_query($sql);
 	    while($row = mysql_fetch_assoc($result)){
-		$sql_1 = "select company_id as id,short_description as name from company where company_id = ".$row['company_id'];
+		$sql_1 = "select company_id as id,company_id as name from company where company_id = ".$row['company_id'];
 		$result_1 = mysql_query($sql_1);
 		$row_1 = mysql_fetch_assoc($result_1);
 		$array[] = $row_1;
@@ -707,7 +708,7 @@ class Purchase extends Base{
 		$array[] = $row;
 	    }
 	}else{
-	    $sql = "select company_id as id,short_description as name from company";
+	    $sql = "select company_id as id,company_id as name from company";
 	    $result = mysql_query($sql);
 	    while($row = mysql_fetch_assoc($result)){
 		$array[] = $row;

@@ -108,6 +108,7 @@ class CompanyEditForm extends CompanyEditFormBase {
 		$this->ctlShortcutMenu_Create();
 			
 		// Create labels for Company information
+		$this->lblCompanyId_Create();
 		$this->lblShortDescription_Create();
 		$this->lblHeaderCompanyName_Create();
 		$this->lblWebsite_Create();

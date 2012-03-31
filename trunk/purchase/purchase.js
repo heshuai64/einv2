@@ -552,6 +552,11 @@ Ext.onReady(function(){
             sortable: true
         }*/],
         listeners: {'dblclick': function(e){
+                if(user_role != "Administrator" && user_role != "PPMC"){
+                    Ext.Msg.alert(lang.Warning, lang.Permissions_Reject);
+                    return 0;    
+                }
+                
                 var selections = purchaseOrdersGrid.selModel.getSelections();
                 var purchase_orders_id = selections[0].data.id;
                 var sku = selections[0].data.sku;
@@ -854,6 +859,7 @@ Ext.onReady(function(){
                     });
                 
                     vendorsWindow.show();
+                    return 1;
             }
         },
         bbar:[{
@@ -1681,7 +1687,7 @@ Ext.onReady(function(){
                         name:"combovalue",
                         hiddenName:"combovalue",
                         
-                        displayField:'name',
+                        //displayField:'name',
                         //typeAhead: false,
                         minChars: 2,
                         loadingText: 'Searching...',
@@ -1754,18 +1760,18 @@ Ext.onReady(function(){
                         }),
                         valueField:'id',
                         displayField:'name',
-                        fieldLabel: lang.Vendors,
+                        //fieldLabel: lang.Vendors,
                         triggerAction: 'all',
                         editable: false,
                         selectOnFocus:true,
-                        fieldLabel: lang.Purchaser,
-                        name:"combovalue",
-                        hiddenName:"combovalue"
+                        fieldLabel: lang.Purchaser
+                        //name:"combovalue",
+                        //hiddenName:"combovalue"
                     },{
                         xtype:"combo",
-                        fieldLabel: lang.Category,
-                        name:"combovalue",
-                        hiddenName:"combovalue"
+                        fieldLabel: lang.Category
+                        //name:"combovalue",
+                        //hiddenName:"combovalue"
                     }]
                 }]
             }],
@@ -2063,7 +2069,7 @@ Ext.onReady(function(){
                         name:"combovalue",
                         hiddenName:"combovalue",
                         
-                        displayField:'name',
+                        //displayField:'name',
                         //typeAhead: false,
                         minChars: 2,
                         loadingText: 'Searching...',

@@ -664,6 +664,99 @@ class Cron extends Base{
 	}
     }
     
+    public function calculateTakeOutByDate(){
+	global $argv;
+	$sku_array = array();
+	if(!empty($argv[2])){
+	    $yday = $argv[2];
+	}else{
+	    $yday = date("Y-m-d", time() - 24 * 60 * 60);
+	}
+	echo $yday."\n";
+	
+	$sql = "select count(*) as num from sku_date_qty_history where date = '".$yday."'";
+	$result = mysql_query($sql, $this->conn);
+	$row = mysql_fetch_assoc($result);
+	if($row['num'] > 0){
+	    echo $yday." had calculate.\n";
+	    exit;
+	}
+	
+	//$sql_0 = "select im.inventory_model_code as sku,t.transaction_id from inventory_model as im,transaction as t where im.inventory_model_id = t.entity_qtype_id and t.transaction_type_id = 1 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	$sql_0 = "select it.inventory_location_id,it.quantity from transaction as t,inventory_transaction as it where t.transaction_id = it.transaction_id and it.source_location_id = 6 and t.entity_qtype_id = 2 and t.transaction_type_id = 1 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	echo $sql_0."\n";
+	$result_0 = mysql_query($sql_0, $this->conn);
+        while($row_0 = mysql_fetch_assoc($result_0)){
+	    //$sql_1 = "select quantity from inventory_transaction where source_location_id = 6 and destination_location_id = 3 and transaction_id = ".$row_0['transaction_id'];
+	    $sql_1 = "select im.inventory_model_code as sku from inventory_model as im,inventory_location as il where im.inventory_model_id = il.inventory_model_id and il.inventory_location_id = ".$row_0['inventory_location_id'];
+	    $result_1 = mysql_query($sql_1, $this->conn);
+	    $row_1 = mysql_fetch_assoc($result_1);
+	    $sku_array[1][$row_1['sku']] += $row_0['quantity'];
+	}
+	
+	//$yday = date("Y-m-d", time() - 24 * 60 * 60);
+	//$sql_0 = "select im.inventory_model_code as sku,t.transaction_id from inventory_model as im,transaction as t where im.inventory_model_id = t.entity_qtype_id and t.transaction_type_id = 4 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	$sql_0 = "select it.inventory_location_id,it.quantity from transaction as t,inventory_transaction as it where t.transaction_id = it.transaction_id and it.source_location_id = 4 and it.destination_location_id = 6 and t.entity_qtype_id = 2 and t.transaction_type_id = 4 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	echo $sql_0."\n";
+	$result_0 = mysql_query($sql_0, $this->conn);
+        while($row_0 = mysql_fetch_assoc($result_0)){
+	    //$sql_1 = "select quantity from inventory_transaction where source_location_id = 6 and destination_location_id = 3 and transaction_id = ".$row_0['transaction_id'];
+	    $sql_1 = "select im.inventory_model_code as sku from inventory_model as im,inventory_location as il where im.inventory_model_id = il.inventory_model_id and il.inventory_location_id = ".$row_0['inventory_location_id'];
+	    $result_1 = mysql_query($sql_1, $this->conn);
+	    $row_1 = mysql_fetch_assoc($result_1);
+	    $sku_array[4][$row_1['sku']] += $row_0['quantity'];
+	}
+	
+	//$yday = date("Y-m-d", time() - 24 * 60 * 60);
+	//$sql_0 = "select im.inventory_model_code as sku,t.transaction_id from inventory_model as im,transaction as t where im.inventory_model_id = t.entity_qtype_id and t.transaction_type_id = 5 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	$sql_0 = "select it.inventory_location_id,it.quantity from transaction as t,inventory_transaction as it where t.transaction_id = it.transaction_id and it.source_location_id = 6 and it.destination_location_id = 3 and t.entity_qtype_id = 2 and t.transaction_type_id = 5 and t.creation_date between '".$yday." 00:00:00' and '".$yday." 23:59:59'";
+	echo $sql_0."\n";
+	$result_0 = mysql_query($sql_0, $this->conn);
+        while($row_0 = mysql_fetch_assoc($result_0)){
+	    //$sql_1 = "select quantity from inventory_transaction where source_location_id = 6 and destination_location_id = 3 and transaction_id = ".$row_0['transaction_id'];
+	    $sql_1 = "select im.inventory_model_code as sku from inventory_model as im,inventory_location as il where im.inventory_model_id = il.inventory_model_id and il.inventory_location_id = ".$row_0['inventory_location_id'];
+	    $result_1 = mysql_query($sql_1, $this->conn);
+	    $row_1 = mysql_fetch_assoc($result_1);
+	    $sku_array[5][$row_1['sku']] += $row_0['quantity'];
+	}
+	
+	foreach($sku_array as $type=>$skus){
+	    foreach($skus as $sku=>$qty){
+		switch($type){
+		    case 1:
+			$sql_2 = "insert into sku_date_qty_history (sku,date,move_qty) values 
+			('".$sku."','".$yday."',".$qty.")";
+		    break;
+		
+		    case 4:
+			$sql_20 = "select count(*) as num from sku_date_qty_history where sku = '".$sku."' and date = '".$yday."'";
+			$result_20 = mysql_query($sql_20, $this->conn);
+			$row_20 = mysql_fetch_assoc($result_20);
+			if($row_20['num'] > 0){
+			    $sql_2 = "update sku_date_qty_history set restore_qty = ".$qty." where sku = '".$sku."' and date = '".$yday."'";
+			}else{
+			    $sql_2 = "insert into sku_date_qty_history (sku,date,restore_qty) values ('".$sku."','".$yday."',".$qty.")";
+			}
+		    break;
+		
+		    case 5:
+			$sql_20 = "select count(*) as num from sku_date_qty_history where sku = '".$sku."' and date = '".$yday."'";
+			$result_20 = mysql_query($sql_20, $this->conn);
+			$row_20 = mysql_fetch_assoc($result_20);
+			if($row_20['num'] > 0){
+			    $sql_2 = "update sku_date_qty_history set take_out_qty = ".$qty." where sku = '".$sku."' and date = '".$yday."'";
+			}else{
+			    $sql_2 = "insert into sku_date_qty_history (sku,date,take_out_qty) values ('".$sku."','".$yday."',".$qty.")";
+			}
+		    break;
+		}
+		echo $sql_2."\n";
+		mysql_query($sql_2, $this->conn);
+	    }
+	}
+	
+    }
+    
     public function __destruct(){
         mysql_close($this->conn);
     }

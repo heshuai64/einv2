@@ -52,6 +52,10 @@
 			return sprintf('%s',  $this->ShortDescription);
 		}
 		
+		public function __toStringWithId($cssClass = null) {
+			return $this->CompanyId;
+		}
+		
 		public function __toStringWithLink($cssClass = null) {
 			return sprintf('<a href="company_edit.php?intCompanyId=%s" class="%s">%s</a>', $this->CompanyId, $cssClass, $this->ShortDescription);
 		}

@@ -41,7 +41,6 @@ lang = {
     Address: '地址',
     WebSite: '站点',
     
-    Purchase_Status: '采购状态',
     Generate_Purchase_Orders_Date: '下采购订单',
     Approval_Pass_Date: '审核通过',
     Expected_Arrival_Date: '预计到货',
@@ -74,7 +73,6 @@ lang = {
     Import_Purchase_Orders_Excel: '导入Excel文件转化为采购订单',
     File: '文件',
     Select_An_Excel_File: '选择一个Excel文件',
-    Create_Purchase_Orders: '创建采购订单',
     Edit_Purchase_Orders:'编辑采购订单',
     Show_Remark:'显示备注',
     Submit_Purchase_Orders:'提交采购订单',
@@ -108,6 +106,7 @@ lang = {
     Confirmation: '确认',
     Waitting: '正在加载中,请稍候.',
     Warning: '警告',
+    Permissions_Reject: '权限拒绝',
     Success: '成功',
     Failure: '错误',
     Network_Error: '网络错误,请稍后再试.',

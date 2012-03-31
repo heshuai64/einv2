@@ -163,7 +163,7 @@
      * @param array $objExpansionMap
      * @return integer Count
      */
-		public static function CountBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $objExpansionMap = null, $mc = null) {
+		public static function CountBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $objExpansionMap = null, &$mc = null) {
 		
 			// Call to QueryHelper to Get the Database Object		
 			InventoryModel::QueryHelper($objDatabase);
@@ -219,7 +219,7 @@
 			if($value == false){
 				$strDbRow = $objDbResult->FetchRow();
 				$value = QType::Cast($strDbRow[0], QType::Integer);
-				$mc->add($key, $value, 600);
+				$mc->add($key, $value, false, 600);
 			}
 			return $value;
 			//return QType::Cast($strDbRow[0], QType::Integer);
@@ -242,7 +242,7 @@
      * @param array $objExpansionMap map of referenced columns to be immediately expanded via early-binding
      * @return InventoryModel[]
      */
-		public static function LoadArrayBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $strOrderBy = null, $strLimit = null, $objExpansionMap = null, $mc = null) {
+		public static function LoadArrayBySearch($strInventoryModelCode = null, $intLocationId = null, $intInventoryModelId = null, $intCategoryId = null, $intManufacturerId = null, $strShortDescription = null, $arrCustomFields = null, $strDateModified = null, $strDateModifiedFirst = null, $strDateModifiedLast = null, $blnAttachment = null, $strOrderBy = null, $strLimit = null, $objExpansionMap = null, &$mc = null) {
 			
 			InventoryModel::ArrayQueryHelper($strOrderBy, $strLimit, $strLimitPrefix, $strLimitSuffix, $strExpandSelect, $strExpandFrom, $objExpansionMap, $objDatabase);
 			
@@ -317,7 +317,7 @@
 			$value = $mc->get($key);
 			if($value == false){
 				$value = InventoryModel::InstantiateDbResult($objDbResult);		
-				$mc->add($key, $value, 600);
+				$mc->add($key, $value, false, 600);
 			}
 			return $value;
 			//return $objDbResult = unserialize(file_get_contents("D:/3.log"));	
@@ -393,6 +393,14 @@
   						$tmp2 .= "`inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode OR ";
   					}
   					$arrSearchSql['strInventoryModelCodeSql'] = "AND (".substr($tmp2, 0, -4).")";
+  				}elseif(strpos($strInventoryModelCode, " ") != false){
+  					$tmp = explode(" ", $strInventoryModelCode);
+  					$tmp2 = "";
+  					foreach($tmp as $tmp1){
+  						$strInventoryModelCode = QApplication::$Database[1]->SqlVariable("%" . $tmp1 . "%", false);
+  						$tmp2 .= "`inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode OR ";
+  					}
+  					$arrSearchSql['strInventoryModelCodeSql'] = "AND (".substr($tmp2, 0, -4).")";
   				}else{
 					$strInventoryModelCode = QApplication::$Database[1]->SqlVariable("%" . $strInventoryModelCode . "%", false);
 					$arrSearchSql['strInventoryModelCodeSql'] = "AND `inventory_model` . `inventory_model_code` LIKE $strInventoryModelCode";
@@ -416,10 +424,20 @@
   		  $intManufacturerId = QApplication::$Database[1]->SqlVariable($intManufacturerId, true);
 				$arrSearchSql['strManufacturerSql'] = sprintf("AND `inventory_model`.`manufacturer_id`%s", $intManufacturerId);
 			}
-			if ($strShortDescription) {
+			
+			if(strpos($strShortDescription, " ") != false){
+				$tmp = explode(" ", $strShortDescription);
+  				$tmp2 = "";
+  				foreach($tmp as $tmp1){
+  					$strShortDescription = QApplication::$Database[1]->SqlVariable("%" . $tmp1 . "%", false);
+  					$tmp2 .= "`inventory_model` . `short_description` LIKE $strShortDescription AND ";
+  				}
+  				$arrSearchSql['strShortDescriptionSql'] = "AND (".substr($tmp2, 0, -4).")";
+			}elseif ($strShortDescription) {
 				$strShortDescription = QApplication::$Database[1]->SqlVariable("%" . $strShortDescription . "%", false);
 				$arrSearchSql['strShortDescriptionSql'] = "AND `inventory_model`.`short_description` LIKE $strShortDescription";
 			}
+			
 			if ($strDateModified) {
 				if ($strDateModified == "before" && $strDateModifiedFirst instanceof QDateTime) {
 					$strDateModifiedFirst = QApplication::$Database[1]->SqlVariable($strDateModifiedFirst->Timestamp, false);
