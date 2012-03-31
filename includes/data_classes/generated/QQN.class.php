@@ -144,5 +144,8 @@
 		static public function WeightUnit() {
 			return new QQNodeWeightUnit('weight_unit', null);
 		}
+		static public function SkuDateQtyHistory() {
+			return new QQNodeSkuDateQtyHistory('sku_date_qty_history', null);
+		}
 	}
 ?>

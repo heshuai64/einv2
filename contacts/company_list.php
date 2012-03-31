@@ -238,8 +238,11 @@
       $objPaginator = new QPaginator($this->dtgCompany);
       $this->dtgCompany->Paginator = $objPaginator;
       $this->dtgCompany->ItemsPerPage = 20;
-          
+
+      $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('Company Id'), '<?= $_ITEM->__toStringWithId() ?>', 'SortByCommand="company_id ASC"', 'ReverseSortByCommand="company_id DESC"', 'CssClass="dtg_column"'));
+      /*
       $this->dtgCompany->AddColumn(new QDataGridColumnExt('<img src=../images/icons/attachment_gray.gif border=0 title=Attachments alt=Attachments>', '<?= Attachment::toStringIcon($_ITEM->GetVirtualAttribute(\'attachment_count\')); ?>', 'SortByCommand="__attachment_count ASC"', 'ReverseSortByCommand="__attachment_count DESC"', 'CssClass="dtg_column"', 'HtmlEntities="false"'));
+      */
       $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('Company Name'), '<?= $_ITEM->__toStringWithLink("bluelink") ?>', 'SortByCommand="short_description ASC"', 'ReverseSortByCommand="short_description DESC"', 'CssClass="dtg_column"', 'HtmlEntities=false'));
       $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('City'), '<?= $_ITEM->__toStringCity() ?>', 'Width=200', 'SortByCommand="company__address_id__city ASC"', 'ReverseSortByCommand="company__address_id__city DESC"', 'CssClass="dtg_column"'));
       $this->dtgCompany->AddColumn(new QDataGridColumnExt(QApplication::Translate('State/Province'), '<?= $_ITEM->__toStringStateProvince() ?>', 'SortByCommand="company__address_id__state_province_id__short_description ASC"', 'ReverseSortByCommand="company__address_id__state_province_id__short_description DESC"', 'CssClass="dtg_column"'));

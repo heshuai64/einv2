@@ -1,5 +1,4 @@
 <?php 
-include('../includes/configuration.inc.php');
 include('../includes/prepend.inc.php');
 if(empty($_SESSION['intUserAccountId'])){
 	header('Location: /inventory/login.php');
@@ -45,15 +44,18 @@ if(!in_array($currency_user_role, $role_1)){
 		<link rel="stylesheet" type="text/css" href="../resources/css/ext-all.css" />
 		<link rel="stylesheet" type="text/css" href="../resources/css/xtheme-gray.css" />
 		<link rel="stylesheet" type="text/css" href="fileuploadfield.css"/>
-	    <!-- GC -->
+		<!-- GC -->
 	 	<!-- LIBS -->
 	 	<script type="text/javascript" src="../adapter/ext/ext-base.js"></script>
 	 	<!-- ENDLIBS -->
 	
 		<script type="text/javascript" src="../ext-all.js"></script>
-		<script type="text/javascript" src="zh_cn.js"></script>
+		<script type="text/javascript" src="zh_cn-min.js"></script>
 		<script src="FileUploadField.js"></script>
-		<script type="text/javascript" src="purchase.js"></script>
+		<script type="text/javascript">
+			var user_role = "<?=$currency_user_role?>";
+		</script>
+		<script type="text/javascript" src="purchase-min.js"></script>
 	</head>
 	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0" style="width: 1630px;">
 	<?php

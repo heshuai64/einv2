@@ -85,7 +85,8 @@
 		<img src="../images/empty.gif" width="10">
 	</td>
 	<td width="100%" valign="top">	
-	<div class="title">Companies: <?php $this->lblHeaderCompanyName->Render(); ?></div>
+	<div class="title"><?php echo QApplication::Translate('Company Name')?>: <?php $this->lblHeaderCompanyName->Render(); ?></div>
+	<div style="font:bold 14px verdana ; color:red; "><?php echo QApplication::Translate('Company Id')?>: <?php $this->lblCompanyId->Render(); ?></div>
 	<table class="datagrid" cellpadding="5" cellspacing="0" border="0" >
 		<tr>
 			<td class="record_header">

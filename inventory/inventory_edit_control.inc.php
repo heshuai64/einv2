@@ -339,6 +339,32 @@ if(!empty($_GET['intInventoryModelId'])){
 		<a href="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"><img border=0 style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/></a>
 	</div>
 </div>
+
+<div id="image-list" class="manage-block" style="display:none;">
+	<?php
+		/*
+		$images_host = array();
+		$result = json_decode(@file_get_contents("http://127.0.0.1:6666/eBayBO/eBayListing/service.php?action=getAlleBayAccount"));
+		foreach($result->result as $r){
+			if(!in_array($r->images_host, $images_host)){
+				$images_host[] = $r->images_host;
+			}
+		}
+		
+		foreach($images_host as $host){
+			for($i = 0; $i < 6; $i++){
+				if($i == 0){
+					echo "<img src='".$host.substr($sku, 0, 2)."/".$sku.".jpg' width='100' height='100' />&nbsp;&nbsp;";
+				}else{
+					echo "<img src='".$host.substr($sku, 0, 2)."/".$sku."_".$i.".jpg' width='100' height='100' />&nbsp;&nbsp;";
+				}
+			}
+			echo "<br>";
+		}
+		*/
+	?>
+</div>
+
 <br><br>
 <?php
 if(in_array($currency_user_role, $role_1)){
@@ -436,7 +462,7 @@ if(in_array($currency_user_role, $role_1)){
 	$company .= '<select id="vendors_id">';
 	while($row = mysql_fetch_assoc($result)){
 		$company_array[$row['company_id']] = $row['short_description'];
-		$company .= '<option value="'.$row['company_id'].'">'.$row['short_description'].'</option>';
+		$company .= '<option value="'.$row['company_id'].'">'.$row['company_id'].'</option>';
 	}
 	$company .= '</select>';
 	echo $company;
@@ -468,7 +494,7 @@ if(in_array($currency_user_role, $role_1)){
 		$vendors_table .= $row['default']==1?'<font color="red">'.QApplication::Translate('Y').'</font>':QApplication::Translate('N');
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
-		$vendors_table .= $company_array[$row['company_id']];
+		$vendors_table .= $row['company_id'];
 		$vendors_table .= "</td>";
 		$vendors_table .= "<td>";
 		$vendors_table .= @$contact_array[$row['contact_id']];
@@ -839,9 +865,15 @@ $this->pnlAttachments->Render();
 			//$this->btnReceive->Render();
 			echo '<br class="item_divider />';
 			echo '<br class="item_divider />';
+			
 			echo('<div class="title">'.QApplication::Translate('Quantity by Location').'</div>');
 			$this->dtgInventoryQuantities->RenderWithError(); 
 			echo '<br class="item_divider" />';
+			
+			echo('<div class="title">'.QApplication::Translate('Quantity by Date').'</div>');
+			$this->dtgInventoryDateQuantities->RenderWithError(); 
+			echo '<br class="item_divider" />';
+			
 			echo '<div class="title">'.QApplication::Translate('Transactions').'</div>';
 			$this->dtgInventoryTransaction->RenderWithError();
 		}

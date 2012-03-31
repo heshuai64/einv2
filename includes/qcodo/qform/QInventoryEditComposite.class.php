@@ -65,6 +65,8 @@ class QInventoryEditComposite extends QControl {
 	// Quantities By Location Datagrid
 	public $dtgInventoryQuantities;
 
+	public $dtgInventoryDateQuantities;
+	
 	// Transaction History Datagrid
 	public $dtgInventoryTransaction;
 	public $dtgShipmentReceipt;
@@ -144,6 +146,7 @@ class QInventoryEditComposite extends QControl {
 		if ($this->blnEditMode) {
 			// Create the Quantities by Location datagrid
 			$this->dtgInventoryQuantities_Create();
+			$this->dtgInventoryDateQuantities_Create();
 			// Create the transaction history datagrid
 			$this->dtgInventoryTransaction_Create();
 			$this->lblShipmentReceipt_Create();
@@ -466,7 +469,39 @@ class QInventoryEditComposite extends QControl {
 		$this->btnReceive->CausesValidation = false;
 		QApplication::AuthorizeControl($this->objInventoryModel, $this->btnReceive, 2);
 	}
+	
+	protected function dtgInventoryDateQuantities_Create(){
+		$this->dtgInventoryDateQuantities = new QDataGrid($this);
+		$this->dtgInventoryDateQuantities->Name = 'Quantities By Date';
+		$this->dtgInventoryDateQuantities->CellPadding = 5;
+		$this->dtgInventoryDateQuantities->CellSpacing = 0;
+		$this->dtgInventoryDateQuantities->CssClass = "datagrid";
 
+		// Enable AJAX - this won't work while using the DB profiler
+		$this->dtgInventoryDateQuantities->UseAjax = true;
+
+		// Enable Pagination, and set to 20 items per page
+		$objPaginator = new QPaginator($this->dtgInventoryDateQuantities);
+		$this->dtgInventoryDateQuantities->Paginator = $objPaginator;
+		$this->dtgInventoryDateQuantities->ItemsPerPage = 10;
+
+		$this->dtgInventoryDateQuantities->AddColumn(new QDataGridColumn(QApplication::Translate('Date'), '<?= $_ITEM->Date ?>', 'SortByCommand="date ASC"', 'ReverseSortByCommand="date DESC"', 'CssClass="dtg_column"'));
+		$this->dtgInventoryDateQuantities->AddColumn(new QDataGridColumn(QApplication::Translate('Number'), '<?= $_ITEM->TakeOutQty ?>', 'SortByCommand="take_out_qty ASC"', 'ReverseSortByCommand="take_out_qty DESC"', 'CssClass="dtg_column"'));
+
+		$objStyle = $this->dtgInventoryDateQuantities->RowStyle;
+		$objStyle->ForeColor = '#000000';
+		$objStyle->BackColor = '#FFFFFF';
+		$objStyle->FontSize = 12;
+
+		$objStyle = $this->dtgInventoryDateQuantities->AlternateRowStyle;
+		$objStyle->BackColor = '#EFEFEF';
+
+		$objStyle = $this->dtgInventoryDateQuantities->HeaderRowStyle;
+		$objStyle->ForeColor = '#000000';
+		$objStyle->BackColor = '#EFEFEF';
+		$objStyle->CssClass = 'dtg_header';
+	}
+	
 	protected function dtgInventoryQuantities_Create() {
 		$this->dtgInventoryQuantities = new QDataGrid($this);
 		$this->dtgInventoryQuantities->Name = 'Quantities By Location';

@@ -186,7 +186,16 @@ MsgStr "库存出库"
 MsgId "Restock Inventory"
 MsgStr "库存入库"
 
+MsgId "Quantity by Date"
+MsgStr "日出货量"
+
+MsgId "Number"
+MsgStr "数量"
+
 #
+MsgId "Company Id"
+MsgStr "供应商ID"
+
 MsgId "Create Company"
 MsgStr "创建供应商"
 
