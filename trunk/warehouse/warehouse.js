@@ -366,7 +366,7 @@ Ext.onReady(function(){
             totalProperty: 'totalCount',
             idProperty: 'id',
             //autoLoad:true,
-            fields: ['sku', 'title', 'locator', 'stock', 'virtual_stock', 'good_products_warehouse', 'bad_products_warehouse', 'repair_warehouse', 'sample_warehouse'],
+            fields: ['sku', 'title', 'status', 'locator', 'stock', 'virtual_stock', 'good_products_warehouse', 'bad_products_warehouse', 'repair_warehouse', 'sample_warehouse'],
             url:'warehouse.php?action=getSkuWarehouseStock'
     });
 
@@ -386,6 +386,12 @@ Ext.onReady(function(){
             width: 250,
             align: 'center',
             sortable: true
+        },{
+            header: lang.Status,
+            dataIndex: 'status',
+            width: 70,
+            align: 'center',
+            sortable: true    
         },{
             header: lang.Locator,
             dataIndex: 'locator',

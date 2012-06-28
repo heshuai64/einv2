@@ -103,7 +103,7 @@
 				else {
 					$this->ctlInventoryEdit->dtgInventoryDateQuantities->ShowHeader = true;
 					$tmp = explode(",", $this->ctlInventoryEdit->dtgInventoryDateQuantities->LimitInfo);
-					$this->ctlInventoryEdit->dtgInventoryDateQuantities->DataSource = SkuDateQtyHistory::LoadArrayBySku($this->ctlInventoryEdit->objInventoryModel->InventoryModelCode, QQ::Clause(QQ::LimitInfo($tmp[1], $tmp[0])));
+					$this->ctlInventoryEdit->dtgInventoryDateQuantities->DataSource = SkuDateQtyHistory::LoadArrayBySku($this->ctlInventoryEdit->objInventoryModel->InventoryModelCode, QQ::Clause(QQ::OrderBy(QQN::SkuDateQtyHistory()->Date, false), QQ::LimitInfo($tmp[1], $tmp[0])));
 					//print_r($this->ctlInventoryEdit->dtgInventoryDateQuantities->DataSource);
 				}
 				

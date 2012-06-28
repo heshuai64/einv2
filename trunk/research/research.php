@@ -391,15 +391,20 @@ class Research{
     }
     
     private function getLO($type, $status){
+        //1:sales manager,2:sales,3:purchaser,4:purchase manager,5:qc
         $status_array = array(0=>'新品',
                               1=>'待审核',
                               2=>'待询价',
-                              3=>'询价待审核',
+                              3=>'价格待审核',
                               4=>'询价完成',
                               5=>'拿样确认',
                               6=>'新品开发成功',
                               7=>'新品开发失败',
-                              8=>'放弃');
+                              8=>'放弃',
+                              
+                              9=>'询价待分配',
+                              10=>'供应商审核',
+                              11=>'包材待审核');
         session_start();
         $role = $_SESSION['role'];
         $array = array();
@@ -408,7 +413,7 @@ class Research{
                 switch($status){
                     case "1":
                         $array = array(0=>array('id'=>'1', 'name'=>$status_array[1]),
-                                       1=>array('id'=>'2', 'name'=>$status_array[2]),
+                                       1=>array('id'=>'9', 'name'=>$status_array[9]),
                                        2=>array('id'=>'8', 'name'=>$status_array[8]));
                     break;
                 
@@ -447,12 +452,32 @@ class Research{
                 switch($status){
                     case "2":
                         $array = array(0=>array('id'=>'2', 'name'=>$status_array[2]),
-                                       1=>array('id'=>'3', 'name'=>$status_array[3]));
+                                       1=>array('id'=>'10', 'name'=>$status_array[10]));
                     break;
                 
                     case "4":
                         $array = array(0=>array('id'=>'4', 'name'=>$status_array[4]),
                                        1=>array('id'=>'5', 'name'=>$status_array[5]));
+                    break;
+                }
+            }elseif($role == 4){
+                switch($status){
+                    case "9":
+                        $array = array(0=>array('id'=>'9', 'name'=>$status_array[9]),
+                                       1=>array('id'=>'2', 'name'=>$status_array[2]));
+                    break;
+                
+                    case "10":
+                        $array = array(0=>array('id'=>'10', 'name'=>$status_array[10]),
+                                       1=>array('id'=>'11', 'name'=>$status_array[11]));
+                    break;
+                }
+            }elseif($role == 5){
+                switch($status){
+                    case "11":
+                        $array = array(0=>array('id'=>'11', 'name'=>$status_array[11]),
+                                       1=>array('id'=>'3', 'name'=>$status_array[3]),
+                                       2=>array('id'=>'7', 'name'=>$status_array[7]));
                     break;
                 }
             }
