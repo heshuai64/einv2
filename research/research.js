@@ -1019,21 +1019,23 @@ Ext.onReady(function(){
                 layout:"form",
                 items:[{
                     xtype:"textfield",
-                    fieldLabel:lang.ID,
-                    name:"id"
+                    fieldLabel:lang.Research_ID,
+                    name:"research_id",
+                    width: 300
                   },{
                     xtype:"textfield",
                     fieldLabel:lang.Chinese_Title,
-                    name:"chinese_title"
+                    name:"chinese_title",
+                    width: 300
                   }]
               },{
                 columnWidth:0.5,
                 layout:"form",
                 items:[{
-                    xtype:"combo",
-                    fieldLabel:lang.Sales,
-                    name:"sales",
-                    hiddenName:"sales"
+                    xtype:"textfield",
+                    fieldLabel:lang.Purchase_ID,
+                    name:"purchase_id",
+                    width: 300
                   },{
                     xtype:"datefield",
                     fieldLabel:lang.Created_On,
@@ -1046,9 +1048,9 @@ Ext.onReady(function(){
                 text: lang.Search,
                 handler: function(){
                     researchStore.baseParams = {
-                        id: research_search.getForm().items.items[0].getValue(),
+                        research_id: research_search.getForm().items.items[0].getValue(),
                         chinese_title: research_search.getForm().items.items[1].getValue(),
-                        sales: research_search.getForm().items.items[2].getValue(),
+                        purchase_id: research_search.getForm().items.items[2].getValue(),
                         createdOn: research_search.getForm().items.items[3].getValue(),
                         type: "search"
                     };
@@ -1101,28 +1103,49 @@ Ext.onReady(function(){
                 handler: function(b, e){
                     showResearchByStatus(1);
                 }
-            },/*{
+            },{
+                id:'status-button-9',
+                xtype:'button',
+                text: lang.Inquiry_Waiting_Assign,
+                handler: function(b, e){
+                    showResearchByStatus(9);
+                }
+            },{
                 id:'status-button-2',
                 xtype:'button',
                 text: lang.Waiting_Inquiry,
                 handler: function(b, e){
                     showResearchByStatus(2);
                 }
-            },*/{
+            },{
+                id:'status-button-10',
+                xtype:'button',
+                text: lang.Suppliers_Waiting_Review,
+                handler: function(b, e){
+                    showResearchByStatus(10);
+                }
+            },{
+                id:'status-button-11',
+                xtype:'button',
+                text: lang.Packaging_Materials_Review,
+                handler: function(b, e){
+                    showResearchByStatus(11);
+                }
+            },{
                 id:'status-button-3',
                 xtype:'button',
                 text: lang.Waiting_Inquiry_Review,
                 handler: function(b, e){
                     showResearchByStatus(3);
                 }
-            },/*{
+            },{
                 id:'status-button-4',
                 xtype:'button',
                 text: lang.Inquiry_Complete,
                 handler: function(b, e){
                     showResearchByStatus(4);
                 }
-            },*/{
+            },{
                 id:'status-button-5',
                 xtype:'button',
                 text: lang.Take_Sample_Confirm,

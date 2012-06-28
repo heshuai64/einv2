@@ -104,19 +104,21 @@ class Warehouse extends Base{
 	    $objExcel->setActiveSheetIndex(0);
 	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(0, 1, 'SKU');
 	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(1, 1, 'Title');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(2, 1, 'Locator');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(3, 1, 'Stock');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(4, 1, 'Virtual Stock');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(5, 1, 'Good Products Warehouse');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(6, 1, 'Bad Products Warehouse');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(7, 1, 'Sample Warehouse');
-	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(8, 1, 'Repair Warehouse');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(2, 1, 'Status');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(3, 1, 'Locator');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(4, 1, 'Stock');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(5, 1, 'Virtual Stock');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(6, 1, 'Good Products Warehouse');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(7, 1, 'Bad Products Warehouse');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(8, 1, 'Sample Warehouse');
+	    $objExcel->getActiveSheet()->setCellValueByColumnAndRow(9, 1, 'Repair Warehouse');
 	    
 	    $i = 2;
 	    foreach($temp as $key=>$value){
 		$j = 0;
 		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $key);
 		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $title_array[$key]);
+		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $this->getCustomFieldValueBySku($key, $this->conf['fieldArray']['skuStatus']));
 		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $this->getCustomFieldValueBySku($key, $this->conf['fieldArray']['LocatorNumber']));
 		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $value[6]+$value[7]+$value[8]+$value[9]);
 		$objExcel->getActiveSheet()->setCellValueByColumnAndRow($j++, $i, $this->getVirtualStock("", $key));
@@ -145,6 +147,7 @@ class Warehouse extends Base{
 	    foreach($temp as $key=>$value){
 		$array[] = array('sku'=>$key,
 				 'title'=>$title_array[$key],
+				 'status'=>$this->getCustomFieldValueBySku($key, $this->conf['fieldArray']['skuStatus']),
 				 'locator'=>$this->getCustomFieldValueBySku($key, $this->conf['fieldArray']['LocatorNumber']),
 				 'stock'=>$value[6]+$value[7]+$value[8]+$value[9],
 				 'virtual_stock'=>$this->getVirtualStock("", $key),

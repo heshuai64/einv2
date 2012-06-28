@@ -30,9 +30,11 @@ Ext.onReady(function(){
                        var obj = Ext.decode(response.responseText);
                        //console.log(obj);
                        for(var i=0; i<obj.length; i++){
-                            if(obj[i].status == 2 || obj[i].status == 4){
+                            //if(obj[i].status == 2 || obj[i].status == 4){
+                            if(!Ext.isEmpty(Ext.getCmp("status-button-"+obj[i].status))){
                                 Ext.getCmp("status-button-"+obj[i].status).setText(lang.Status_Array[obj[i].status] + "(" + obj[i].count + ")");
                             }
+                            //}
                        }
                     },
                     failure: function(response, opts) {
@@ -392,6 +394,27 @@ Ext.onReady(function(){
                 align:'stretch'
             },
             items: [{
+                id:'status-button-0',
+                xtype:'button',
+                text: lang.New_Product,
+                handler: function(b, e){
+                    showResearchByStatus(0);
+                }
+            },{
+                id:'status-button-1',
+                xtype:'button',
+                text: lang.Waiting_Review,
+                handler: function(b, e){
+                    showResearchByStatus(1);
+                }
+            },{
+                id:'status-button-9',
+                xtype:'button',
+                text: lang.Inquiry_Waiting_Assign,
+                handler: function(b, e){
+                    showResearchByStatus(9);
+                }
+            },{
                 id:'status-button-2',
                 xtype:'button',
                 text: lang.Waiting_Inquiry,
@@ -399,11 +422,60 @@ Ext.onReady(function(){
                     showResearchByStatus(2);
                 }
             },{
+                id:'status-button-10',
+                xtype:'button',
+                text: lang.Suppliers_Waiting_Review,
+                handler: function(b, e){
+                    showResearchByStatus(10);
+                }
+            },{
+                id:'status-button-11',
+                xtype:'button',
+                text: lang.Packaging_Materials_Review,
+                handler: function(b, e){
+                    showResearchByStatus(11);
+                }
+            },{
+                id:'status-button-3',
+                xtype:'button',
+                text: lang.Waiting_Inquiry_Review,
+                handler: function(b, e){
+                    showResearchByStatus(3);
+                }
+            },{
                 id:'status-button-4',
                 xtype:'button',
                 text: lang.Inquiry_Complete,
                 handler: function(b, e){
                     showResearchByStatus(4);
+                }
+            },{
+                id:'status-button-5',
+                xtype:'button',
+                text: lang.Take_Sample_Confirm,
+                handler: function(b, e){
+                    showResearchByStatus(5);
+                }
+            },{
+                id:'status-button-6',
+                xtype:'button',
+                text: lang.New_Product_Develop_Success,
+                handler: function(b, e){
+                    showResearchByStatus(6);
+                }
+            },{
+                id:'status-button-7',
+                xtype:'button',
+                text: lang.New_Product_Develop_Failure,
+                handler: function(b, e){
+                    showResearchByStatus(7);
+                }
+            },{
+                id:'status-button-8',
+                xtype:'button',
+                text: lang.Give_Up,
+                handler: function(b, e){
+                    showResearchByStatus(8);
                 }
             },{
                 xtype:'button',
