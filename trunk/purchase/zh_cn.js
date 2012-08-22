@@ -70,6 +70,7 @@ lang = {
     Created_On: '创建时间',
     Category:'分类',
     Import_Purchase_Orders: '导入采购订单',
+    Export_Purchase_Orders: '导出',
     Import_Purchase_Orders_Excel: '导入Excel文件转化为采购订单',
     File: '文件',
     Select_An_Excel_File: '选择一个Excel文件',

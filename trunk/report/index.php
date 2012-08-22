@@ -33,7 +33,7 @@ $row = mysql_fetch_assoc($result);
 $currency_user_role = $role[$row['role_id']];
 
 if(!in_array($currency_user_role, $role_1)){
-	echo "没有权限访问!";
+	echo "Do not have permission to access!";
 	exit;	
 }
 ?>
@@ -50,7 +50,7 @@ if(!in_array($currency_user_role, $role_1)){
 	 	<!-- ENDLIBS -->
 		<script type="text/javascript" src="../ext-all.js"></script>
                 <script type="text/javascript" src="zh_cn.js"></script>
-                <script type="text/javascript" src="warehouse.js"></script>
+                <script type="text/javascript" src="report.js"></script>
 	</head>
 	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0">
 	<?php
@@ -87,19 +87,7 @@ if(!in_array($currency_user_role, $role_1)){
                                                             <tr>
                                                                 <td align="center" width="30"><img name="shortcut0" src="/inventory/images/icons/calendar.gif"/></td>
                                                                 <td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);">
-                                                                    <a id="position-management" class="graylink"><?=QApplication::Translate('Position Management')?></a>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td align="center" width="30"><img name="shortcut0" src="/inventory/images/icons/calendar.gif"/></td>
-                                                                <td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);">
-                                                                    <a id="sku-info-search" class="graylink"><?=QApplication::Translate('SKU Search')?></a>
-                                                                </td>
-                                                            </tr>
-							    <tr>
-                                                                <td align="center" width="30"><img name="shortcut0" src="/inventory/images/icons/calendar.gif"/></td>
-                                                                <td onmouseout="this.style.backgroundColor='#FFFFFF';" onmouseover="this.style.backgroundColor='#EEEEEE';" style="border-left: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); padding-left: 5px; cursor: pointer; background-color: rgb(255, 255, 255);">
-                                                                    <a id="sku-stock-search" class="graylink"><?=QApplication::Translate('SKU Stock')?></a>
+                                                                    <a id="sku-complaints" class="graylink"><?=QApplication::Translate('SKU Complaints')?></a>
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -112,9 +100,7 @@ if(!in_array($currency_user_role, $role_1)){
 				<img width="10" src="../images/empty.gif"/>
 			</td>
 			<td width="100%" valign="top">
-                            <div id="position-management-panel" style="position: absolute; top: 10px;"></div>
-			    <div id="sku-management-panel" style="position: absolute; top: 10px;">
-			    <div id="sku-stock-panel" style="position: absolute; top: 10px;">
+                <div id="sku-complaints-Panel" style="position: absolute; top: 10px;"></div>
 			</td>
 		</table>
         </div>

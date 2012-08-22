@@ -306,24 +306,67 @@ if(!empty($_GET['intInventoryModelId'])){
 			.ajaxComplete(function(){
 				$(this).hide();
 			});
-	
-			$.ajaxFileUpload
-			(
-				{
-					url:'doajaxfileupload.php?categoryId=<?=$this->lstCategory->SelectedValue?>&inventoryCode=<?=$this->txtInventoryModelCode->Text?>',
-					secureuri:false,
-					fileElementId:'fileToUpload',
-					dataType: 'json',
-					success: function (data, status)
+
+			if($("#fileToUpload")[0].value != ""){
+				$.ajaxFileUpload
+				(
 					{
-						document.getElementById("inventory-image").src = data.imagePath;
-					},
-					error: function (data, status, e)
-					{
-						alert(e);
+						url:'doajaxfileupload.php?categoryId=<?=$this->lstCategory->SelectedValue?>&inventoryCode=<?=$this->txtInventoryModelCode->Text?>',
+						secureuri:false,
+						fileElementId:'fileToUpload',
+						dataType: 'json',
+						success: function (data, status)
+						{
+							document.getElementById("inventory-image").src = data.imagePath;
+						},
+						error: function (data, status, e)
+						{
+							alert(e);
+						}
 					}
-				}
-			)
+				)
+			}
+
+			if($("#fileToUpload_1")[0].value != ""){
+				$.ajaxFileUpload
+				(
+					{
+						url:'doajaxfileupload.php?categoryId=<?=$this->lstCategory->SelectedValue?>&inventoryCode=<?=$this->txtInventoryModelCode->Text?>',
+						secureuri:false,
+						fileElementId:'fileToUpload_1',
+						dataType: 'json',
+						success: function (data, status)
+						{
+							document.getElementById("inventory-image-1").src = data.imagePath;
+						},
+						error: function (data, status, e)
+						{
+							alert(e);
+						}
+					}
+				)
+			}
+
+			if($("#fileToUpload_2")[0].value != ""){
+				$.ajaxFileUpload
+				(
+					{
+						url:'doajaxfileupload.php?categoryId=<?=$this->lstCategory->SelectedValue?>&inventoryCode=<?=$this->txtInventoryModelCode->Text?>',
+						secureuri:false,
+						fileElementId:'fileToUpload_2',
+						dataType: 'json',
+						success: function (data, status)
+						{
+							document.getElementById("inventory-image-2").src = data.imagePath;
+						},
+						error: function (data, status, e)
+						{
+							alert(e);
+						}
+					}
+				)
+			}
+			
 			
 			return false;
 	
@@ -331,12 +374,16 @@ if(!empty($_GET['intInventoryModelId'])){
 	</script>	
 	<h2><?=QApplication::Translate('Image Manage')?></h2>
 	<form name="form" action="" method="POST" enctype="multipart/form-data">
-		<input id="fileToUpload" type="file" size="45" name="fileToUpload" class="input"><br>
+		1:<input id="fileToUpload" type="file" size="45" name="fileToUpload" class="input"><br>
+		2:<input id="fileToUpload_1" type="file" size="45" name="fileToUpload_1" class="input"><br>
+		3:<input id="fileToUpload_2" type="file" size="45" name="fileToUpload_2" class="input"><br>
 		<button class="button" id="buttonUpload" onclick="return ajaxFileUpload();" style="height:32px"><?=QApplication::Translate('Upload Image')?></button>
 	</form>
 	<img id="loading" src="../images/loading.gif" style="display:none;">
-	<div style="position:absolute;right:300px;top:0px">
+	<div style="position:absolute;right:100px;top:0px">
 		<a href="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"><img border=0 style="width:150px;height:100px" id="inventory-image" src="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>.jpg"/></a>
+		<a href="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>_1.jpg"><img border=0 style="width:150px;height:100px" id="inventory-image-1" src="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>_1.jpg"/></a>
+		<a href="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>_2.jpg"><img border=0 style="width:150px;height:100px" id="inventory-image-2" src="../inventory_images/<?=substr($this->txtInventoryModelCode->Text, 0, 2)?>/<?=$this->txtInventoryModelCode->Text?>_2.jpg"/></a>
 	</div>
 </div>
 

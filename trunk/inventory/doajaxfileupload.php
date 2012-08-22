@@ -11,10 +11,19 @@
 	//$imagePath = "C:\\xampp\\htdocs\\inventory\\inventoy_images\\";
 	//$imagePath = "/export/inventory/inventory_images/";
 	$imagePath = $conf['path']['images'];
-	
+	$ex = '';
+	if(!empty($_FILES['fileToUpload'])){
+		$fileElementName = 'fileToUpload';
+	}elseif(!empty($_FILES['fileToUpload_1'])){
+		$fileElementName = 'fileToUpload_1';
+		$ex = '_1';
+	}elseif(!empty($_FILES['fileToUpload_2'])){
+		$fileElementName = 'fileToUpload_2';
+		$ex = '_2';
+	}
 	$error = "";
 	$msg = "";
-	$fileElementName = 'fileToUpload';
+	
 	if(!empty($_FILES[$fileElementName]['error']))
 	{
 		switch($_FILES[$fileElementName]['error'])
@@ -46,7 +55,7 @@
 			default:
 				$error = 'No error code avaiable';
 		}
-	}elseif(empty($_FILES['fileToUpload']['tmp_name']) || $_FILES['fileToUpload']['tmp_name'] == 'none')
+	}elseif(empty($_FILES[$fileElementName]['tmp_name']) || $_FILES[$fileElementName]['tmp_name'] == 'none')
 	{
 		$error = 'No file was uploaded..';
 	}else 
@@ -57,7 +66,7 @@
 			//$msg .= " category: ".$_GET['categoryId'];
 			//for security reason, we force to remove all uploaded file
 			//@unlink($_FILES['fileToUpload']);
-			$extension = explode(".", $_FILES['fileToUpload']['name']);
+			$extension = explode(".", $_FILES[$fileElementName]['name']);
 			$extension = $extension[1];
 			//echo $_FILES['fileToUpload']['tmp_name'];
 			//if(!file_exists($imagePath.$_GET['categoryId']."\\".$_GET['inventoryCode'])){
@@ -71,8 +80,9 @@
 			//var_dump($_SESSION);
 			//$categoryId = ($_GET['categoryId'] !="")?$_GET['categoryId']:$_SESSION['categoryId'];
 			$inventoryCode = ($_GET['inventoryCode'] !="")?$_GET['inventoryCode']:$_SESSION['inventoryCode'];
+			$inventoryCode = $inventoryCode.$ex;
 			//move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$categoryId."\\".$inventoryCode.".".$extension);
-			move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $imagePath.$type.DIRECTORY_SEPARATOR.$inventoryCode.".".$extension);
+			move_uploaded_file($_FILES[$fileElementName]['tmp_name'], $imagePath.$type.DIRECTORY_SEPARATOR.$inventoryCode.".".$extension);
 			echo "{success: true,imagePath: '../inventory_images/".$type."/".$inventoryCode.".".$extension."'}";
 	}
 	/*

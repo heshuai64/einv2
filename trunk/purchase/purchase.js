@@ -14,7 +14,8 @@ Ext.onReady(function(){
     Ext.Ajax.on('beforerequest', showWait);
     Ext.Ajax.on('requestcomplete', hideWait);
     Ext.Ajax.on('requestexception', exception);
-     
+    
+    var current_status;
     var purchasePlannedStore = new Ext.data.JsonStore({
             root: 'records',
             totalProperty: 'totalCount',
@@ -930,6 +931,13 @@ Ext.onReady(function(){
                     importExcelWindow.show();  
                 }
             },'-',{
+                id: 'export-purchase-orders',
+                text: lang.Export_Purchase_Orders,
+                handler: function(){
+                    window.open("purchase.php?action=exportPO&status="+current_status,
+                                "_blank","toolbar=no, location=yes, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=no, copyhistory=yes, width=100, height=100");
+                }
+            },'-',{
                 id: 'create-purchase-orders',
                 text: lang.Create_Purchase_Orders,
                 handler: function(){
@@ -1697,11 +1705,24 @@ Ext.onReady(function(){
                                 //document.getElementById("PrimaryCategoryCategoryID").value = r.data.id;
                             }
                         }
-                      },{
-                        xtype:"textfield",
-                        fieldLabel: lang.Sku,
-                        name:"textvalue"
-                      }]
+                    },{
+                        xtype:"combo",
+                        mode: 'local',
+                        store: new Ext.data.JsonStore({
+                            autoLoad: true,
+                            fields: ['id', 'name'],
+                            url: "purchase.php?action=getPurchaser"
+                        }),
+                        valueField:'id',
+                        displayField:'name',
+                        //fieldLabel: lang.Vendors,
+                        triggerAction: 'all',
+                        editable: false,
+                        selectOnFocus:true,
+                        fieldLabel: lang.Purchaser
+                        //name:"combovalue",
+                        //hiddenName:"combovalue"
+                    }]
                   },{
                     columnWidth:0.18,
                     layout:"form",
@@ -1744,7 +1765,7 @@ Ext.onReady(function(){
                         editable: false,
                         selectOnFocus:true
                     }]
-                  },{
+                }/*,{
                     columnWidth:0.18,
                     layout:"form",
                     defaults:{
@@ -1773,7 +1794,12 @@ Ext.onReady(function(){
                         //name:"combovalue",
                         //hiddenName:"combovalue"
                     }]
-                }]
+                }*/]
+            },{
+                xtype:"textfield",
+                fieldLabel: lang.Sku,
+                name:"textvalue",
+                width: 600
             }],
             buttonAlign: 'center',
             buttons: [{
@@ -1781,10 +1807,10 @@ Ext.onReady(function(){
                 handler: function(){
                     purchaseOrdersStore.baseParams = {
                         vendors: Ext.getCmp("purchase-orders-search-form").getForm().items.items[0].getValue(),
-                        sku: Ext.getCmp("purchase-orders-search-form").getForm().items.items[1].getValue(),
+                        purchaser: Ext.getCmp("purchase-orders-search-form").getForm().items.items[1].getValue(),
                         purchase_type: Ext.getCmp("purchase-orders-search-form").getForm().items.items[2].getValue(),
                         purchase_status: Ext.getCmp("purchase-orders-search-form").getForm().items.items[3].getValue(),
-                        purchaser: Ext.getCmp("purchase-orders-search-form").getForm().items.items[4].getValue()
+                        sku: Ext.getCmp("purchase-orders-search-form").getForm().items.items[4].getValue()
                     };
                     purchaseOrdersStore.load();
                 }
@@ -2205,9 +2231,11 @@ Ext.onReady(function(){
     })
     
     var purchaseOrdersUI = function(status){
+        current_status = status;
         switch(status){
             case 1:
                 Ext.getCmp("import-purchase-orders").enable();
+                Ext.getCmp("export-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").enable();
                 Ext.getCmp("edit-purchase-orders").enable();
                 Ext.getCmp("show-remark").disable();
@@ -2223,6 +2251,7 @@ Ext.onReady(function(){
         
             case 2:
                 Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").enable();
                 Ext.getCmp("show-remark").disable();
@@ -2238,6 +2267,7 @@ Ext.onReady(function(){
         
             case 3:
                 Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").enable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("show-remark").enable();
@@ -2253,6 +2283,7 @@ Ext.onReady(function(){
         
             case 5:
                 Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").enable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("show-remark").enable();
@@ -2268,6 +2299,7 @@ Ext.onReady(function(){
         
             case 6:
                 Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("submit-purchase-orders").disable();
@@ -2282,6 +2314,7 @@ Ext.onReady(function(){
         
             case 8:
                 Ext.getCmp("import-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("submit-purchase-orders").disable();
