@@ -42,7 +42,18 @@
 								<tr style="height:24px">
 									<td style="width:15px;background-image: url(../images/emptyTabSpace.gif); background-repeat:repeat-x;"><img src="../images/empty.gif" width="15" height="1"></td>
 									<?php
-									
+										$role = array();
+									    $sql = "select role_id,short_description from role";
+									    $result = mysql_query($sql);
+									    while($row = mysql_fetch_assoc($result)){
+									            $role[$row['role_id']] = $row['short_description'];
+									    }
+	    
+										$sql = "select role_id from user_account where user_account_id = ".$_SESSION['intUserAccountId'];
+									    $result = mysql_query($sql);
+									    $row = mysql_fetch_assoc($result);
+									    $currency_role = $role[$row['role_id']];
+    
 										if ($this->objRoleModuleArray) {
 											foreach ($this->objRoleModuleArray as $objRoleModule) {
 												//var_dump($objRoleModule->Module->ShortDescription);
@@ -64,27 +75,38 @@
 										}
 									?>
 									<?php
-										$strTabClass = 'other_tab_';
-										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Purchase").'</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
-										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
-										
+										if(in_array($currency_role, array('Administrator', 'PPMC'))){
+											$strTabClass = 'other_tab_';
+											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Purchase").'</a></td>', $strTabClass, '../purchase/index.php', $strTabClass));
+											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
+											echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										}
 										/*
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Miscellaneous").'</a></td>', $strTabClass, '../admin/miscellaneous.php?type=1', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										*/
+										
 										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Import Export").'</a></td>', $strTabClass, '../import_export/index.php', $strTabClass));
 										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
 										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										*/
+										
+										if(in_array($currency_role, array('Administrator', 'PPMC', 'Warehouse Manager'))){
+											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Warehouse").'</a></td>', 'other_tab_', '../warehouse/index.php', 'other_tab_'));
+											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										}	
 
-										echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Warehouse").'</a></td>', $strTabClass, '../warehouse/index.php', $strTabClass));
-										echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', $strTabClass));
-										echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
-																			
+										//if(in_array($currency_role, array('Administrator', 'PPMC', 'Warehouse Manager'))){
+											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Report").'</a></td>', 'other_tab_', '../report/index.php', 'other_tab_'));
+											echo(sprintf('<td class="%sright"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
+											echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
+										//}	
+										
 										if (QApplication::$objUserAccount->AdminFlag) {
 											echo(sprintf('<td class="%sleft"><img src="../images/empty.gif" width="12" height="1"></td>', 'other_tab_'));
 											echo(sprintf('<td class="%smiddle"><a href="%s" class="%slabel">'.QApplication::Translate("Sku Status Manage").'</a></td>', 'other_tab_', '../admin/status_manage.php', 'other_tab_'));

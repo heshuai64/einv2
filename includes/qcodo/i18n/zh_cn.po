@@ -305,3 +305,9 @@ MsgStr "状态"
 
 MsgId "Reason"
 MsgStr "原因"
+
+MsgId "Report"
+MsgStr "报表"
+
+MsgId "SKU Complaints"
+MsgStr "SKU 投诉"

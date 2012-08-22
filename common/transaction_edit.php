@@ -106,7 +106,7 @@
 		protected function lblNote_Create() {
 			$this->lblNote = new QLabel($this);
 			$this->lblNote->Name = 'Note';
-			if(QApplication::$objRoleModule->RoleId == 1 || QApplication::$objRoleModule->RoleId == 3){
+			if(in_array(QApplication::$objRoleModule->RoleId, array(1,3,6))){
 				$this->lblNote->Text = $this->objTransaction->Note;
 			}
 		}

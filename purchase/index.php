@@ -50,12 +50,12 @@ if(!in_array($currency_user_role, $role_1)){
 	 	<!-- ENDLIBS -->
 	
 		<script type="text/javascript" src="../ext-all.js"></script>
-		<script type="text/javascript" src="zh_cn-min.js"></script>
+		<script type="text/javascript" src="zh_cn.js"></script>
 		<script src="FileUploadField.js"></script>
 		<script type="text/javascript">
 			var user_role = "<?=$currency_user_role?>";
 		</script>
-		<script type="text/javascript" src="purchase-min.js"></script>
+		<script type="text/javascript" src="purchase.js"></script>
 	</head>
 	<body marginwidth="0" marginheight="0" topmargin="0" leftmargin="0" style="width: 1630px;">
 	<?php

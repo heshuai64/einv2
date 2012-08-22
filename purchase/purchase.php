@@ -111,7 +111,14 @@ class Purchase extends Base{
 	if(!empty($_POST['vendors'])){
 	    $where .= " and vendors_id = '".$_POST['vendors']."'";
 	}
-	if(!empty($_POST['sku'])){
+	if(strpos($_POST['sku'], ",")){
+	    $tmp = "";
+	    $sku_array = explode(",", $_POST['sku']);
+	    foreach($sku_array as $sku){
+		$tmp .= "'".$sku."',";
+	    }
+	    $where .= " and sku in (".substr($tmp, 0, -1).")";
+	}elseif(!empty($_POST['sku'])){
 	    $where .= " and sku like '".$_POST['sku']."%'";
 	}
 	if(!empty($_POST['purchase_type']) && $_POST['purchase_type'] != 3){
@@ -330,6 +337,21 @@ class Purchase extends Base{
 	if($po){
 	    echo '{success: true, msg: "'.$po_id.'"}';
 	}
+    }
+    
+    public function exportPO(){
+	$data = "PO,SKU,Quantity\n";
+	$sql = "select id,sku,sku_purchase_qty from purchase_orders where purchase_status = ".$_GET['status'];
+	$result = mysql_query($sql);
+	while($row = mysql_fetch_assoc($result)){
+	    $data .= $row['id'].",".$row['sku'].",".$row['sku_purchase_qty']."\n";
+	}
+	
+	header("Content-type: application/x-msdownload");
+        header("Content-Disposition: attachment; filename=po(".$_GET['status'].").csv");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        echo $data;
     }
     
     public function createPOFromPP(){

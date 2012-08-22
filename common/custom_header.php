@@ -11,11 +11,12 @@
     $row = mysql_fetch_assoc($result);
     $currency_role = $role[$row['role_id']];
 
-    $custom_module = array(array('id'=>'inventory','label'=>QApplication::Translate('Inventory'),'role'=>''),
-                           array('id'=>'contacts','label'=>QApplication::Translate('Contacts'),'role'=>''),
+    $custom_module = array(array('id'=>'inventory','label'=>QApplication::Translate('Inventory'),'role'=>array('All')),
+                           array('id'=>'contacts','label'=>QApplication::Translate('Contacts'),'role'=>array('Administrator')),
                            array('id'=>'purchase','label'=>QApplication::Translate('Purchase'),'role'=>array('Administrator', 'PPMC')),
-                           array('id'=>'import_export','label'=>QApplication::Translate('Import Export'),'role'=>''),
-                           array('id'=>'warehouse','label'=>QApplication::Translate('Warehouse'),'role'=>array('Administrator', 'PPMC')),
+                           array('id'=>'import_export','label'=>QApplication::Translate('Import Export'),'role'=>array('')),
+                           array('id'=>'warehouse','label'=>QApplication::Translate('Warehouse'),'role'=>array('Administrator', 'PPMC', 'Warehouse Manager')),
+                           array('id'=>'report','label'=>QApplication::Translate('Report'),'role'=>array('All')),
                            array('id'=>'status_manage','label'=>QApplication::Translate('Sku Status Manage'),'link'=>'../admin/status_manage.php','role'=>array('Administrator'))
                            );
     if(strpos($_SERVER['SCRIPT_NAME'], '.php')){
@@ -52,7 +53,8 @@
                                 }else{
                                     $class = "other";
                                 }
-                                if(empty($module['role']) || in_array($currency_role, $module['role'])){
+                                //var_dump($currency_role);
+                                if($module['role']['0'] == "All" || in_array($currency_role, $module['role'])){
                                     echo '<td class="empty_tab_space"><img height="1" width="1" src="../images/empty.gif"/></td>';
                                     echo '<td class="'.$class.'_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
                                         <td class="'.$class.'_tab_middle"><a border="0" class="'.$class.'_tab_label" href="'.((!empty($module['link']))?$module['link']:'../'.$module['id'].'/').'">'.$module['label'].'</a></td>
@@ -63,7 +65,7 @@
                             }
                         ?>
                         
-                        <?php if($currency_user_role == "Administrator"){?>
+                        <?php if($currency_role == "Administrator"){?>
                         <td class="other_tab_left"><img height="1" width="12" src="../images/empty.gif"/></td>
                         <td class="other_tab_middle"><a class="other_tab_label" href="../admin/category_list.php"><?=QApplication::Translate('Admin')?></a></td>
                         <td class="other_tab_right"><img height="1" width="12" src="../images/empty.gif"/></td>
