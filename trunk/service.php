@@ -81,8 +81,18 @@ class Service extends Base{
 	}
     }
     
+    public function checkSkuStockFromRemote(){
+	if($this->checkSkuStock($_GET['sku'], $_GET['quantity'])){
+	    echo "Y";
+	}else{
+	    echo "N";
+	}
+    }
+    
     private function skuTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id='',$shipment_method='',$warehouse=6){
-        $this->log("skuTakeOut", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
+        $inventory_model = trim($inventory_model);
+	
+	$this->log("skuTakeOut", "<br><font color='red'>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</font><br>");
 	
 	if($this->checkSkuCombo($inventory_model)){
 	    $this->skuComboTakeOut($inventory_model,$inventory_model_id,$quantity,$shipment_id,$shipment_method);
@@ -167,6 +177,8 @@ class Service extends Base{
             //echo "<br>";
             $result = mysql_query($sql, $this->conn);
             if($result){
+		//$sql = "LOCK TABLES inventory_location WRITE;";
+		//$result = mysql_query($sql, $this->conn);
                 //sku update stock quantity
                 $sql = "update inventory_location set quantity = quantity - ".$quantity." where inventory_model_id = '".$inventory_model_id."' and location_id = '".$source_location_id."'";
                 $this->log("skuTakeOut", $sql."<br>");
@@ -174,6 +186,9 @@ class Service extends Base{
                 //echo "<br>";
                 $result = mysql_query($sql, $this->conn);
                 
+		//$sql = "UNLOCK TABLES;";
+		//$result = mysql_query($sql, $this->conn);
+		
                 $sql = "update inventory_model set modified_by = '".$created_by."',modified_date = '".date("Y-m-d H:i:s")."' where inventory_model_id = '".$inventory_model_id."'";
                 //$this->log("skuTakeOut", $sql."<br>");
                 $result = mysql_query($sql, $this->conn);
@@ -194,7 +209,17 @@ class Service extends Base{
     }
     
     public function clientSkuTackOut(){
-	$sku = $_GET['sku'];
+	$rand = rand(1000, 5000);
+	usleep($rand);
+	
+	$sql = "SET AUTOCOMMIT=0;";
+	$result = mysql_query($sql, $this->conn);
+	if(!$result){
+	    $this->log("clientSkuTackOut", "AUTOCOMMIT=0 failure|".mysql_error()."<br>");
+	}
+	
+	//$sku = $_GET['sku'];
+	$sku = trim($_GET['sku']);
 	$sql = "select inventory_model_id from inventory_model where inventory_model_code='".$sku."'";
 	//echo $sql;
 	//echo "<br>";
@@ -207,6 +232,18 @@ class Service extends Base{
 	
 	$this->log("clientSkuTackOut", print_r($_GET, true)."<br>");
 	$result = $this->skuTakeOut($sku, $inventory_model_id, $quantity, $shipment_id, $shipment_method);
+	
+	$sql = "COMMIT;";
+	$result = mysql_query($sql, $this->conn);
+	if(!$result){
+	    $this->log("clientSkuTackOut", "COMMIT failure|".mysql_error()."<br>");
+	}
+	$sql = "SET AUTOCOMMIT=1;";
+	$result = mysql_query($sql, $this->conn);
+	if(!$result){
+	    $this->log("clientSkuTackOut", "SET AUTOCOMMIT=1 failure|".mysql_error()."<br>");
+	}
+	
 	if($result){
 	    echo "HS:success";
 	}else{
@@ -2264,30 +2301,30 @@ class Service extends Base{
 		
 		case "US":
 		    $site_arg_1 = 0.7;
-		    $site_arg_2 = 1.18;
-		    $site_arg_3 = 1.15;
+		    $site_arg_2 = 1.17;
+		    $site_arg_3 = 1.12;
 		break;
 	    
 		case "UK":
 		    $site_arg_1 = 1;
-		    $site_arg_2 = 1.18;
+		    $site_arg_2 = 1.17;
 		    $site_arg_3 = 1.2;
 		break;
 	    
 		case "Australia":
-		    $site_arg_1 = 2;
-		    $site_arg_2 = 1.18;
-		    $site_arg_3 = 1.22;
+		    $site_arg_1 = 1.5;
+		    $site_arg_2 = 1.17;
+		    $site_arg_3 = 1.2;
 		break;
 	    
 		case "Germany":
 		    $site_arg_1 = 1.5;
-		    $site_arg_2 = 1.18;
-		    $site_arg_3 = 1.26;
+		    $site_arg_2 = 1.17;
+		    $site_arg_3 = 1.24;
 		break;
 	    }
             
-	    $tmp = $sku_cost + $sku_weight * 90;
+	    $tmp = $sku_cost + $sku_weight * 85;
             if($tmp <= 5){
             	$arg_3 = 1;
             }elseif($tmp <= 10){
