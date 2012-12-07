@@ -2251,7 +2251,7 @@ Ext.onReady(function(){
         
             case 2:
                 Ext.getCmp("import-purchase-orders").disable();
-                Ext.getCmp("export-purchase-orders").disable();
+                Ext.getCmp("export-purchase-orders").enable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").enable();
                 Ext.getCmp("show-remark").disable();
@@ -2267,7 +2267,7 @@ Ext.onReady(function(){
         
             case 3:
                 Ext.getCmp("import-purchase-orders").disable();
-                Ext.getCmp("export-purchase-orders").enable();
+                Ext.getCmp("export-purchase-orders").disable();
                 Ext.getCmp("create-purchase-orders").disable();
                 Ext.getCmp("edit-purchase-orders").disable();
                 Ext.getCmp("show-remark").enable();

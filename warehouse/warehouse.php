@@ -38,7 +38,7 @@ class Warehouse extends Base{
 	$array['massive_cotton_number'] = $this->getCustomFieldValue($row['id'], $this->conf['fieldArray']['massiveCottonNumber']);
 	
 	//$array['image'] = "http://127.0.0.1:6666/inventory/inventory_images/".substr($_GET['sku'], 0, 2)."/".$_GET['sku'].".jpg";
-	$array['image'] = "http://rich2010.3322.org:8080/inventory/inventory_images/".substr($_GET['sku'], 0, 2)."/".$_GET['sku'].".jpg";
+	$array['image'] = "http://rich2010.3322.org:9999/inventory/inventory_images/".substr($_GET['sku'], 0, 2)."/".$_GET['sku'].".jpg";
 	echo '['.json_encode($array).']';
     }
     

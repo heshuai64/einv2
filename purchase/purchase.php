@@ -118,6 +118,13 @@ class Purchase extends Base{
 		$tmp .= "'".$sku."',";
 	    }
 	    $where .= " and sku in (".substr($tmp, 0, -1).")";
+	}elseif(strpos($_POST['sku'], " ")){
+	    $tmp = "";
+	    $sku_array = explode(" ", $_POST['sku']);
+	    foreach($sku_array as $sku){
+		$tmp .= "'".$sku."',";
+	    }
+	    $where .= " and sku in (".substr($tmp, 0, -1).")";
 	}elseif(!empty($_POST['sku'])){
 	    $where .= " and sku like '".$_POST['sku']."%'";
 	}
@@ -698,6 +705,7 @@ class Purchase extends Base{
 	    $sql = "select sku,sku_purchase_qty from go_inventory_orders where id = '".$id."' and purchase_status = 1";
 	    $result = mysql_query($sql, $this->conn);
 	    $row = mysql_fetch_assoc($result);
+	    $row['sku'] = trim($row['sku']);
 	    
 	    $sql_1 = "select inventory_model_id from inventory_model where inventory_model_code = '".$row['sku']."'";
 	    $result_1 = mysql_query($sql_1, $this->conn);
