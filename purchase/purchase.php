@@ -19,6 +19,12 @@ class Purchase extends Base{
     1: new
     2: to inventory
     */
+    private static $payment_method = array("Advance Payment"=>"预付款",
+				    "Express Collection"=>"快递代收",
+				    "Delivery Payment"=>"货到付款",
+				    "Weekly"=>"周结",
+				    "A Half Monthly"=>"半月结",
+				    "Monthly"=>"月结");
     
     public function __construct(){
 	parent::__construct();
@@ -167,7 +173,11 @@ class Purchase extends Base{
 		$row['sku_rework_qty'] = $this->getStock("", $row['sku'], $this->conf['location']['repair_warehouse']);
 	    //}
 	    //$row['vendors'] = $allCompany[$row['vendors_id']]['short_description']."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
-            $row['vendors'] = ((!empty($row['vendors_id']))?$row['vendors_id']:"")."<br>".$allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
+            $payment_method = Purchase::$payment_method[$this->getCustomFieldValue($row['vendors_id'], $this->conf['fieldArray']['paymentMethod'], 7)];
+	    $contact = $allContact[$row['contact_id']]['first_name'].$allContact[$row['contact_id']]['last_name'];
+	    $row['vendors'] = ((!empty($row['vendors_id']))?$row['vendors_id']."<br>":"").
+	    ((!empty($contact))?($contact."<br>"):"").
+	    $payment_method;
 	    $array[] = $row;
             $i++;
         }
@@ -347,11 +357,12 @@ class Purchase extends Base{
     }
     
     public function exportPO(){
-	$data = "PO,SKU,Quantity\n";
-	$sql = "select id,sku,sku_purchase_qty from purchase_orders where purchase_status = ".$_GET['status'];
+	$data = "PO,Vendors,Payment Method,SKU,Quantity\n";
+	$sql = "select id,vendors_id,sku,sku_purchase_qty from purchase_orders where purchase_status = ".$_GET['status'];
 	$result = mysql_query($sql);
 	while($row = mysql_fetch_assoc($result)){
-	    $data .= $row['id'].",".$row['sku'].",".$row['sku_purchase_qty']."\n";
+	    $payment_method = $this->getCustomFieldValue($row['vendors_id'], $this->conf['fieldArray']['paymentMethod'], 7);
+	    $data .= $row['id'].",".$row['vendors_id'].",".$payment_method.",".$row['sku'].",".$row['sku_purchase_qty']."\n";
 	}
 	
 	header("Content-type: application/x-msdownload");
